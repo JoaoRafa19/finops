@@ -18,7 +18,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	db, err := app.NewDbPool(ctx, cfg.DbURL)
+	db, err := app.NewDB(ctx, cfg.DbURL)
 	if err != nil {
 		log.Fatalf("cannot connect to database: %v", err)
 	}

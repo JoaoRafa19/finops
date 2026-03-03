@@ -2,25 +2,27 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func NewDbPool(ctx context.Context, databaseUrl string) (*pgxpool.Pool, error) {
+func NewDB(ctx context.Context, databaseUrl string) (*sql.DB, error) {
 	if databaseUrl == "" {
 		return nil, errors.New("DATABASE_URL is required, invalid database url")
 	}
 
-	pool, err := pgxpool.New(ctx, databaseUrl)
+	db, err := sql.Open("pgx", databaseUrl)
 	if err != nil {
-		return nil, fmt.Errorf("error creating connection: %w", err)
+		return nil, fmt.Errorf("error opening database connection: %w", err)
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
 		return nil, fmt.Errorf("error connecting database: %w", err)
 	}
 
-	return pool, nil
+	return db, nil
 }
