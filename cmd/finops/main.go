@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"finops/internal/app"
-	"finops/internal/httpx"
+	"finops/internal/web"
 	"log"
 	"net/http"
 	"os"
@@ -13,35 +13,43 @@ import (
 )
 
 func main() {
-
 	cfg := app.LoadConfig()
-	router := httpx.NewRouter()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	db, err := app.NewDbPool(ctx, cfg.DbURL)
+	if err != nil {
+		log.Fatalf("cannot connect to database: %v", err)
+	}
+	defer db.Close()
+
+	router := web.NewRouter()
 
 	s := http.Server{
-		Addr:        cfg.HTTPAddr,
-		Handler:     router,
+		Addr:              cfg.HTTPAddr,
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	go func() {
-		log.Println("Server runing on addr: ", s.Addr)
+		log.Println("Server running on addr:", s.Addr)
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Println("Server stopped with error: ", err)
+			log.Println("Server stopped with error:", err)
+			os.Exit(1)
 		}
-
 	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
 	log.Println("Terminating...Cleaning UP")
 
-	if err := s.Shutdown(ctx); err != nil {
+	ctxShutDown, c := context.WithTimeout(context.Background(), time.Second*10)
+	defer c()
+
+	if err := s.Shutdown(ctxShutDown); err != nil {
 		log.Fatal("Shutdown error")
 	}
-
 }

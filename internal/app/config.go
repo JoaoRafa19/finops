@@ -4,6 +4,7 @@ import "os"
 
 type Config struct {
 	HTTPAddr string
+	DbURL    string
 }
 
 func LoadConfig() Config {
@@ -12,7 +13,10 @@ func LoadConfig() Config {
 		addr = ":8080"
 	}
 
+	dbURL := os.Getenv("DATABASE_URL")
+
 	return Config{
 		HTTPAddr: addr,
+		DbURL:    dbURL,
 	}
 }

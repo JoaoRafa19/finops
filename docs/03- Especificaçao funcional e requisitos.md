@@ -1,5 +1,21 @@
 # Especificação funcional e de design para um monólito de controle financeiro pessoal com Go, templ, htmx, Tailwind, DB e Ollama
 
+## Padrão arquitetural adotado (implementação atual)
+
+A implementação segue MVC com camada de serviço:
+
+- Model: `internal/store` (código gerado por sqlc + queries SQL).
+- Service: `internal/service` (regras de negócio; acesso a DB e integrações externas).
+- Controller: `internal/controllers/api` e `internal/controllers/web` (processa request/response HTTP).
+- Router: `internal/web/router.go` (registro de rotas e injeção de controllers).
+- Composition root: `cmd/finops/main.go` (monta config, DB, services e controllers).
+- Separação de roteamento: API em `/api/*` e páginas em `/`.
+
+Regras de responsabilidade:
+- Controller não faz SQL direto.
+- Service concentra regra de negócio e orquestra Model/APIs.
+- Model não conhece HTTP.
+
 ## Escopo, premissas e fontes prioritárias
 
 Este documento especifica (i) **funcionalidades** e **regras de negócio**, (ii) **fluxos críticos**, (iii) **handlers/APIs internas**, (iv) **modelo de dados (ER + DDL)** para **Postgres e MySQL**, (v) **design de interface (wireframes textuais + componentes Tailwind)**, (vi) **integração com LLM local via Ollama**, e (vii) **segurança/privacidade, testes e deploy** para um **aplicativo monolítico** que roda primeiro no computador do desenvolvedor e depois evolui para **responsivo/mobile**.
