@@ -1,0 +1,12 @@
+bin/
+temp/
+*.log
+env.*
+*.env
+dist/
+
+coverage.out
+
+.vscode/
+.idea/
+.DS_Store
