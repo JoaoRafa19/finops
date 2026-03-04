@@ -31,8 +31,8 @@ func LoadConfig() Config {
 	sessionCookie := getEnv("SESSION_COOKIE_NAME", "finops_session")
 	cookieSecure := getEnvBool("COOKIE_SECURE", false)
 	redisDB := getEnvInt("REDIS_DB", 0)
-	sessionTTL := getEnvDuration("SESSION_TTL", 12*time.Hour)
-	rememberMeTTL := getEnvDuration("REMEMBER_ME_TTL", 30*24*time.Hour)
+	sessionTTL := getEnvDuration("SESSION_TTL", 30*time.Minute)
+	rememberMeTTL := getEnvDuration("REMEMBER_ME_TTL", 7*24*time.Hour)
 	slidingSessionTTL := getEnvBool("SLIDING_SESSION_TTL", true)
 
 	return Config{

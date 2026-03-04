@@ -15,7 +15,19 @@ services:
       test: ["CMD-SHELL", "pg_isready -U finops -d finops"]
       interval: 5s
       retries: 10
+  app:
+    build: 
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile 
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/finance?sslmode=disable
+    ports:
+      - 10000:10000
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
+  ollama:
   finops_pg_data:
   
