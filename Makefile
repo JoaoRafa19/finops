@@ -19,7 +19,8 @@ tidy:
 	go mod tidy
 
 start_db:
-	docker compose -f ./deploy/docker/docker-compose.yaml  up postgres -d
+	docker compose -f ./deploy/docker/docker-compose.yaml  up postgres redis -d
+
 
 startf:
 	templ generate --watch
@@ -46,3 +47,7 @@ setup:
 	go install github.com/a-h/templ/cmd/templ@latest
 	go install github.com/jackc/tern/v2@latest
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
+
+front:
+	templ generate --watch --proxy="http://localhost:8080" --cmd="go run ./cmd/finops/main.go"

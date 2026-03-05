@@ -2,24 +2,41 @@ package web
 
 import (
 	"finops/internal/controllers/web"
+	service "finops/internal/services"
+	"finops/internal/web/middleware"
 	"net/http"
+	"time"
 )
 
-func newPageRouter() http.Handler {
+type PageRouterDeps struct {
+	AuthService   service.AuthService
+	SessionCookie string
+	CookieSecure  bool
+	RememberMeTTL time.Duration
+}
+
+func newPageRouter(deps PageRouterDeps) http.Handler {
 	mux := http.NewServeMux()
 
 	homeController := web.NewHomeController()
+	authController := web.NewAuthController(
+		deps.AuthService,
+		deps.SessionCookie,
+		deps.CookieSecure,
+		deps.RememberMeTTL,
+	)
 
-	mux.Handle("/", homeRouter(*homeController))
+	// Públicas
+	mux.HandleFunc("GET /login", authController.LoginPage)
+	mux.HandleFunc("POST /login", authController.Login)
 
-	return mux
-}
+	// Privadas
+	private := http.NewServeMux()
+	private.HandleFunc("GET /", homeController.Home)
+	private.HandleFunc("POST /logout", authController.Logout)
 
-func homeRouter(ctrl web.HomeController) http.Handler {
-	// All Home Routes
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /", ctrl.Home)
+	privateChain := middleware.AuthRequired(private)
+	mux.Handle("/", privateChain)
 
 	return mux
 }

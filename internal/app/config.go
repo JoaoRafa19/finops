@@ -4,6 +4,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -20,12 +22,14 @@ type Config struct {
 }
 
 func LoadConfig() Config {
+	godotenv.Load()
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
+	println(dbURL)
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	sessionCookie := getEnv("SESSION_COOKIE_NAME", "finops_session")

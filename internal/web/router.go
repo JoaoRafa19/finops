@@ -5,11 +5,15 @@ import (
 	"net/http"
 )
 
-func NewRouter() http.Handler {
+func NewRouter(deps PageRouterDeps) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("/", newPageRouter())
+	mux.Handle("/", newPageRouter(deps))
 	mux.Handle("/api/", http.StripPrefix("/api", newAPIRouter()))
 
-	return middleware.Logging(mux)
+	handler := middleware.Logging(mux)
+	handler = middleware.SessionLoader(deps.AuthService, deps.SessionCookie)(handler)
+	handler = middleware.CSRFMiddleware(deps.AuthService)(handler)
+	
+	return handler
 }

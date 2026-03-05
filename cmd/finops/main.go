@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"finops/internal/app"
+	service "finops/internal/services"
+	"finops/internal/store"
 	"finops/internal/web"
 	"log"
 	"net/http"
@@ -23,8 +25,30 @@ func main() {
 		log.Fatalf("cannot connect to database: %v", err)
 	}
 	defer db.Close()
+	queries := store.New(db)
+	if queries == nil {
+		log.Fatalf("cannot connect to database: %v", err)
+	}
 
-	router := web.NewRouter()
+	redisClient, err := app.NewRedisClient(ctx, cfg)
+	if err != nil {
+		log.Fatalf("cannot connect to redis: %v", err)
+	}
+
+	authService := service.NewRedisAuthService(
+		redisClient,
+		queries,
+		cfg.SessionTTL,
+		cfg.RememberMeTTL,
+		cfg.SlidingSessionTTL,
+	)
+
+	router := web.NewRouter(web.PageRouterDeps{
+		AuthService:   authService,
+		SessionCookie: cfg.SessionCookie,
+		CookieSecure:  cfg.CookieSecure,
+		RememberMeTTL: cfg.RememberMeTTL,
+	})
 
 	s := http.Server{
 		Addr:              cfg.HTTPAddr,
