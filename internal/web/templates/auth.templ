@@ -1,36 +1,18 @@
 package templates
 
-
-
 templ LoginPage(errorMessage string) {
-    <!doctype html>
-    <html lang="pt-BR">
-        <head>
-            <meta charset="utf-8">
-            <title>Login - Finops</title>
-        </head>
-        <body>
-            <h1>Login</h1>
-            if errorMessage != "" {
-                <p style="color:#b00020;">{ errorMessage }</p>
-            }
-                                                                                                    
-            <form method="POST" action="/login">                                                   
-                    <label>Email</label><br />                                                     
-                    <input type="email" name="email" required /><br /><br />                       
-                                                                                                    
-                    <label>Senha</label><br />                                                     
-                    <input type="password" name="password" required /><br /><br />                 
-                                                                                                    
-                    <label>                                                                        
-                            <input type="checkbox" name="remember_me" />                           
-                            Lembrar-me                                                             
-                    </label><br /><br />                                                           
-                                                                                                    
-                    <button type="submit">Entrar</button>                                          
-            </form>   
-
-        </body>
-    </html>
-    
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		<head>
+			<meta charset="utf-8"/>
+			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
+			<title>Login - Finops</title>
+		</head>
+		<body>
+			<h1>Login</h1>
+			<div id="login-box">
+				@LoginForm(errorMessage)
+			</div>
+		</body>
+	</html>
 }

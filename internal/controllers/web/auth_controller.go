@@ -46,12 +46,17 @@ func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.LoginPage(""))
+	errMsg := ""
+	if r.URL.Query().Get("error") == "1" {
+		errMsg = "usuario ou senha invalidos"
+	}
+
+	renderTempl(w, r, http.StatusOK, templates.LoginPage(errMsg))
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos"))
+		renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("Erro Interno"))
 		return
 	}
 
@@ -62,10 +67,14 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := c.auth.Login(r.Context(), email, password, rememberMe)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos"))
+			if r.Header.Get("HX-Request") == "true" {
+				renderTempl(w, r, http.StatusOK, templates.LoginForm("usuario ou senha invalidos."))
+				return
+			}
+			renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos."))
 			return
 		}
-		renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos"))
+		renderTempl(w, r, http.StatusInternalServerError, templates.LoginPage("erro no login"))
 		return
 	}
 

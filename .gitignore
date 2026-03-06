@@ -1,5 +1,6 @@
 bin/
 temp/
+tmp/
 *.log
 env.*
 *.env

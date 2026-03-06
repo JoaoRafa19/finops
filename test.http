@@ -1,0 +1,39 @@
+### Health check
+GET http://localhost:8080/api/health
+
+### Login page (render HTML)
+GET http://localhost:8080/login
+
+### Login inválido
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+email=admin@finops.local&password=senha_errada
+
+### Login válido (esperado: 303 + Set-Cookie finops_session)
+# @name login
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+email=admin@finops.local&password=123456
+
+### Home sem sessão (esperado: redirect para /login)
+GET http://localhost:8080/
+
+### Home com sessão (copie o cookie retornado no login)
+GET http://localhost:8080/
+Cookie: finops_session={{session_id}}
+
+### Logout com sessão (esperado: expirar cookie + redirect /login)
+POST http://localhost:8080/logout
+Cookie: finops_session={{session_id}}
+Content-Type: application/x-www-form-urlencoded
+
+_csrf={{csrf_token}}
+
+### Teste CSRF inválido (quando middleware CSRF estiver ativo)
+POST http://localhost:8080/logout
+Cookie: finops_session={{session_id}}
+Content-Type: application/x-www-form-urlencoded
+
+_csrf=token_invalido

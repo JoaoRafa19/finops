@@ -29,7 +29,6 @@ func LoadConfig() Config {
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
-	println(dbURL)
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	sessionCookie := getEnv("SESSION_COOKIE_NAME", "finops_session")
