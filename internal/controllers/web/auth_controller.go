@@ -82,6 +82,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Redirect", "/")
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

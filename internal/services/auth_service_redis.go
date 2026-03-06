@@ -30,7 +30,7 @@ func NewRedisAuthService(rdb *redis.Client,
 	queries *store.Queries,
 	sessionTTL time.Duration,
 	rememberMeTTL time.Duration,
-	slidingSessionTTL bool) AuthService {
+	slidingSessionTTL bool) *RedisAuthService {
 	return &RedisAuthService{
 		rdb:               rdb,
 		queries:           queries,

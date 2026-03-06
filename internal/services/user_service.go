@@ -5,14 +5,18 @@ import (
 	"finops/internal/store"
 )
 
-type UserService struct {
+type UserService interface {
+	GetUserByID(ctx context.Context, id int64) (store.User, error )
+}
+
+type PGUserService struct {
 	db *store.Queries
 }
 
-func NewUserService(q *store.Queries) *UserService {
-	return &UserService{db: q}
+func NewUserService(q *store.Queries) UserService {
+	return &PGUserService{db: q}
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id int64) (store.User, error) {
+func (s *PGUserService) GetUserByID(ctx context.Context, id int64) (store.User, error) {
 	return s.db.GetUserById(ctx, id)
 }

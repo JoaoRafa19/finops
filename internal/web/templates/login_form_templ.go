@@ -30,25 +30,25 @@ func LoginForm(errorMessage string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if errorMessage != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<p style=\"color: #b00020;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/login_form.templ`, Line: 5, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/login_form.templ`, Line: 6, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/login\" hx-post=\"/login\" hx-target=\"#login-box\" hx-swap=\"innerHTML\"><label for=\"email\">Email</label><br><input type=\"email\" name=\"email\" required><br><label for=\"password\">Senha</label><br><input type=\"password\" name=\"password\" required><br><br><label><input type=\"checkbox\" name=\"remember_me\"> Lembrar-me</label><br><br><button type=\"submit\">Entrar</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/login\" hx-post=\"/login\" hx-target=\"#login-box\" hx-swap=\"innerHTML\" class=\"space-y-5\"><div><label for=\"email\" class=\"mb-2 block text-sm font-bold text-finops-800\">Email</label> <input id=\"email\" type=\"email\" name=\"email\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\" placeholder=\"voce@exemplo.com\"></div><div><label for=\"password\" class=\"mb-2 block text-sm font-bold text-finops-800\">Senha</label> <input id=\"password\" type=\"password\" name=\"password\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\" placeholder=\"Digite sua senha\"></div><label class=\"flex items-center gap-3 rounded-lg bg-slate-100/90 px-3 py-2 text-sm font-semibold text-finops-700\"><input type=\"checkbox\" name=\"remember_me\" class=\"size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400\"> Lembrar-me por 7 dias</label> <button type=\"submit\" class=\"inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25\">Entrar</button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

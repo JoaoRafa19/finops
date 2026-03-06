@@ -43,11 +43,16 @@ func main() {
 		cfg.SlidingSessionTTL,
 	)
 
+	accountService := service.NewPGAccountService(queries)
+	workspaceService := service.NewPGWorkspaceService(queries)
+
 	router := web.NewRouter(web.PageRouterDeps{
-		AuthService:   authService,
-		SessionCookie: cfg.SessionCookie,
-		CookieSecure:  cfg.CookieSecure,
-		RememberMeTTL: cfg.RememberMeTTL,
+		AuthService:      authService,
+		SessionCookie:    cfg.SessionCookie,
+		CookieSecure:     cfg.CookieSecure,
+		RememberMeTTL:    cfg.RememberMeTTL,
+		AccoutnService:   accountService,
+		WorkspaceService: workspaceService,
 	})
 
 	s := http.Server{
