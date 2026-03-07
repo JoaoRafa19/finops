@@ -16,4 +16,4 @@ coverage.out
 *.md
 
 !README.md 
-!docs
+!docs/**

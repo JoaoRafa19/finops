@@ -31,7 +31,7 @@ func HomePage(user, csrf_token string, accounts []store.Account) templ.Component
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\"><link href=\"https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.tailwindcss.com\"></script><script>\n\t\t\t\ttailwind.config = {\n\t\t\t\t\ttheme: {\n\t\t\t\t\t\textend: {\n\t\t\t\t\t\t\tfontFamily: {\n\t\t\t\t\t\t\t\tdisplay: [\"Manrope\", \"sans-serif\"],\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\t\tfinops: {\n\t\t\t\t\t\t\t\t\t900: \"#0f172a\",\n\t\t\t\t\t\t\t\t\t800: \"#1e293b\",\n\t\t\t\t\t\t\t\t\t700: \"#334155\",\n\t\t\t\t\t\t\t\t\t500: \"#0ea5a4\",\n\t\t\t\t\t\t\t\t\t400: \"#2dd4bf\",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t}\n\t\t\t</script><title>Finops</title></head><body class=\"min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-4xl items-center px-4 py-12 sm:px-6\"><section class=\"w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Workspace</p><h1 class=\"mt-3 text-3xl font-extrabold sm:text-4xl\">Finops online</h1><p class=\"mt-3 text-sm text-finops-700\">Você está autenticado como <span class=\"font-bold text-finops-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\"><link href=\"https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.tailwindcss.com\"></script><script>                                                        \n                                tailwind.config = {                                     \n                                        theme: {                                        \n                                                extend: {                               \n                                                        fontFamily: {                   \n                                                                display: [\"Manrope\", \"sans-serif\"],                                                                             \n                                                        },                              \n                                                        colors: {                       \n                                                                finops: {               \n                                                                        900: \"#0f172a\", \n                                                                        800: \"#1e293b\", \n                                                                        700: \"#334155\", \n                                                                        500: \"#0ea5a4\", \n                                                                        400: \"#2dd4bf\", \n                                                                },                      \n                                                        },                              \n                                                },                                      \n                                        },                                              \n                                }                                                       \n                        </script><title>Finops</title></head><body class=\"min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 sm:px-6\"><section class=\"w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Workspace</p><h1 class=\"mt-3 text-3xl font-extrabold sm:text-4xl\">Finops online</h1><p class=\"mt-3 text-sm text-finops-700\">Você está autenticado como               <span class=\"font-bold text-finops-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,43 +44,110 @@ func HomePage(user, csrf_token string, accounts []store.Account) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span>.</p><div class=\"mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5\"><p class=\"text-sm font-semibold text-finops-800\">Sessão ativa e protegida por CSRF.</p><p class=\"mt-1 text-sm text-finops-700\">Use o botão abaixo para encerrar sua sessão com segurança.</p></div><div><ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span>.                                                                        </p><div class=\"mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5\"><p class=\"text-sm font-semibold text-finops-800\">Sessão ativa e protegida por CSRF.</p><p class=\"mt-1 text-sm text-finops-700\">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p></div><div class=\"mt-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, ac := range accounts {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<li>")
+		if len(accounts) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"rounded-2xl border border-dashed border-slate-300 bg-white p-6\"><p class=\"text-lg font-bold text-finops-900\">Nenhuma conta cadastrada</p><p class=\"mt-2 text-sm text-finops-700\">Cadastre sua primeira conta para começar a registrar transações e acompanhar seus saldos.                                                                               </p><form method=\"post\" action=\"/accounts\" class=\"mt-6 grid gap-4 md:grid-cols-2\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(ac.Name)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 53, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 58, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><div class=\"md:col-span-2\"><label for=\"name\" class=\"mb-2 block text-sm font-bold text-finops-800\">Nome da conta</label> <input id=\"name\" type=\"text\" name=\"name\" placeholder=\"Conta corrente principal\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"></div><div><label for=\"type\" class=\"mb-2 block text-sm font-bold text-finops-800\">Tipo</label> <select id=\"type\" name=\"type\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"><option value=\"\">Selecione</option> <option value=\"checking\">Conta corrente</option> <option value=\"savings\">Poupança</option> <option value=\"cash\">Dinheiro</option> <option value=\"credit_card\">Cartão</option> <option value=\"investment\">Investimento</option></select></div><div><label for=\"currency\" class=\"mb-2 block text-sm font-bold text-finops-800\">Moeda</label> <input id=\"currency\" type=\"text\" name=\"currency\" value=\"BRL\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"></div><div><label for=\"opening_balance\" class=\"mb-2 block text-sm font-bold text-finops-800\">Saldo inicial</label> <input id=\"opening_balance\" type=\"text\" name=\"opening_balance\" placeholder=\"0.00\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"></div><div><label for=\"opening_date\" class=\"mb-2 block text-sm font-bold text-finops-800\">Data inicial</label> <input id=\"opening_date\" type=\"date\" name=\"opening_date\" class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"></div><div class=\"md:col-span-2\"><button type=\"submit\" class=\"inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25\">Cadastrar primeira conta                                                                 </button></div></form></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"rounded-2xl border border-slate-200 bg-white p-6\"><div class=\"flex items-center justify-between\"><div><p class=\"text-lg font-bold text-finops-900\">Contas cadastradas</p><p class=\"mt-1 text-sm text-finops-700\">Base inicial pronta para lançamentos e                   transferências.</p></div></div><ul class=\"mt-6 space-y-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, ac := range accounts {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<li class=\"flex items-center justify-between rounded-xl border border-slate-200 bg- slate-50 px-4 py-3\"><div><p class=\"font-semibold text-finops-900\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var4 string
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(ac.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 146, Col: 62}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p><p class=\"text-sm text-finops-700\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var5 string
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(ac.Type)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 147, Col: 56}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " • ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(ac.Currency)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 147, Col: 76}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</p></div><p class=\"text-sm font-bold text-finops-800\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(ac.OpeningBalance)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 149, Col: 75}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</p></li>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</ul></div><form method=\"post\" action=\"/logout\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><form method=\"post\" action=\"/logout\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 58, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 157, Col: 58}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"inline-flex items-center justify-center rounded-xl bg-finops-900 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25\">Sair</button></form></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <button type=\"submit\" class=\"inline-flex items-center justify-center rounded-xl bg-finops-900 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops- 900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring- finops-400/25\">Sair                            </button></form></section></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
