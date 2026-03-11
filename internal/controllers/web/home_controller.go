@@ -1,8 +1,6 @@
 package web
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 
 	service "finops/internal/services"
@@ -29,11 +27,19 @@ func (c *HomeController) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	exists, err := c.workspaceService.ExistsForUser(r.Context(), session.UserID)
+	if err != nil {
+		http.Error(w, "failed to load workspace", http.StatusInternalServerError)
+		return
+	}
+
+	if !exists {
+		http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
+		return
+	}
+
 	accounts, err := c.accountService.ListByUser(r.Context(), session.UserID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
-		}
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
 	}

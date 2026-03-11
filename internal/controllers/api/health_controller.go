@@ -1,14 +1,35 @@
 package api
 
-import "net/http"
+import (
+	"database/sql"
+	"finops/internal/utils"
+	"net/http"
 
-type HealthController struct{}
+	"github.com/redis/go-redis/v9"
+)
 
-func NewHealthController() *HealthController {
-	return &HealthController{}
+type HealthController struct {
+	db    *sql.DB
+	redis *redis.Client
+}
+
+func NewHealthController(db *sql.DB, rdb *redis.Client) *HealthController {
+	return &HealthController{
+		db:    db,
+		redis: rdb,
+	}
 }
 
 func (c *HealthController) Health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("ok"))
+	if err := c.db.PingContext(r.Context()); err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "error connecting database"})
+		return
+	}
+
+	if _, err := c.redis.Ping(r.Context()).Result(); err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "error connecting redis"})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, map[string]string{"status": "ok"})
 }

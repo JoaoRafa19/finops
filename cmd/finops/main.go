@@ -51,8 +51,10 @@ func main() {
 		SessionCookie:    cfg.SessionCookie,
 		CookieSecure:     cfg.CookieSecure,
 		RememberMeTTL:    cfg.RememberMeTTL,
-		AccoutnService:   accountService,
+		AccountService:   accountService,
 		WorkspaceService: workspaceService,
+		DB:               db,
+		RedisClient:      redisClient,
 	})
 
 	s := http.Server{
