@@ -33,6 +33,7 @@ func (c *HomeController) Home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
+			return
 		}
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
