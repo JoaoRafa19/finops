@@ -67,7 +67,7 @@ As convenções atuais são:
 - moeda padrão inicial: `BRL`;
 - nome padrão do workspace quando vazio: um valor default no backend.
 
-Observação: há diferença entre o plano/documentação e a implementação atual sobre o nome default do workspace. O plano menciona `Meu Workspace`, mas o service atual usa `MyWorkspace`. Isso precisa ser alinhado.
+Observação: o default do nome do workspace foi alinhado com o plano. O backend agora usa `Meu Workspace`.
 
 ### 8. A home deve suportar estado vazio
 
@@ -117,13 +117,13 @@ Já implementado:
 
 ### Contas
 
-Parcialmente implementado:
+Já implementado:
 
 - `AccountService.ListByUser` já existe;
 - `AccountService.Create` já existe no service;
 - template da home já possui formulário `POST /accounts`;
-- `AccountController` foi criado, mas ainda está incompleto;
-- a rota de criação de conta ainda não está conectada no router.
+- `AccountController` implementa a criação da conta;
+- a rota de criação de conta já está conectada no router.
 
 ## Ponto exato do desenvolvimento
 

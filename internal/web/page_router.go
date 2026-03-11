@@ -1,17 +1,22 @@
 package web
 
 import (
+	"database/sql"
 	"finops/internal/controllers/web"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
 	"net/http"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type PageRouterDeps struct {
 	AuthService      service.AuthService
-	AccoutnService   service.AccountService
+	AccountService   service.AccountService
 	WorkspaceService service.WorkspaceService
+	DB               *sql.DB
+	RedisClient      *redis.Client
 	SessionCookie    string
 	CookieSecure     bool
 	RememberMeTTL    time.Duration
@@ -21,9 +26,10 @@ func newPageRouter(deps PageRouterDeps) http.Handler {
 	mux := http.NewServeMux()
 
 	homeController := web.NewHomeController(
-		deps.AccoutnService,
+		deps.AccountService,
 		deps.WorkspaceService,
 	)
+	accountController := web.NewAccountController(deps.AccountService)
 
 	onboardingController := web.NewOnboardingController(deps.WorkspaceService)
 
@@ -41,6 +47,7 @@ func newPageRouter(deps PageRouterDeps) http.Handler {
 	// Privadas
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
+	private.HandleFunc("POST /accounts", accountController.Create)
 	private.HandleFunc("GET /onboarding", onboardingController.Page)
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)

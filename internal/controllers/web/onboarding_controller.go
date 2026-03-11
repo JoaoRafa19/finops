@@ -50,10 +50,10 @@ func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	_, err := c.workspaceService.CreateWorkspace(r.Context(), service.CreateAccountDTO{
-		UserID:   session.UserID,
-		Name:     r.FormValue("name"),
-		Currency: "BRL",
+	_, err := c.workspaceService.CreateWorkspace(r.Context(), service.CreateWorkspaceDTO{
+		UserID:          session.UserID,
+		Name:            r.FormValue("name"),
+		DefaultCurrency: "BRL",
 	})
 
 	if err != nil {
