@@ -28,13 +28,59 @@ templ HomePage(user, csrf_token string, accounts []store.Account) {
 						<p class="text-sm font-semibold text-finops-800">Sessão ativa e protegida por CSRF.</p>
 						<p class="mt-1 text-sm text-finops-700">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p>
 					</div>
-					<div class="mt-8">
-						@AccountPanels(csrf_token, accounts)
+					<div
+						class="flex gap-2 mt-8 justify-end"
+					>
+						<form
+							method="get"
+							action="/transaction-modal"
+							hx-get="/transaction-modal"
+							hx-target="#transaction-modal-body"
+							hx-swap="innerHTML"
+							class="mt-8"
+						>
+							<input type="hidden" name="_csrf" value={ csrf_token }/>
+							@SecondaryButton("submit", "Registrar Transação")
+						</form>
+						<form method="post" action="/logout" class="mt-8">
+							<input type="hidden" name="_csrf" value={ csrf_token }/>
+							@PrimaryButton("submit", "Sair", false)
+						</form>
 					</div>
-					<form method="post" action="/logout" class="mt-8">
-						<input type="hidden" name="_csrf" value={ csrf_token }/>
-						@PrimaryButton("submit", "Sair", false)
-					</form>
+					<div class="mt-8">
+						@AccountPanels(csrf_token, accounts, NewCreateAccountFormState())
+					</div>
+					<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="transaction-modal-body"></div>
+					</dialog>
+					<script>
+						document.body.addEventListener("htmx:afterSwap", (event) => {
+							if (event.target.id === "transaction-modal-body") {
+								const dialog = document.getElementById("transaction-modal");
+								if (dialog && typeof dialog.showModal === "function" && !dialog.open) {
+									dialog.showModal();
+								}
+							}
+						});
+
+						document.body.addEventListener("click", (event) => {
+							const dialog = document.getElementById("transaction-modal");
+							if (!dialog || !dialog.open) {
+								return
+							}
+
+							const rect = dialog.getBoundingClientRect();
+							const clickedInDialog = (
+								event.clientX >= rect.left &&
+								event.clientX <= rect.right &&
+								event.clientY >= rect.top &&
+								event.clientY <= rect.bottom
+							);
+							if (!clickedInDialog) {
+								dialog.close();
+							}
+						});
+					</script>
 				</section>
 			</main>
 		</body>

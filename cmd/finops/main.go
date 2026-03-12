@@ -54,16 +54,18 @@ func main() {
 
 	accountService := service.NewPGAccountService(queries)
 	workspaceService := service.NewPGWorkspaceService(queries)
+	transactionService := service.NewPGTransactionService(queries)
 
 	router := web.NewRouter(web.PageRouterDeps{
-		AuthService:      authService,
-		SessionCookie:    cfg.SessionCookie,
-		CookieSecure:     cfg.CookieSecure,
-		RememberMeTTL:    cfg.RememberMeTTL,
-		AccountService:   accountService,
-		WorkspaceService: workspaceService,
-		DB:               db,
-		RedisClient:      redisClient,
+		TransactionService: transactionService,
+		AuthService:        authService,
+		SessionCookie:      cfg.SessionCookie,
+		CookieSecure:       cfg.CookieSecure,
+		RememberMeTTL:      cfg.RememberMeTTL,
+		AccountService:     accountService,
+		WorkspaceService:   workspaceService,
+		DB:                 db,
+		RedisClient:        redisClient,
 	})
 
 	s := http.Server{

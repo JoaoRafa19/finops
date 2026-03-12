@@ -31,25 +31,6 @@ func NewAccountController(accountService service.AccountService) *AccountControl
 	}
 }
 
-func (c *AccountController) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	logger := observability.Logger(r.Context())
-	session, ok := middleware.SessionFromContext(r.Context())
-	if !ok {
-		logger.Warn("create_transaction_unauthorized")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if err := r.ParseForm(); err != nil {
-		logger.Warn("create_transaction_invalid_form", "user_id", session.UserID, "error", err)
-		http.Error(w, "invalid form data", http.StatusBadRequest)
-		return
-	}
-
-	//amount := r.FormValue("category")
-
-}
-
 func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
 	if err := r.ParseForm(); err != nil {
 		return accountPayload{}, http.StatusBadRequest, errors.New("invalid form data")
@@ -57,12 +38,12 @@ func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
 
 	openingBalance := normalizeAmount(r.FormValue("opening_balance"))
 	if openingBalance == "" {
-		return accountPayload{}, http.StatusBadRequest, errors.New("invalid form data")
+		return accountPayload{}, http.StatusBadRequest, errors.New("opening balance must be a valid number")
 	}
 
 	openingBalanceFloat, err := strconv.ParseFloat(openingBalance, 64)
 	if err != nil {
-		return accountPayload{}, http.StatusBadRequest, errors.New("invalid form data")
+		return accountPayload{}, http.StatusBadRequest, errors.New("opening balance must be a valid number")
 	}
 
 	var openingDate *time.Time
@@ -70,17 +51,22 @@ func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
 	if value := strings.TrimSpace(r.FormValue("opening_date")); value != "" {
 		parsedDate, err := time.Parse("2006-01-02", value)
 		if err != nil {
-			return accountPayload{}, http.StatusBadRequest, errors.New("invalid form data")
+			return accountPayload{}, http.StatusBadRequest, errors.New("opening date must be in the format YYYY-MM-DD")
 		}
 		openingDate = &parsedDate
+	}
+
+	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
+	if currency == "" {
+		return accountPayload{}, http.StatusBadRequest, errors.New("currency is required")
 	}
 
 	return accountPayload{
 		OpeningBalance: openingBalanceFloat,
 		OpeningDate:    openingDate,
-		Name:           r.FormValue("name"),
-		Type:           r.FormValue("type"),
-		Currency:       r.FormValue("currency"),
+		Name:           strings.TrimSpace(r.FormValue("name")),
+		Type:           strings.TrimSpace(r.FormValue("type")),
+		Currency:       currency,
 	}, http.StatusOK, nil
 }
 
@@ -93,49 +79,24 @@ func (c *AccountController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		logger.Warn("account_create_invalid_form", "user_id", session.UserID, "error", err)
-		http.Error(w, "invalid form data", http.StatusBadRequest)
-		return
-	}
-
-	openingBalance := normalizeAmount(r.FormValue("opening_balance"))
-	if openingBalance == "" {
-		logger.Warn("account_create_missing_opening_balance", "user_id", session.UserID)
-		http.Error(w, "opening balance is required", http.StatusBadRequest)
-		return
-	}
-	var openingBalanceFloat float64
-
-	openingBalanceFloat, err := strconv.ParseFloat(openingBalance, 32)
+	payload, status, err := parseAccountPayload(r)
 	if err != nil {
-		logger.Warn("account_create_invalid_opening_balance", "user_id", session.UserID, "opening_balance", openingBalance)
-		http.Error(w, "opening balance must be numeric", http.StatusBadRequest)
+		logger.Warn("account_create_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
+		c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
-	}
-
-	var openingDate *time.Time
-	if value := strings.TrimSpace(r.FormValue("opening_date")); value != "" {
-		parsedDate, err := time.Parse("2006-01-02", value)
-		if err != nil {
-			logger.Warn("account_create_invalid_opening_date", "user_id", session.UserID, "opening_date", value)
-			http.Error(w, "opening date is invalid", http.StatusBadRequest)
-			return
-		}
-		openingDate = &parsedDate
 	}
 
 	_, err = c.accountService.Create(r.Context(), service.CreateAccountDTO{
 		UserID:         session.UserID,
-		Name:           r.FormValue("name"),
-		Type:           r.FormValue("type"),
-		Currency:       r.FormValue("currency"),
-		OpeningBalance: openingBalanceFloat,
-		OpeningDate:    openingDate,
+		Name:           payload.Name,
+		Type:           payload.Type,
+		Currency:       payload.Currency,
+		OpeningBalance: payload.OpeningBalance,
+		OpeningDate:    payload.OpeningDate,
 	})
 	if err != nil {
 		logger.Error("account_create_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "failed to create account", http.StatusInternalServerError)
+		c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
 	}
 
@@ -162,11 +123,11 @@ func (c *AccountController) EditForm(w http.ResponseWriter, r *http.Request) {
 	account, err := c.accountService.GetByID(r.Context(), session.UserID, accountID)
 	if err != nil {
 		logger.Error("account_edit_form_load_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
-		http.Error(w, "failed to load account", http.StatusInternalServerError)
+		http.Error(w, "failed to load account details", http.StatusInternalServerError)
 		return
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.AccountEditForm(&account, session.CSRFToken))
+	renderTempl(w, r, http.StatusOK, templates.AccountEditForm(templates.NewEditAccountFormState(account, ""), session.CSRFToken))
 }
 
 func (c *AccountController) Update(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +151,7 @@ func (c *AccountController) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.Warn("account_update_error", "user_id", session.UserID, "account_id", accountId, "error", err)
-		http.Error(w, err.Error(), status)
+		renderTempl(w, r, status, templates.AccountEditForm(buildEditAccountFormState(accountId, r, err.Error()), session.CSRFToken))
 		return
 	}
 
@@ -206,21 +167,21 @@ func (c *AccountController) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.Error("account_update_failed", "user_id", session.UserID, "account_id", accountId, "error", err)
-		http.Error(w, "failed to update account", http.StatusInternalServerError)
+		renderTempl(w, r, http.StatusInternalServerError, templates.AccountEditForm(buildEditAccountFormState(accountId, r, err.Error()), session.CSRFToken))
 		return
 	}
 
-	c.renderAccountsPannel(w, r, session.UserID, session.CSRFToken)
+	c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, templates.NewCreateAccountFormState())
 }
 
-func (c *AccountController) renderAccountsPannel(w http.ResponseWriter, r *http.Request, userId int64, csrfToken string) {
+func (c *AccountController) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userId int64, csrfToken string, form templates.AccountFormState) {
 	accounts, err := c.accountService.ListByUser(r.Context(), userId)
 	if err != nil {
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.AccountPanels(csrfToken, accounts))
+	renderTempl(w, r, http.StatusOK, templates.AccountPanels(csrfToken, accounts, form))
 }
 
 func normalizeAmount(value string) string {
@@ -234,4 +195,27 @@ func normalizeAmount(value string) string {
 	}
 
 	return amount
+}
+
+func buildCreateAccountFormState(r *http.Request, errorMessage string) templates.AccountFormState {
+	return templates.NewCreateAccountFormStateFromValues(
+		strings.TrimSpace(r.FormValue("name")),
+		strings.TrimSpace(r.FormValue("type")),
+		strings.ToUpper(strings.TrimSpace(r.FormValue("currency"))),
+		strings.TrimSpace(r.FormValue("opening_balance")),
+		strings.TrimSpace(r.FormValue("opening_date")),
+		errorMessage,
+	)
+}
+
+func buildEditAccountFormState(accountID int64, r *http.Request, errorMessage string) templates.AccountFormState {
+	return templates.NewEditAccountFormStateFromValues(
+		accountID,
+		strings.TrimSpace(r.FormValue("name")),
+		strings.TrimSpace(r.FormValue("type")),
+		strings.ToUpper(strings.TrimSpace(r.FormValue("currency"))),
+		strings.TrimSpace(r.FormValue("opening_balance")),
+		strings.TrimSpace(r.FormValue("opening_date")),
+		errorMessage,
+	)
 }

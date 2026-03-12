@@ -19,6 +19,15 @@ type CreateAccountDTO struct {
 	OpeningDate    *time.Time
 }
 
+type AccountSummary struct {
+	ID             int64
+	Name           string
+	Type           string
+	Currency       string
+	OpeningBalance float64
+	CurrentBalance float64
+}
+
 type UpdateAccountDTO struct {
 	UserID         int64
 	AccountID      int64
@@ -31,6 +40,7 @@ type UpdateAccountDTO struct {
 
 type AccountService interface {
 	ListByUser(ctx context.Context, userID int64) ([]store.Account, error)
+	ListSummariesByUser(ctx context.Context, userID int64) ([]AccountSummary, error)
 	GetByID(ctx context.Context, userID, accountID int64) (store.Account, error)
 	Create(ctx context.Context, createDto CreateAccountDTO) (store.Account, error)
 	Update(ctx context.Context, updateDto UpdateAccountDTO) (store.Account, error)
@@ -134,6 +144,37 @@ func (p *PGAccountService) ListByUser(ctx context.Context, userID int64) ([]stor
 
 	logger.Debug("account_service_list_succeeded", "user_id", userID, "workspace_id", workspace.ID, "accounts_count", len(accounts))
 	return accounts, nil
+}
+
+// ListSummariesByUser implements [AccountService].
+func (p *PGAccountService) ListSummariesByUser(ctx context.Context, userID int64) ([]AccountSummary, error) {
+	logger := observability.Logger(ctx)
+	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		logger.Error("account_service_list_summaries_workspace_lookup_failed", "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	rows, err := p.db.ListAccountSummariesByWorkspace(ctx, workspace.ID)
+	if err != nil {
+		logger.Error("account_service_list_summaries_failed", "user_id", userID, "workspace_id", workspace.ID, "error", err)
+		return nil, err
+	}
+
+	items := make([]AccountSummary, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, AccountSummary{
+			ID:             row.ID,
+			Name:           row.Name,
+			Type:           row.Type,
+			Currency:       row.Currency,
+			OpeningBalance: row.OpeningBalance,
+			CurrentBalance: row.CurrentBalance,
+		})
+	}
+
+	logger.Debug("account_service_list_summaries_succeeded", "user_id", userID, "workspace_id", workspace.ID, "accounts_count", len(items))
+	return items, nil
 }
 
 // Update implements [AccountService].

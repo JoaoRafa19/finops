@@ -14,7 +14,7 @@ import (
 	"fmt"
 )
 
-func AccountEditForm(account *store.Account, csrfToken string) templ.Component {
+func AccountEditForm(form AccountFormState, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -40,9 +40,9 @@ func AccountEditForm(account *store.Account, csrfToken string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("account-%d", account.ID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(form.ContainerID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 10, Col: 112}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 10, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -52,7 +52,7 @@ func AccountEditForm(account *store.Account, csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AccountForm(account, csrfToken, true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = AccountForm(form, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -64,7 +64,7 @@ func AccountEditForm(account *store.Account, csrfToken string) templ.Component {
 	})
 }
 
-func AccountPanels(csrf_token string, accounts []store.Account) templ.Component {
+func AccountPanels(csrf_token string, accounts []store.Account, form AccountFormState) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -95,9 +95,9 @@ func AccountPanels(csrf_token string, accounts []store.Account) templ.Component 
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormTitle(nil))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormTitle(form))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 18, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 18, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -108,9 +108,9 @@ func AccountPanels(csrf_token string, accounts []store.Account) templ.Component 
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormDescription(nil))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormDescription(form))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 19, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 19, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -120,7 +120,7 @@ func AccountPanels(csrf_token string, accounts []store.Account) templ.Component 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = AccountForm(nil, csrf_token, false).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = AccountForm(form, csrf_token).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -255,7 +255,7 @@ func AccountItem(account store.Account) templ.Component {
 	})
 }
 
-func AccountForm(account *store.Account, csrf_token string, inline bool) templ.Component {
+func AccountForm(form AccountFormState, csrf_token string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -276,7 +276,7 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var14 = []any{accountFormClass(inline)}
+		var templ_7745c5c3_Var14 = []any{accountFormClass(form.Inline)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var14...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -286,9 +286,9 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 templ.SafeURL
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(accountFormAction(account))
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(accountFormAction(form))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 58, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 58, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -299,41 +299,77 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormAction(account))
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormAction(form))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 59, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 59, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#accounts-panel\" hx-swap=\"outerHTML\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var14).String())
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(accountFormTarget(form))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 60, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" hx-swap=\"outerHTML\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var14).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 64, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><div class=\"md:col-span-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 64, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if form.ErrorMessage != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"col-span-full rounded-lg bg-red-100 p-4 text-sm text-red-700\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(form.ErrorMessage)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 67, Col: 23}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"md:col-span-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -341,11 +377,11 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = TextInput("name", "name", "text", accountFormName(account), "Conta corrent principal", true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TextInput("name", "name", "text", form.Name, "Conta corrente principal", true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -353,11 +389,11 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SelectInput("type", "type", buildAccountTypeOptions(accountFormType(account)), true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SelectInput("type", "type", buildAccountTypeOptions(form.Type), true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</div><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -365,11 +401,11 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = TextInput("currency", "currency", "text", accountFormCurrency(account), "", true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TextInput("currency", "currency", "text", form.Currency, "", true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -377,11 +413,11 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = TextInput("opening_balance", "opening_balance", "text", accountFormOpeningBalance(account), "0.00", true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TextInput("opening_balance", "opening_balance", "text", form.OpeningBalance, "0.00", true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -389,38 +425,38 @@ func AccountForm(account *store.Account, csrf_token string, inline bool) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = TextInput("opening_date", "opening_date", "date", accountFormOpeningDate(account), "0.00", true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TextInput("opening_date", "opening_date", "date", form.OpeningDate, "", false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><div class=\"md:col-span-2 flex flex-col gap-3 sm:flex-row\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div><div class=\"md:col-span-2 flex flex-col gap-3 sm:flex-row\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = PrimaryButton("submit", accountFormSubmitLabel(account), true).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PrimaryButton("submit", accountFormSubmitLabel(form), true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if account != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<button type=\"button\" hx-get=\"")
+		if form.IsEdit {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<button type=\"button\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/account/%d", account.ID))
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/account/%d", form.AccountID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 90, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 95, Col: 56}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" hx-target=\"closest li\" hx-swap=\"outerHTML\" class=\"inline-flex items-center justify-centyer rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\">Cancelar</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" hx-target=\"closest li\" hx-swap=\"outerHTML\" class=\"inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\">Cancelar</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -444,157 +480,69 @@ func Account(account store.Account) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
+		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var22 == nil {
+			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<li class=\"flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3\"><div><p class=\"font-semibold text-finops-900\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(account.Name)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 103, Col: 58}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</p><p class=\"text-sm text-finops-700\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(account.Type)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 104, Col: 52}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " • ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<li class=\"flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3\"><div><p class=\"font-semibold text-finops-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(account.Currency)
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(account.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 104, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 108, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</p></div><div class=\"flex items-center gap-3\"><p class=\"text-sm font-bold text-finops-800\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p><p class=\"text-sm text-finops-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(account.OpeningBalance))
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(account.Type)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 107, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 109, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</p><span class=\"inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500\" title=\"Edicao em breve\"><i class=\"fa-solid fa-pen-to-square\"></i></span></div></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " • ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(account.Currency)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 109, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</p></div><div class=\"flex items-center gap-3\"><p class=\"text-sm font-bold text-finops-800\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var26 string
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(account.OpeningBalance))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/account_components.templ`, Line: 112, Col: 91}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</p><span class=\"inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500\" title=\"Edicao em breve\"><i class=\"fa-solid fa-pen-to-square\"></i></span></div></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		return nil
 	})
-}
-
-func buildAccountTypeOptions(selected string) []SelectOption {
-	return []SelectOption{
-		{Value: "", Label: "Selecione", Selected: selected == ""},
-		{Value: "checking", Label: "Conta corrente", Selected: selected == "checking"},
-		{Value: "savings", Label: "Poupanca", Selected: selected == "savings"},
-		{Value: "cash", Label: "Dinheiro", Selected: selected == "cash"},
-		{Value: "credit_card", Label: "Cartao", Selected: selected == "credit_card"},
-		{Value: "investment", Label: "Investimento", Selected: selected == "investment"},
-	}
-}
-
-func accountFormSubmitLabel(account *store.Account) string {
-	if account == nil {
-		return "Cadastrar conta"
-	}
-
-	return "Atualizar"
-}
-
-func accountFormAction(account *store.Account) string {
-	if account == nil {
-		return "/accounts"
-	}
-	return fmt.Sprintf("/account/%d", account.ID)
-}
-
-func accountFormTitle(account *store.Account) string {
-	if account == nil {
-		return "Cadastrar nova conta"
-	}
-	return "Editar conta"
-}
-
-// if exists account description returns a placeholder
-func accountFormDescription(account *store.Account) string {
-	if account == nil {
-		return "Cadastrar nova conta"
-	}
-	return "Salvar alterações"
-}
-
-// If exists Name It returns a placeholder
-func accountFormName(account *store.Account) string {
-	if account == nil {
-		return ""
-	}
-	return account.Name
-}
-
-// If exists Type It returns a placeholder
-func accountFormType(account *store.Account) string {
-	if account == nil {
-		return ""
-	}
-	return account.Type
-}
-
-// If exists Currency It returns a placeholder
-func accountFormCurrency(account *store.Account) string {
-	if account == nil {
-		return ""
-	}
-	return account.Currency
-}
-
-// If exists Balance It returns a placeholder
-func accountFormOpeningBalance(account *store.Account) string {
-	if account == nil {
-		return ""
-	}
-	return fmt.Sprintf("%.2f", account.OpeningBalance)
-}
-
-// If exists date It returns a placeholder
-func accountFormOpeningDate(account *store.Account) string {
-	if account == nil || !account.OpeningDate.Valid {
-		return ""
-	}
-	return account.OpeningDate.Time.Format("2006-01-02")
-}
-
-func accountFormClass(inline bool) string {
-	if inline {
-		return "grid gap-4 md:grid-cols-2"
-	}
-	return "mt-6 grid gap-4 md:grid-cols-2"
 }
 
 var _ = templruntime.GeneratedTemplate

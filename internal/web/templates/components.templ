@@ -1,5 +1,10 @@
 package templates
 
+import (
+	"finops/internal/store"
+	"fmt"
+)
+
 templ AppHead(title string, includeHTMX bool) {
 	<head>
 		<meta charset="utf-8"/>
@@ -64,7 +69,12 @@ templ SelectInput(id, name string, options []SelectOption, required bool) {
 		class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
 	>
 		for _, option := range options {
-			<option value={ option.Value } if option.Selected { selected }>{ option.Label }</option>
+			<option
+				value={ option.Value }
+				if option.Selected {
+					selected
+				}
+			>{ option.Label }</option>
 		}
 	</select>
 }
@@ -78,6 +88,15 @@ templ PrimaryButton(buttonType, text string, fullWidth bool) {
 	</button>
 }
 
+templ SecondaryButton(buttonType, text string) {
+	<button
+		type={ buttonType }
+		class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+	>
+		{ text }
+	</button>
+}
+
 templ SecondaryLink(href, text string) {
 	<a
 		href={ href }
@@ -85,4 +104,86 @@ templ SecondaryLink(href, text string) {
 	>
 		{ text }
 	</a>
+}
+
+templ TransactionModalDialog(csrf_token string, err string, accounts []store.Account) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
+			<form method="dialog">
+				<button
+					type="submit"
+					class="inline-flex size-9 items-center justify-center rounded-lg border border-slate-300 text-finops-800 transition hover:bg-slate-100"
+				>
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			</form>
+		</div>
+		if err != "" {
+			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ err }</p>
+		}
+		<form
+			method="post"
+			action="/transactions"
+			hx-post="/transactions"
+			hx-target="#transaction-modal-body"
+			hx-swap="innerHTML"
+			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
+		>
+			<input type="hidden" name="_csrf" value={ csrf_token }/>
+			<div class="md:col-span-2">
+				@FormLabel("description", "Descricao")
+				@TextInput("description", "description", "text", "", "Compra no supermercado", true)
+			</div>
+			<div>
+				@FormLabel("amount", "Valor")
+				@TextInput("amount", "amount", "text", "", "0.00", true)
+			</div>
+			<div>
+				@FormLabel("account_id", "Conta")
+				@SelectInput("account_id", "account_id", buildAccountOptions(accounts), true)
+			</div>
+			<div>
+				@FormLabel("posted_on", "Data")
+				@TextInput("posted_on", "posted_on", "date", "", "", true)
+			</div>
+			<div>
+				@FormLabel("direction", "Tipo")
+				@SelectInput("direction", "direction", buildTransactionDirectionOptions(), true)
+			</div>
+			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+				@PrimaryButton("submit", "Adicionar Transacao", true)
+			</div>
+		</form>
+	</div>
+}
+
+templ AccountListItem(account store.Account, balance float64) {
+	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+			<p class="text-sm text-finops-700">Saldo: { fmt.Sprintf("%.2f", balance) }</p>
+		</div>
+		<div class="flex gap-2">
+			<a
+				href={ fmt.Sprintf("/account/%d/edit", account.ID) }
+				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+			>Editar</a>
+			<button
+				hx-delete={ fmt.Sprintf("/account/%d", account.ID) }
+				hx-target="closest li"
+				hx-swap="outerHTML"
+				class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+			>Excluir</button>
+		</div>
+	</li>
+}
+
+func buildTransactionDirectionOptions() []SelectOption {
+	return []SelectOption{
+		{Value: "", Label: "Selecione", Selected: true},
+		{Value: "credit", Label: "Entrada"},
+		{Value: "debit", Label: "Saida"},
+	}
 }

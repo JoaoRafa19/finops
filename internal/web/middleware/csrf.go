@@ -16,6 +16,7 @@ func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 			}
 
 			sessionID, ok := SessionIDFromContext(r.Context())
+
 			if !ok || sessionID == "" {
 				// Sem sessão autenticada, deixa AuthRequired decidir.
 				next.ServeHTTP(w, r)
@@ -30,11 +31,13 @@ func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 
 			valid, err := auth.ValidateCSRFToken(r.Context(), sessionID, token)
 			if err != nil {
+				auth.Logout(r.Context(), sessionID) // Força logout para limpar sessão inválida
 				writeCSRFFailure(w, r, http.StatusInternalServerError, "CSRF Validation failed")
 				return
 			}
 
 			if !valid {
+				auth.Logout(r.Context(), sessionID) // Força logout para limpar sessão inválida
 				writeCSRFFailure(w, r, http.StatusForbidden, "csrf token invalid")
 				return
 			}

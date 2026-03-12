@@ -6,7 +6,7 @@ import (
 )
 
 type UserService interface {
-	GetUserByID(ctx context.Context, id int64) (store.User, error )
+	GetUserByID(ctx context.Context, id int64) (store.User, error)
 }
 
 type PGUserService struct {

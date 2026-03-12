@@ -126,6 +126,91 @@ func (q *Queries) GetAccountByWorkspaceAndID(ctx context.Context, arg GetAccount
 	return i, err
 }
 
+const listAccountSummariesByWorkspace = `-- name: ListAccountSummariesByWorkspace :many
+SELECT
+    a.id,
+    a.workspace_id,
+    a.name,
+    a.type,
+    a.currency,
+    a.opening_balance,
+    a.opening_date,
+    a.archived,
+    (
+        a.opening_balance +
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN t.direction = 'credit' THEN t.amount
+                    ELSE -t.amount
+                END
+            ),
+            0
+        )
+    )::float8 AS current_balance
+FROM accounts a
+LEFT JOIN transactions t
+    ON t.account_id = a.id
+    AND t.workspace_id = a.workspace_id
+WHERE a.workspace_id = $1
+    AND a.archived = FALSE
+GROUP BY
+    a.id,
+    a.workspace_id,
+    a.name,
+    a.type,
+    a.currency,
+    a.opening_balance,
+    a.opening_date,
+    a.archived
+ORDER BY a.name ASC
+`
+
+type ListAccountSummariesByWorkspaceRow struct {
+	ID             int64
+	WorkspaceID    int64
+	Name           string
+	Type           string
+	Currency       string
+	OpeningBalance float64
+	OpeningDate    sql.NullTime
+	Archived       bool
+	CurrentBalance float64
+}
+
+func (q *Queries) ListAccountSummariesByWorkspace(ctx context.Context, workspaceID int64) ([]ListAccountSummariesByWorkspaceRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountSummariesByWorkspace, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAccountSummariesByWorkspaceRow
+	for rows.Next() {
+		var i ListAccountSummariesByWorkspaceRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.Name,
+			&i.Type,
+			&i.Currency,
+			&i.OpeningBalance,
+			&i.OpeningDate,
+			&i.Archived,
+			&i.CurrentBalance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountsByWorkspace = `-- name: ListAccountsByWorkspace :many
 SELECT
     id,

@@ -133,6 +133,8 @@ func (s *RedisAuthService) ValidateCSRFToken(ctx context.Context, sessionID stri
 		logger.Warn("auth_validate_csrf_invalid", "user_id", session.UserID)
 	}
 
+	logger.Debug("Login successful", "user_id", session.UserID, "csrf_valid", valid)
+
 	return valid, nil
 
 }

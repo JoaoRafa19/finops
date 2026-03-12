@@ -13,6 +13,45 @@ WHERE workspace_id = $1
     AND archived = FALSE
 ORDER BY name ASC;
 
+-- name: ListAccountSummariesByWorkspace :many
+SELECT
+    a.id,
+    a.workspace_id,
+    a.name,
+    a.type,
+    a.currency,
+    a.opening_balance,
+    a.opening_date,
+    a.archived,
+    (
+        a.opening_balance +
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN t.direction = 'credit' THEN t.amount
+                    ELSE -t.amount
+                END
+            ),
+            0
+        )
+    )::float8 AS current_balance
+FROM accounts a
+LEFT JOIN transactions t
+    ON t.account_id = a.id
+    AND t.workspace_id = a.workspace_id
+WHERE a.workspace_id = $1
+    AND a.archived = FALSE
+GROUP BY
+    a.id,
+    a.workspace_id,
+    a.name,
+    a.type,
+    a.currency,
+    a.opening_balance,
+    a.opening_date,
+    a.archived
+ORDER BY a.name ASC;
+
 -- name: GetAccountByID :one 
 SELECT
     id,

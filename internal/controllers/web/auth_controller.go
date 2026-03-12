@@ -7,6 +7,7 @@ import (
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
 	"finops/internal/web/templates"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -45,7 +46,7 @@ func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	if _, ok := middleware.SessionFromContext(r.Context()); ok {
 		logger.Debug("login_page_redirect_authenticated")
-		http.Redirect(w, r, "/", http.StatusOK)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -70,6 +71,8 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	rememberMe := r.FormValue("remember_me") == "on"
 
 	session, err := c.auth.Login(r.Context(), email, password, rememberMe)
+	slog.Debug("login_attempt", "email", email, "remember_me", rememberMe, "error", err)
+	slog.Debug("login_session_issued", "session_id", session.ID, "user_id", session.UserID, "remember_me", session.RememberMe)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			logger.Warn("login_invalid_credentials", "remember_me", rememberMe)
@@ -94,7 +97,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusOK)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ import (
 
 func SessionFromContext(ctx context.Context) (models.Session, bool) {
 	session, ok := ctx.Value(models.SessionCtxKey).(models.Session)
+	slog.Debug("session_from_context", "session_id", session.ID, "user_id", session.UserID, "ok", ok)
 	return session, ok
 }
 

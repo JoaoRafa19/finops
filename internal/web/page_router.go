@@ -12,14 +12,15 @@ import (
 )
 
 type PageRouterDeps struct {
-	AuthService      service.AuthService
-	AccountService   service.AccountService
-	WorkspaceService service.WorkspaceService
-	DB               *sql.DB
-	RedisClient      *redis.Client
-	SessionCookie    string
-	CookieSecure     bool
-	RememberMeTTL    time.Duration
+	AuthService        service.AuthService
+	AccountService     service.AccountService
+	WorkspaceService   service.WorkspaceService
+	TransactionService service.TransactionService
+	DB                 *sql.DB
+	RedisClient        *redis.Client
+	SessionCookie      string
+	CookieSecure       bool
+	RememberMeTTL      time.Duration
 }
 
 func newPageRouter(deps PageRouterDeps) http.Handler {
@@ -33,6 +34,7 @@ func newPageRouter(deps PageRouterDeps) http.Handler {
 
 	onboardingController := web.NewOnboardingController(deps.WorkspaceService)
 
+	transactionController := web.NewTransactionController(deps.TransactionService, deps.AccountService)
 	authController := web.NewAuthController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -54,6 +56,9 @@ func newPageRouter(deps PageRouterDeps) http.Handler {
 	private.HandleFunc("GET /onboarding", onboardingController.Page)
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
+
+	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
+	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)
