@@ -1,37 +1,9 @@
 package templates
 
-templ OnboardingPage(errorMessage string) {
+templ OnboardingPage(errorMessage string, csrfToken string) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
-		<head>
-			<meta charset="utf-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<link rel="preconnect" href="https://fonts.googleapis.com"/>
-			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-			<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet"/>
-			<script src="https://cdn.tailwindcss.com"></script>
-			<script>
-				tailwind.config = {
-					theme: {
-						extend: {
-							fontFamily: {
-								display: ["Manrope", "sans-serif"],
-							},
-							colors: {
-								finops: {
-									900: "#0f172a",
-									800: "#1e293b",
-									700: "#334155",
-									500: "#0ea5a4",
-									400: "#2dd4bf",
-								},
-							},
-						},
-					},
-				}
-			</script>
-			<title>Onboarding - Finops</title>
-		</head>
+		@AppHead("Onboarding - Finops", false)
 		<body class="min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900">
 			<main class="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6">
 				<section class="grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/85 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr]">
@@ -63,23 +35,13 @@ templ OnboardingPage(errorMessage string) {
 						}
 
 						<form method="post" action="/onboarding" class="mt-8 space-y-5">
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
 							<div>
-								<label for="name" class="mb-2 block text-sm font-bold text-finops-800">Nome do workspace</label>
-								<input
-									id="name"
-									type="text"
-									name="name"
-									placeholder="Meu Workspace"
-									class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
-								/>
+								@FormLabel("name", "Nome do workspace")
+								@TextInput("name", "name", "text", "", "Meu Workspace", false)
 							</div>
 
-							<button
-								type="submit"
-								class="inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25"
-							>
-								Criar workspace
-							</button>
+							@PrimaryButton("submit", "Criar workspace", true)
 						</form>
 					</div>
 				</section>

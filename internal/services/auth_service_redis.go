@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"finops/internal/models"
+	"finops/internal/observability"
 	"finops/internal/store"
 	"fmt"
 	"time"
@@ -43,19 +44,23 @@ func NewRedisAuthService(rdb *redis.Client,
 // IssueCSRFToken rotaciona o token CSRF de uma sessão existente.
 // Mantemos o mesmo TTL remanescente da sessão para não alterar sua janela de validade.
 func (s *RedisAuthService) IssueCSRFToken(ctx context.Context, sessionID string) (string, error) {
+	logger := observability.Logger(ctx)
 	session, err := s.getSession(ctx, sessionID)
 	if err != nil {
+		logger.Error("auth_issue_csrf_load_session_failed", "error", err)
 		return "", err
 	}
 
 	token, err := randomToken(32)
 	if err != nil {
+		logger.Error("auth_issue_csrf_generate_failed", "user_id", session.UserID, "error", err)
 		return "", err
 	}
 
 	session.CSRFToken = token
 	ttl, err := s.rdb.TTL(ctx, sessionKey(sessionID)).Result()
 	if err != nil {
+		logger.Error("auth_issue_csrf_ttl_failed", "user_id", session.UserID, "error", err)
 		return "", fmt.Errorf("read session ttl: %w", err)
 	}
 
@@ -68,58 +73,81 @@ func (s *RedisAuthService) IssueCSRFToken(ctx context.Context, sessionID string)
 	}
 
 	if err := s.saveSession(ctx, session, ttl); err != nil {
+		logger.Error("auth_issue_csrf_save_failed", "user_id", session.UserID, "error", err)
 		return "", err
 	}
 
+	logger.Info("auth_issue_csrf_succeeded", "user_id", session.UserID)
 	return token, nil
 }
 
 // RotateSession invalida a sessão atual e emite uma nova, preservando usuário e remember_me.
 // Útil para mitigar fixation e trocar credenciais de sessão após eventos sensíveis.
 func (s *RedisAuthService) RotateSession(ctx context.Context, sessionID string) (models.Session, error) {
+	logger := observability.Logger(ctx)
 	current, err := s.getSession(ctx, sessionID)
 	if err != nil {
+		logger.Error("auth_rotate_session_load_failed", "error", err)
 		return models.Session{}, err
 	}
 
 	if err := s.Logout(ctx, sessionID); err != nil {
+		logger.Error("auth_rotate_session_revoke_failed", "user_id", current.UserID, "error", err)
 		return models.Session{}, err
 	}
 	newSession, ttl, err := s.newSession(current.UserID, current.Email, current.RememberMe)
 	if err != nil {
+		logger.Error("auth_rotate_session_generate_failed", "user_id", current.UserID, "error", err)
 		return models.Session{}, err
 	}
 	if err := s.saveSession(ctx, newSession, ttl); err != nil {
+		logger.Error("auth_rotate_session_save_failed", "user_id", current.UserID, "error", err)
 		return models.Session{}, err
 	}
 
+	logger.Info("auth_rotate_session_succeeded", "user_id", current.UserID, "remember_me", current.RememberMe)
 	return newSession, nil
 }
 
 // ValidateCSRFToken compara o token enviado pela requisição com o token salvo na sessão.
 // A comparação é feita em tempo constante para reduzir risco de side-channel.
 func (s *RedisAuthService) ValidateCSRFToken(ctx context.Context, sessionID string, token string) (bool, error) {
+	logger := observability.Logger(ctx)
 	session, err := s.getSession(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, ErrSessionNotFound) {
+			logger.Warn("auth_validate_csrf_session_not_found")
 			return false, nil
 		}
+		logger.Error("auth_validate_csrf_load_failed", "error", err)
 		return false, err
 	}
 
 	if token == "" || session.CSRFToken == "" {
+		logger.Warn("auth_validate_csrf_missing_token", "user_id", session.UserID)
 		return false, nil
 	}
 
-	return subtle.ConstantTimeCompare([]byte(session.CSRFToken), []byte(token)) == 1, nil
+	valid := subtle.ConstantTimeCompare([]byte(session.CSRFToken), []byte(token)) == 1
+	if !valid {
+		logger.Warn("auth_validate_csrf_invalid", "user_id", session.UserID)
+	}
+
+	return valid, nil
 
 }
 
 // ValidateSession valida a existência da sessão e opcionalmente renova TTL (sliding expiration).
 // A renovação acontece somente quando slidingSessionTTL está habilitado.
 func (s *RedisAuthService) ValidateSession(ctx context.Context, sessionID string) (models.Session, error) {
+	logger := observability.Logger(ctx)
 	session, err := s.getSession(ctx, sessionID)
 	if err != nil {
+		if errors.Is(err, ErrSessionNotFound) {
+			logger.Warn("auth_validate_session_not_found")
+		} else {
+			logger.Error("auth_validate_session_load_failed", "error", err)
+		}
 		return models.Session{}, err
 	}
 
@@ -133,42 +161,53 @@ func (s *RedisAuthService) ValidateSession(ctx context.Context, sessionID string
 		session.ExpiresAt = session.LastSeenAt.Add(ttl)
 
 		if err := s.saveSession(ctx, session, ttl); err != nil {
+			logger.Error("auth_validate_session_refresh_failed", "user_id", session.UserID, "error", err)
 			return models.Session{}, err
 		}
 	}
+	logger.Debug("auth_validate_session_succeeded", "user_id", session.UserID, "remember_me", session.RememberMe)
 	return session, nil
 }
 
 // Logout remove a sessão do Redis (revogação imediata server-side).
 func (s *RedisAuthService) Logout(ctx context.Context, sessionID string) error {
+	logger := observability.Logger(ctx)
 	if err := s.rdb.Del(ctx, sessionKey(sessionID)).Err(); err != nil {
+		logger.Error("auth_logout_failed", "error", err)
 		return fmt.Errorf("delete session: %w", err)
 	}
 
+	logger.Info("auth_logout_succeeded")
 	return nil
 }
 
 // Login valida credenciais do usuário e cria uma nova sessão autenticada.
 // O hash de senha é verificado com bcrypt.
 func (s *RedisAuthService) Login(ctx context.Context, email, password string, rememberme bool) (models.Session, error) {
+	logger := observability.Logger(ctx)
 	user, err := s.queries.GetUserByEmail(ctx, email)
 	if err != nil {
+		logger.Warn("auth_login_invalid_credentials_lookup", "remember_me", rememberme)
 		return models.Session{}, ErrInvalidCredentials
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		logger.Warn("auth_login_invalid_credentials_password", "remember_me", rememberme)
 		return models.Session{}, ErrInvalidCredentials
 	}
 
 	session, ttl, err := s.newSession(user.ID, email, rememberme)
 	if err != nil {
+		logger.Error("auth_login_new_session_failed", "user_id", user.ID, "error", err)
 		return models.Session{}, err
 	}
 
 	if err := s.saveSession(ctx, session, ttl); err != nil {
+		logger.Error("auth_login_save_session_failed", "user_id", user.ID, "error", err)
 		return models.Session{}, err
 	}
 
+	logger.Info("auth_login_succeeded", "user_id", user.ID, "remember_me", rememberme)
 	return session, nil
 }
 

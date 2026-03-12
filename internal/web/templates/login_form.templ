@@ -15,36 +15,17 @@ templ LoginForm(errorMessage string) {
 		class="space-y-5"
 	>
 		<div>
-			<label for="email" class="mb-2 block text-sm font-bold text-finops-800">Email</label>
-			<input
-				id="email"
-				type="email"
-				name="email"
-				required
-				class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
-				placeholder="voce@exemplo.com"
-			/>
+			@FormLabel("email", "Email")
+			@TextInput("email", "email", "email", "", "voce@exemplo.com", true)
 		</div>
 		<div>
-			<label for="password" class="mb-2 block text-sm font-bold text-finops-800">Senha</label>
-			<input
-				id="password"
-				type="password"
-				name="password"
-				required
-				class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
-				placeholder="Digite sua senha"
-			/>
+			@FormLabel("password", "Senha")
+			@TextInput("password", "password", "password", "", "Digite sua senha", true)
 		</div>
 		<label class="flex items-center gap-3 rounded-lg bg-slate-100/90 px-3 py-2 text-sm font-semibold text-finops-700">
 			<input type="checkbox" name="remember_me" class="size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400"/>
 			Lembrar-me por 7 dias
 		</label>
-		<button
-			type="submit"
-			class="inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25"
-		>
-			Entrar
-		</button>
+		@PrimaryButton("submit", "Entrar", true)
 	</form>
 }

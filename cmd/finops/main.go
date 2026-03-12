@@ -6,7 +6,8 @@ import (
 	service "finops/internal/services"
 	"finops/internal/store"
 	"finops/internal/web"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,24 +16,32 @@ import (
 )
 
 func main() {
+	fmt.Printf("%d\n", os.Getpid())
 	cfg := app.LoadConfig()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: cfg.LogLevel,
+	}))
+	slog.SetDefault(logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
 	db, err := app.NewDB(ctx, cfg.DbURL)
 	if err != nil {
-		log.Fatalf("cannot connect to database: %v", err)
+		logger.Error("database_connection_failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 	defer db.Close()
 	queries := store.New(db)
 	if queries == nil {
-		log.Fatalf("cannot connect to database: %v", err)
+		logger.Error("queries_initialization_failed")
+		os.Exit(1)
 	}
 
 	redisClient, err := app.NewRedisClient(ctx, cfg)
 	if err != nil {
-		log.Fatalf("cannot connect to redis: %v", err)
+		logger.Error("redis_connection_failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	authService := service.NewRedisAuthService(
@@ -64,9 +73,9 @@ func main() {
 	}
 
 	go func() {
-		log.Println("Server running on addr:", s.Addr)
+		logger.Info("server_started", slog.String("addr", s.Addr))
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Println("Server stopped with error:", err)
+			logger.Error("server_stopped", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}()
@@ -75,12 +84,15 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
-	log.Println("Terminating...Cleaning UP")
+	logger.Info("server_shutting_down")
 
 	ctxShutDown, c := context.WithTimeout(context.Background(), time.Second*10)
 	defer c()
 
 	if err := s.Shutdown(ctxShutDown); err != nil {
-		log.Fatal("Shutdown error")
+		logger.Error("shutdown_failed", slog.Any("error", err))
+		os.Exit(1)
 	}
+
+	logger.Info("server_stopped")
 }

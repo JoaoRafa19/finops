@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"finops/internal/models"
+	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
 	"finops/internal/web/templates"
@@ -41,8 +42,10 @@ func renderTempl(w http.ResponseWriter, r *http.Request, status int, c templ.Com
 }
 
 func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
 	if _, ok := middleware.SessionFromContext(r.Context()); ok {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		logger.Debug("login_page_redirect_authenticated")
+		http.Redirect(w, r, "/", http.StatusOK)
 		return
 	}
 
@@ -55,7 +58,9 @@ func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
 	if err := r.ParseForm(); err != nil {
+		logger.Warn("login_parse_form_failed", "error", err)
 		renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("Erro Interno"))
 		return
 	}
@@ -67,6 +72,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := c.auth.Login(r.Context(), email, password, rememberMe)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
+			logger.Warn("login_invalid_credentials", "remember_me", rememberMe)
 			if r.Header.Get("HX-Request") == "true" {
 				renderTempl(w, r, http.StatusOK, templates.LoginForm("usuario ou senha invalidos."))
 				return
@@ -74,6 +80,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 			renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos."))
 			return
 		}
+		logger.Error("login_failed", "remember_me", rememberMe, "error", err)
 		renderTempl(w, r, http.StatusInternalServerError, templates.LoginPage("erro no login"))
 		return
 	}
@@ -83,24 +90,27 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Redirect", "/")
 
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusOK)
 }
 
 func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
 	sessionID, ok := middleware.SessionIDFromContext(r.Context())
 	if ok && sessionID != "" {
-		_ = c.auth.Logout(r.Context(), sessionID)
+		if err := c.auth.Logout(r.Context(), sessionID); err != nil {
+			logger.Error("logout_failed", "error", err)
+		}
 	}
 
 	c.clearSessionCookie(w)
 
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Redirect", "/login")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 

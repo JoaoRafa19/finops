@@ -1,0 +1,201 @@
+package templates 
+
+import (
+	"finops/internal/store"
+	"finops/internal/utils"
+	"fmt"
+)
+
+templ AccountEditForm(account *store.Account, csrfToken string) {
+	<li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4" id={ fmt.Sprintf("account-%d", account.ID) }>
+		@AccountForm(account, csrfToken, true)
+	</li>
+}
+
+templ AccountPanels(csrf_token string, accounts []store.Account) {
+	<div id="accounts-panel" class="rounded-2x1 border border-slate-200 bg-white p-6">
+		if len(accounts) == 0 {
+			<p class="text-lg font-bold text-finops-900">{ accountFormTitle(nil) }</p>
+			<p class="mt-2 text-sm text-finops-700">{ accountFormDescription(nil) }</p>
+			@AccountForm(nil, csrf_token, false)
+		} else {
+			<div class="flex items-center justify-between">
+				<p class="text-lg font-bold text-finops-900">Contas Cadastradas</p>
+				<p class="mt-01 text-sm text-finops-700">Base inicial pronta para lançamentos e transferências</p>
+			</div>
+			<ul class="mt-6 space-y-3" id="accounts-list">
+				for _, ac := range accounts {
+					@AccountItem(ac)
+				}
+			</ul>
+		}
+	</div>
+}
+
+templ AccountItem(account store.Account) {
+	<li id={ fmt.Sprintf("account-%d", account.ID) } class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+		</div>
+		<div class="flex items-center gap-3">
+			<p class="text-sm font-bold text-finops-800">{ utils.FormatMoney(account.OpeningBalance) }</p>
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
+				hx-target="closest li"
+				hx-swap="outerHTML"
+				class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
+				title="Editar conta"
+			><i class="fa-solid fa-pen-to-square"></i></button>
+		</div>
+	</li>
+}
+
+templ AccountForm(account *store.Account, csrf_token string, inline bool) {
+	<form
+		method="post"
+		action={ accountFormAction(account) }
+		hx-post={ accountFormAction(account) }
+		hx-target="#accounts-panel"
+		hx-swap="outerHTML"
+		class={ accountFormClass(inline) }
+	>
+		<input type="hidden" name="_csrf" value={ csrf_token }/>
+		<div class="md:col-span-2">
+			@FormLabel("name", "Nome da Conta")
+			@TextInput("name", "name", "text", accountFormName(account), "Conta corrent principal", true)
+		</div>
+		<div>
+			@FormLabel("type", "Tipo")
+			@SelectInput("type", "type", buildAccountTypeOptions(accountFormType(account)), true)
+		</div>
+		<div>
+			@FormLabel("currency", "Moeda")
+			@TextInput("currency", "currency", "text", accountFormCurrency(account), "", true)
+		</div>
+		<div>
+			@FormLabel("opening_balance", "Saldo Inicial")
+			@TextInput("opening_balance", "opening_balance", "text", accountFormOpeningBalance(account), "0.00", true)
+		</div>
+		<div>
+			@FormLabel("opening_date", "Data Inicial")
+			@TextInput("opening_date", "opening_date", "date", accountFormOpeningDate(account), "0.00", true)
+		</div>
+		<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+			@PrimaryButton("submit", accountFormSubmitLabel(account), true)
+			if account != nil {
+				<button
+					type="button"
+					hx-get={ fmt.Sprintf("/account/%d", account.ID) }
+					hx-target="closest li"
+					hx-swap="outerHTML"
+					class="inline-flex items-center justify-centyer rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+				>Cancelar</button>
+			}
+		</div>
+	</form>
+}
+
+templ Account(account store.Account) {
+	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+		</div>
+		<div class="flex items-center gap-3">
+			<p class="text-sm font-bold text-finops-800">{ utils.FormatMoney(account.OpeningBalance) }</p>
+			<span class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500" title="Edicao em breve">
+				<i class="fa-solid fa-pen-to-square"></i>
+			</span>
+		</div>
+	</li>
+}
+
+func buildAccountTypeOptions(selected string) []SelectOption {
+	return []SelectOption{
+		{Value: "", Label: "Selecione", Selected: selected == ""},
+		{Value: "checking", Label: "Conta corrente", Selected: selected == "checking"},
+		{Value: "savings", Label: "Poupanca", Selected: selected == "savings"},
+		{Value: "cash", Label: "Dinheiro", Selected: selected == "cash"},
+		{Value: "credit_card", Label: "Cartao", Selected: selected == "credit_card"},
+		{Value: "investment", Label: "Investimento", Selected: selected == "investment"},
+	}
+}
+
+func accountFormSubmitLabel(account *store.Account) string {
+	if account == nil {
+		return "Cadastrar conta"
+	}
+
+	return "Atualizar"
+}
+
+func accountFormAction(account *store.Account) string {
+	if account == nil {
+		return "/accounts"
+	}
+	return fmt.Sprintf("/account/%d", account.ID)
+}
+
+func accountFormTitle(account *store.Account) string {
+	if account == nil {
+		return "Cadastrar nova conta"
+	}
+	return "Editar conta"
+}
+
+// if exists account description returns a placeholder
+func accountFormDescription(account *store.Account) string {
+	if account == nil {
+		return "Cadastrar nova conta"
+	}
+	return "Salvar alterações"
+}
+
+// If exists Name It returns a placeholder
+func accountFormName(account *store.Account) string {
+	if account == nil {
+		return ""
+	}
+	return account.Name
+}
+
+// If exists Type It returns a placeholder
+func accountFormType(account *store.Account) string {
+	if account == nil {
+		return ""
+	}
+	return account.Type
+}
+
+// If exists Currency It returns a placeholder
+func accountFormCurrency(account *store.Account) string {
+	if account == nil {
+		return ""
+	}
+	return account.Currency
+}
+
+// If exists Balance It returns a placeholder
+func accountFormOpeningBalance(account *store.Account) string {
+	if account == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.2f", account.OpeningBalance)
+}
+
+// If exists date It returns a placeholder
+func accountFormOpeningDate(account *store.Account) string {
+	if account == nil || !account.OpeningDate.Valid {
+		return ""
+	}
+	return account.OpeningDate.Time.Format("2006-01-02")
+}
+
+func accountFormClass(inline bool) string {
+	if inline {
+		return "grid gap-4 md:grid-cols-2"
+	}
+	return "mt-6 grid gap-4 md:grid-cols-2"
+}

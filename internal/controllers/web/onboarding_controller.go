@@ -1,6 +1,7 @@
 package web
 
 import (
+	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
 	"finops/internal/web/templates"
@@ -18,35 +19,43 @@ func NewOnboardingController(service service.WorkspaceService) *OnboardingContro
 }
 
 func (c *OnboardingController) Page(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
+		logger.Warn("onboarding_page_unauthenticated")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	exists, err := c.workspaceService.ExistsForUser(r.Context(), session.UserID)
 	if err != nil {
+		logger.Error("onboarding_workspace_check_failed", "user_id", session.UserID, "error", err)
 		http.Error(w, "failed to check workspace", http.StatusInternalServerError)
 		return
 	}
 
 	if exists {
+		logger.Debug("onboarding_redirect_home", "user_id", session.UserID)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.OnboardingPage(""))
+	logger.Debug("onboarding_page_rendered", "user_id", session.UserID)
+	renderTempl(w, r, http.StatusOK, templates.OnboardingPage("", session.CSRFToken))
 }
 
 func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
+		logger.Warn("onboarding_create_unauthenticated")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		renderTempl(w, r, http.StatusBadRequest, templates.OnboardingPage("dados invalidos"))
+		logger.Warn("onboarding_create_invalid_form", "user_id", session.UserID, "error", err)
+		renderTempl(w, r, http.StatusBadRequest, templates.OnboardingPage("dados invalidos", session.CSRFToken))
 		return
 	}
 
@@ -57,9 +66,11 @@ func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Re
 	})
 
 	if err != nil {
-		renderTempl(w, r, http.StatusInternalServerError, templates.OnboardingPage("Não foi possivel criar o workspace"))
+		logger.Error("onboarding_create_workspace_failed", "user_id", session.UserID, "error", err)
+		renderTempl(w, r, http.StatusInternalServerError, templates.OnboardingPage("Não foi possivel criar o workspace", session.CSRFToken))
 		return
 	}
 
+	logger.Debug("onboarding_create_workspace_succeeded", "user_id", session.UserID)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

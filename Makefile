@@ -1,36 +1,38 @@
 APP_NAME=finops
 CMD_PATH=./cmd/finops/
+include .env
+export 
 
 .PHONY: run build test fmt tidy start_db startf migrate gen sqlc
 
-run:
+run: # Run the application
 	go run $(CMD_PATH)
 	
-build:
+build: # Build the application
 	go build -o bin/$(APP_NAME) $(CMD_PATH)
 
-test:
+test: # Run all tests
 	go test ./...
 
-fmt:
+fmt: # Format the code
 	go fmt ./...
 
-tidy:
+tidy: # Tidy up the go modules
 	go mod tidy
 
-start_db:
+start_db: # Start the postgres and redis with docker compose
 	docker compose -f ./deploy/docker/docker-compose.yaml  up postgres redis -d
 
 
-startf:
+startf: # Start the frontend with templ
 	templ generate --watch
 
-migrate:
-	set -a; . ./.env; set +a; tern migrate \
+migrate: # Run database migrations with tern
+	 tern migrate \
     -c ./internal/store/migrations/tern.conf \
     --migrations ./internal/store/migrations/
 
-sqlc:
+sqlc: # Generate sqlc code
 	@if command -v sqlc >/dev/null 2>&1; then \
 		sqlc generate -f ./internal/store/sqlc.yaml; \
 	elif [ -x "$$(go env GOPATH)/bin/sqlc" ]; then \
@@ -40,14 +42,19 @@ sqlc:
 		go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate -f ./internal/store/sqlc.yaml; \
 	fi
 
-gen:
-	$(MAKE) sqlc
+gen: # Generate sqlc code
+	$(MAKE) sqlc && \
+	templ generate ./...
 
-setup:
+setup: # Install necessary tools
 	go install github.com/a-h/templ/cmd/templ@latest
 	go install github.com/jackc/tern/v2@latest
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 
-front:
+front: # Build and run the frontend with templ
 	templ generate --watch --proxy="http://localhost:8080" --cmd="go run ./cmd/finops/main.go"
+
+list: # List all available targets
+	@echo "Available targets:"
+	@awk '/^[A-Za-z0-9_.-]+:.*# / { i = index($$0, ":"); cmd = substr($$0, 1, i - 1); desc = substr($$0, i + 4); printf "%c[36m%-20s%c[0m %s\n", 27, cmd, 27, desc; }' $(MAKEFILE_LIST) | sort

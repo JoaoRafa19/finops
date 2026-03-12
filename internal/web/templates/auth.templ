@@ -3,36 +3,7 @@ package templates
 templ LoginPage(errorMessage string) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
-		<head>
-			<meta charset="utf-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<link rel="preconnect" href="https://fonts.googleapis.com"/>
-			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-			<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet"/>
-			<script src="https://cdn.tailwindcss.com"></script>
-			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
-			<script>
-				tailwind.config = {
-					theme: {
-						extend: {
-							fontFamily: {
-								display: ["Manrope", "sans-serif"],
-							},
-							colors: {
-								finops: {
-									900: "#0f172a",
-									800: "#1e293b",
-									700: "#334155",
-									500: "#0ea5a4",
-									400: "#2dd4bf",
-								},
-							},
-						},
-					},
-				}
-			</script>
-			<title>Login - Finops</title>
-		</head>
+		@AppHead("Login - Finops", true)
 		<body class="min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900">
 			<main class="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6">
 				<section class="grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-2">
@@ -56,6 +27,9 @@ templ LoginPage(errorMessage string) {
 						</div>
 						<div id="login-box">
 							@LoginForm(errorMessage)
+						</div>
+						<div class="mt-6">
+							@SecondaryLink("/", "Voltar para o inicio")
 						</div>
 					</div>
 				</section>

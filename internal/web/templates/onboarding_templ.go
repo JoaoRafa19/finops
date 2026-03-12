@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func OnboardingPage(errorMessage string) templ.Component {
+func OnboardingPage(errorMessage string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,30 +29,71 @@ func OnboardingPage(errorMessage string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\"><link href=\"https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.tailwindcss.com\"></script><script>\n\t\t\t\ttailwind.config = {\n\t\t\t\t\ttheme: {\n\t\t\t\t\t\textend: {\n\t\t\t\t\t\t\tfontFamily: {\n\t\t\t\t\t\t\t\tdisplay: [\"Manrope\", \"sans-serif\"],\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\t\tfinops: {\n\t\t\t\t\t\t\t\t\t900: \"#0f172a\",\n\t\t\t\t\t\t\t\t\t800: \"#1e293b\",\n\t\t\t\t\t\t\t\t\t700: \"#334155\",\n\t\t\t\t\t\t\t\t\t500: \"#0ea5a4\",\n\t\t\t\t\t\t\t\t\t400: \"#2dd4bf\",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t}\n\t\t\t</script><title>Onboarding - Finops</title></head><body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section class=\"grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/85 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr]\"><div class=\"hidden bg-finops-900 p-10 text-slate-100 lg:block\"><div class=\"flex h-full flex-col justify-between\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 class=\"mt-4 text-4xl font-extrabold leading-tight\">Vamos preparar seu primeiro workspace.</h1></div><p class=\"max-w-sm text-sm text-slate-200/90\">Esse nome organiza seu ambiente inicial. Voce pode alterar isso depois sem impacto no restante da aplicacao.</p></div></div><div class=\"p-7 sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Onboarding</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Crie seu workspace</h2><p class=\"mt-2 text-sm text-finops-700\">Informe um nome para comecar. Se deixar em branco, usaremos <span class=\"font-bold\">Meu Workspace</span>.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = AppHead("Onboarding - Finops", false).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section class=\"grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/85 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr]\"><div class=\"hidden bg-finops-900 p-10 text-slate-100 lg:block\"><div class=\"flex h-full flex-col justify-between\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 class=\"mt-4 text-4xl font-extrabold leading-tight\">Vamos preparar seu primeiro workspace.</h1></div><p class=\"max-w-sm text-sm text-slate-200/90\">Esse nome organiza seu ambiente inicial. Voce pode alterar isso depois sem impacto no restante da aplicacao.</p></div></div><div class=\"p-7 sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Onboarding</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Crie seu workspace</h2><p class=\"mt-2 text-sm text-finops-700\">Informe um nome para comecar. Se deixar em branco, usaremos <span class=\"font-bold\">Meu Workspace</span>.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if errorMessage != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/onboarding.templ`, Line: 61, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/onboarding.templ`, Line: 33, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form method=\"post\" action=\"/onboarding\" class=\"mt-8 space-y-5\"><div><label for=\"name\" class=\"mb-2 block text-sm font-bold text-finops-800\">Nome do workspace</label> <input id=\"name\" type=\"text\" name=\"name\" placeholder=\"Meu Workspace\" class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\"></div><button type=\"submit\" class=\"inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25\">Criar workspace</button></form></div></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<form method=\"post\" action=\"/onboarding\" class=\"mt-8 space-y-5\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/onboarding.templ`, Line: 38, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("name", "Nome do workspace").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("name", "name", "text", "", "Meu Workspace", false).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = PrimaryButton("submit", "Criar workspace", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</form></div></section></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

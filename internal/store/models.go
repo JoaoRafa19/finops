@@ -15,7 +15,7 @@ type Account struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance string
+	OpeningBalance float64
 	OpeningDate    sql.NullTime
 	Archived       bool
 }

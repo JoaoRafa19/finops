@@ -1,0 +1,88 @@
+package templates
+
+templ AppHead(title string, includeHTMX bool) {
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<link rel="preconnect" href="https://fonts.googleapis.com"/>
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+		<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet"/>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+		<script src="https://cdn.tailwindcss.com"></script>
+		if includeHTMX {
+			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
+		}
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						fontFamily: {
+							display: ["Manrope", "sans-serif"],
+						},
+						colors: {
+							finops: {
+								900: "#0f172a",
+								800: "#1e293b",
+								700: "#334155",
+								500: "#0ea5a4",
+								400: "#2dd4bf",
+							},
+						},
+					},
+				},
+			}
+		</script>
+		<title>{ title }</title>
+	</head>
+}
+
+templ FormLabel(forID, text string) {
+	<label for={ forID } class="mb-2 block text-sm font-bold text-finops-800">{ text }</label>
+}
+
+templ TextInput(id, name, inputType, value, placeholder string, required bool) {
+	<input
+		id={ id }
+		type={ inputType }
+		name={ name }
+		value={ value }
+		placeholder={ placeholder }
+		if required {
+			required
+		}
+		class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
+	/>
+}
+
+templ SelectInput(id, name string, options []SelectOption, required bool) {
+	<select
+		id={ id }
+		name={ name }
+		if required {
+			required
+		}
+		class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
+	>
+		for _, option := range options {
+			<option value={ option.Value } if option.Selected { selected }>{ option.Label }</option>
+		}
+	</select>
+}
+
+templ PrimaryButton(buttonType, text string, fullWidth bool) {
+	<button
+		type={ buttonType }
+		class={ primaryButtonClass(fullWidth) }
+	>
+		{ text }
+	</button>
+}
+
+templ SecondaryLink(href, text string) {
+	<a
+		href={ href }
+		class="inline-flex items-center text-sm font-semibold text-finops-700 underline decoration-finops-400/70 underline-offset-4 transition hover:text-finops-900"
+	>
+		{ text }
+	</a>
+}

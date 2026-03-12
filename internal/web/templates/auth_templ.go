@@ -29,7 +29,15 @@ func LoginPage(errorMessage string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\"><link href=\"https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@2.0.7\"></script><script>\n\t\t\t\ttailwind.config = {\n\t\t\t\t\ttheme: {\n\t\t\t\t\t\textend: {\n\t\t\t\t\t\t\tfontFamily: {\n\t\t\t\t\t\t\t\tdisplay: [\"Manrope\", \"sans-serif\"],\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\t\tfinops: {\n\t\t\t\t\t\t\t\t\t900: \"#0f172a\",\n\t\t\t\t\t\t\t\t\t800: \"#1e293b\",\n\t\t\t\t\t\t\t\t\t700: \"#334155\",\n\t\t\t\t\t\t\t\t\t500: \"#0ea5a4\",\n\t\t\t\t\t\t\t\t\t400: \"#2dd4bf\",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t}\n\t\t\t</script><title>Login - Finops</title></head><body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section class=\"grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-2\"><div class=\"relative hidden bg-finops-900 p-10 text-slate-100 lg:block\"><div class=\"absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,1)_0%,rgba(15,23,42,0.9)_45%,rgba(13,148,136,0.8)_100%)]\"></div><div class=\"relative z-10 flex h-full flex-col justify-between\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 class=\"mt-4 text-4xl font-extrabold leading-tight\">Seu controle financeiro, sem planilha.</h1></div><p class=\"max-w-sm text-sm text-slate-200/90\">Centralize contas, acompanhe movimentações e construa consistência financeira no seu ritmo.</p></div></div><div class=\"p-7 sm:p-10\"><div class=\"mb-7\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Acesso seguro</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Entrar na sua conta</h2><p class=\"mt-2 text-sm text-finops-700\">Use seu email e senha para continuar.</p></div><div id=\"login-box\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = AppHead("Login - Finops", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section class=\"grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-2\"><div class=\"relative hidden bg-finops-900 p-10 text-slate-100 lg:block\"><div class=\"absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,1)_0%,rgba(15,23,42,0.9)_45%,rgba(13,148,136,0.8)_100%)]\"></div><div class=\"relative z-10 flex h-full flex-col justify-between\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 class=\"mt-4 text-4xl font-extrabold leading-tight\">Seu controle financeiro, sem planilha.</h1></div><p class=\"max-w-sm text-sm text-slate-200/90\">Centralize contas, acompanhe movimentações e construa consistência financeira no seu ritmo.</p></div></div><div class=\"p-7 sm:p-10\"><div class=\"mb-7\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Acesso seguro</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Entrar na sua conta</h2><p class=\"mt-2 text-sm text-finops-700\">Use seu email e senha para continuar.</p></div><div id=\"login-box\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -37,7 +45,15 @@ func LoginPage(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div></section></main><noscript><p class=\"mx-auto mt-4 max-w-xl rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900\">Para melhor experiência, habilite JavaScript no navegador.</p></noscript></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"mt-6\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SecondaryLink("/", "Voltar para o inicio").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></section></main><noscript><p class=\"mx-auto mt-4 max-w-xl rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900\">Para melhor experiência, habilite JavaScript no navegador.</p></noscript></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

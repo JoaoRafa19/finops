@@ -30,7 +30,7 @@ type CreateAccountParams struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance string
+	OpeningBalance float64
 	OpeningDate    sql.NullTime
 }
 
@@ -75,6 +75,43 @@ AND archived = FALSE
 
 func (q *Queries) GetAccountByID(ctx context.Context, id int64) (Account, error) {
 	row := q.db.QueryRowContext(ctx, getAccountByID, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.Name,
+		&i.Type,
+		&i.Currency,
+		&i.OpeningBalance,
+		&i.OpeningDate,
+		&i.Archived,
+	)
+	return i, err
+}
+
+const getAccountByWorkspaceAndID = `-- name: GetAccountByWorkspaceAndID :one
+SELECT
+    id,
+    workspace_id,
+    name,
+    type,
+    currency,
+    opening_balance,
+    opening_date,
+    archived
+FROM accounts
+WHERE workspace_id = $1
+    AND id = $2
+    AND archived = FALSE
+`
+
+type GetAccountByWorkspaceAndIDParams struct {
+	WorkspaceID int64
+	ID          int64
+}
+
+func (q *Queries) GetAccountByWorkspaceAndID(ctx context.Context, arg GetAccountByWorkspaceAndIDParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountByWorkspaceAndID, arg.WorkspaceID, arg.ID)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -135,4 +172,52 @@ func (q *Queries) ListAccountsByWorkspace(ctx context.Context, workspaceID int64
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateAccount = `-- name: UpdateAccount :one
+UPDATE accounts
+SET
+    name = $3,
+    type = $4,
+    currency = $5,
+    opening_balance = $6,
+    opening_date = $7
+WHERE workspace_id = $1
+    AND id = $2
+    AND archived = FALSE
+RETURNING id, workspace_id, name, type, currency, opening_balance, opening_date, archived
+`
+
+type UpdateAccountParams struct {
+	WorkspaceID    int64
+	ID             int64
+	Name           string
+	Type           string
+	Currency       string
+	OpeningBalance float64
+	OpeningDate    sql.NullTime
+}
+
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, updateAccount,
+		arg.WorkspaceID,
+		arg.ID,
+		arg.Name,
+		arg.Type,
+		arg.Currency,
+		arg.OpeningBalance,
+		arg.OpeningDate,
+	)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.Name,
+		&i.Type,
+		&i.Currency,
+		&i.OpeningBalance,
+		&i.OpeningDate,
+		&i.Archived,
+	)
+	return i, err
 }

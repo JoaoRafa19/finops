@@ -48,7 +48,39 @@ func LoginForm(errorMessage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/login\" hx-post=\"/login\" hx-target=\"#login-box\" hx-swap=\"innerHTML\" class=\"space-y-5\"><div><label for=\"email\" class=\"mb-2 block text-sm font-bold text-finops-800\">Email</label> <input id=\"email\" type=\"email\" name=\"email\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\" placeholder=\"voce@exemplo.com\"></div><div><label for=\"password\" class=\"mb-2 block text-sm font-bold text-finops-800\">Senha</label> <input id=\"password\" type=\"password\" name=\"password\" required class=\"w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20\" placeholder=\"Digite sua senha\"></div><label class=\"flex items-center gap-3 rounded-lg bg-slate-100/90 px-3 py-2 text-sm font-semibold text-finops-700\"><input type=\"checkbox\" name=\"remember_me\" class=\"size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400\"> Lembrar-me por 7 dias</label> <button type=\"submit\" class=\"inline-flex w-full items-center justify-center rounded-xl bg-finops-900 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-finops-900/20 transition hover:bg-finops-800 focus:outline-none focus:ring-4 focus:ring-finops-400/25\">Entrar</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/login\" hx-post=\"/login\" hx-target=\"#login-box\" hx-swap=\"innerHTML\" class=\"space-y-5\"><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("email", "Email").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("email", "email", "email", "", "voce@exemplo.com", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("password", "Senha").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("password", "password", "password", "", "Digite sua senha", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><label class=\"flex items-center gap-3 rounded-lg bg-slate-100/90 px-3 py-2 text-sm font-semibold text-finops-700\"><input type=\"checkbox\" name=\"remember_me\" class=\"size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400\"> Lembrar-me por 7 dias</label>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = PrimaryButton("submit", "Entrar", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

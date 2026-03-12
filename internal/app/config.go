@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -9,16 +10,17 @@ import (
 )
 
 type Config struct {
-	HTTPAddr         string
-	DbURL            string
-	RedisAddr        string
-	RedisPassword    string
-	RedisDB          int
-	SessionCookie    string
-	CookieSecure     bool
-	SessionTTL       time.Duration
-	RememberMeTTL    time.Duration
+	HTTPAddr          string
+	DbURL             string
+	RedisAddr         string
+	RedisPassword     string
+	RedisDB           int
+	SessionCookie     string
+	CookieSecure      bool
+	SessionTTL        time.Duration
+	RememberMeTTL     time.Duration
 	SlidingSessionTTL bool
+	LogLevel          slog.Level
 }
 
 func LoadConfig() Config {
@@ -37,6 +39,7 @@ func LoadConfig() Config {
 	sessionTTL := getEnvDuration("SESSION_TTL", 30*time.Minute)
 	rememberMeTTL := getEnvDuration("REMEMBER_ME_TTL", 7*24*time.Hour)
 	slidingSessionTTL := getEnvBool("SLIDING_SESSION_TTL", true)
+	logLevel := getEnvLogLevel("LOG_LEVEL", slog.LevelInfo)
 
 	return Config{
 		HTTPAddr:          addr,
@@ -49,6 +52,7 @@ func LoadConfig() Config {
 		SessionTTL:        sessionTTL,
 		RememberMeTTL:     rememberMeTTL,
 		SlidingSessionTTL: slidingSessionTTL,
+		LogLevel:          logLevel,
 	}
 }
 
@@ -97,4 +101,18 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return parsed
+}
+
+func getEnvLogLevel(key string, fallback slog.Level) slog.Level {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	var level slog.Level
+	if err := level.UnmarshalText([]byte(value)); err != nil {
+		return fallback
+	}
+
+	return level
 }
