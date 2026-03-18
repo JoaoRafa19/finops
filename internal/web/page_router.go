@@ -15,6 +15,7 @@ type PageRouterDeps struct {
 	AuthService        service.AuthService
 	AccountService     service.AccountService
 	WorkspaceService   service.WorkspaceService
+	CategoryService    service.CategoryService
 	TransactionService service.TransactionService
 	DB                 *sql.DB
 	RedisClient        *redis.Client

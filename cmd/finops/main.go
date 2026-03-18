@@ -55,10 +55,12 @@ func main() {
 	accountService := service.NewPGAccountService(queries)
 	workspaceService := service.NewPGWorkspaceService(queries)
 	transactionService := service.NewPGTransactionService(queries)
+	categoryService := service.NewPGCategoryService(queries)
 
 	router := web.NewRouter(web.PageRouterDeps{
 		TransactionService: transactionService,
 		AuthService:        authService,
+		CategoryService:    categoryService,
 		SessionCookie:      cfg.SessionCookie,
 		CookieSecure:       cfg.CookieSecure,
 		RememberMeTTL:      cfg.RememberMeTTL,

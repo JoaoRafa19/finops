@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -30,10 +31,10 @@ func LoadConfig() Config {
 		addr = ":8080"
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-	sessionCookie := getEnv("SESSION_COOKIE_NAME", "finops_session")
+	dbURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	redisAddr := strings.TrimSpace(getEnv("REDIS_ADDR", "localhost:6379"))
+	redisPassword := strings.TrimSpace(os.Getenv("REDIS_PASSWORD"))
+	sessionCookie := strings.TrimSpace(getEnv("SESSION_COOKIE_NAME", "finops_session"))
 	cookieSecure := getEnvBool("COOKIE_SECURE", false)
 	redisDB := getEnvInt("REDIS_DB", 0)
 	sessionTTL := getEnvDuration("SESSION_TTL", 30*time.Minute)
@@ -57,7 +58,7 @@ func LoadConfig() Config {
 }
 
 func getEnv(key, fallback string) string {
-	value := os.Getenv(key)
+	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
@@ -65,7 +66,7 @@ func getEnv(key, fallback string) string {
 }
 
 func getEnvInt(key string, fallback int) int {
-	value := os.Getenv(key)
+	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
@@ -104,7 +105,7 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 }
 
 func getEnvLogLevel(key string, fallback slog.Level) slog.Level {
-	value := os.Getenv(key)
+	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
