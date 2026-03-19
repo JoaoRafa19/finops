@@ -1,4 +1,4 @@
-package web
+package auth
 
 import (
 	"errors"
@@ -6,43 +6,34 @@ import (
 	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
+	"finops/internal/web/render"
 	"finops/internal/web/templates"
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/a-h/templ"
 )
 
-type AuthController struct {
+type Controller struct {
 	auth          service.AuthService
 	cookieName    string
 	cookieSecure  bool
 	rememberMeTTL time.Duration
 }
 
-func NewAuthController(auth service.AuthService, cookieName string, cookieSecure bool, rememberMeTTL time.Duration) *AuthController {
+func NewController(auth service.AuthService, cookieName string, cookieSecure bool, rememberMeTTL time.Duration) *Controller {
 	if cookieName == "" {
 		cookieName = models.DefaultAuthCookieName
 	}
 
-	return &AuthController{
+	return &Controller{
 		auth:          auth,
 		cookieName:    cookieName,
 		cookieSecure:  cookieSecure,
 		rememberMeTTL: rememberMeTTL,
 	}
 }
-func renderTempl(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
 
-	if err := c.Render(r.Context(), w); err != nil {
-		http.Error(w, "template render error", http.StatusInternalServerError)
-	}
-}
-
-func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) LoginPage(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	if _, ok := middleware.SessionFromContext(r.Context()); ok {
 		logger.Debug("login_page_redirect_authenticated")
@@ -55,14 +46,14 @@ func (c *AuthController) LoginPage(w http.ResponseWriter, r *http.Request) {
 		errMsg = "usuario ou senha invalidos"
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.LoginPage(errMsg))
+	render.Templ(w, r, http.StatusOK, templates.LoginPage(errMsg))
 }
 
-func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	if err := r.ParseForm(); err != nil {
 		logger.Warn("login_parse_form_failed", "error", err)
-		renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("Erro Interno"))
+		render.Templ(w, r, http.StatusUnauthorized, templates.LoginPage("Erro Interno"))
 		return
 	}
 
@@ -77,14 +68,14 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			logger.Warn("login_invalid_credentials", "remember_me", rememberMe)
 			if r.Header.Get("HX-Request") == "true" {
-				renderTempl(w, r, http.StatusOK, templates.LoginForm("usuario ou senha invalidos."))
+				render.Templ(w, r, http.StatusOK, templates.LoginForm("usuario ou senha invalidos."))
 				return
 			}
-			renderTempl(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos."))
+			render.Templ(w, r, http.StatusUnauthorized, templates.LoginPage("usuario ou senha invalidos."))
 			return
 		}
 		logger.Error("login_failed", "remember_me", rememberMe, "error", err)
-		renderTempl(w, r, http.StatusInternalServerError, templates.LoginPage("erro no login"))
+		render.Templ(w, r, http.StatusInternalServerError, templates.LoginPage("erro no login"))
 		return
 	}
 
@@ -92,7 +83,6 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Redirect", "/")
-
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -100,7 +90,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Logout(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	sessionID, ok := middleware.SessionIDFromContext(r.Context())
 	if ok && sessionID != "" {
@@ -120,7 +110,7 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-func (c *AuthController) setSessionCookie(w http.ResponseWriter, session models.Session) {
+func (c *Controller) setSessionCookie(w http.ResponseWriter, session models.Session) {
 	maxAge := int(time.Until(session.ExpiresAt).Seconds())
 	if maxAge < 0 {
 		maxAge = 0
@@ -138,7 +128,7 @@ func (c *AuthController) setSessionCookie(w http.ResponseWriter, session models.
 	})
 }
 
-func (c *AuthController) clearSessionCookie(w http.ResponseWriter) {
+func (c *Controller) clearSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     c.cookieName,
 		Value:    "",

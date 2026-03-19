@@ -61,41 +61,61 @@ func HomePage(user, csrf_token string, accounts []store.Account) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span>.                                                                        </p><div class=\"mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5\"><p class=\"text-sm font-semibold text-finops-800\">Sessão ativa e protegida por CSRF.</p><p class=\"mt-1 text-sm text-finops-700\">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p></div><div class=\"flex gap-2 mt-8 justify-end\"><form method=\"get\" action=\"/transaction-modal\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-swap=\"innerHTML\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span>.                                                                        </p><div class=\"mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5\"><p class=\"text-sm font-semibold text-finops-800\">Sessão ativa e protegida por CSRF.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 42, Col: 59}
+		if len(accounts) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"mt-1 text-sm text-finops-700\">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"flex gap-2 mt-8 justify-end\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SecondaryButton("submit", "Registrar Transação").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if len(accounts) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"get\" action=\"/transaction-modal\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-swap=\"innerHTML\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 46, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = SecondaryButton("submit", "Registrar Transação").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</form>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</form><form method=\"post\" action=\"/logout\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<form method=\"post\" action=\"/logout\" class=\"mt-8\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 46, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 51, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -103,15 +123,25 @@ func HomePage(user, csrf_token string, accounts []store.Account) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</form></div><div class=\"mt-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AccountPanels(csrf_token, accounts, NewCreateAccountFormState()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if len(accounts) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"mt-8\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = AccountPanels(csrf_token, accounts, NewCreateAccountFormState()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog><script>\n\t\t\t\t\t\tdocument.body.addEventListener(\"htmx:afterSwap\", (event) => {\n\t\t\t\t\t\t\tif (event.target.id === \"transaction-modal-body\") {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(\"transaction-modal\");\n\t\t\t\t\t\t\t\tif (dialog && typeof dialog.showModal === \"function\" && !dialog.open) {\n\t\t\t\t\t\t\t\t\tdialog.showModal();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tdocument.body.addEventListener(\"click\", (event) => {\n\t\t\t\t\t\t\tconst dialog = document.getElementById(\"transaction-modal\");\n\t\t\t\t\t\t\tif (!dialog || !dialog.open) {\n\t\t\t\t\t\t\t\treturn\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tconst rect = dialog.getBoundingClientRect();\n\t\t\t\t\t\t\tconst clickedInDialog = (\n\t\t\t\t\t\t\t\tevent.clientX >= rect.left &&\n\t\t\t\t\t\t\t\tevent.clientX <= rect.right &&\n\t\t\t\t\t\t\t\tevent.clientY >= rect.top &&\n\t\t\t\t\t\t\t\tevent.clientY <= rect.bottom\n\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\tif (!clickedInDialog) {\n\t\t\t\t\t\t\t\tdialog.close();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t</script></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog><script>\n\t\t\t\t\t\tdocument.body.addEventListener(\"htmx:afterSwap\", (event) => {\n\t\t\t\t\t\t\tif (event.target.id === \"transaction-modal-body\") {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(\"transaction-modal\");\n\t\t\t\t\t\t\t\tif (dialog && typeof dialog.showModal === \"function\" && !dialog.open) {\n\t\t\t\t\t\t\t\t\tdialog.showModal();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tdocument.body.addEventListener(\"click\", (event) => {\n\t\t\t\t\t\t\tconst dialog = document.getElementById(\"transaction-modal\");\n\t\t\t\t\t\t\tif (!dialog || !dialog.open) {\n\t\t\t\t\t\t\t\treturn\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tconst rect = dialog.getBoundingClientRect();\n\t\t\t\t\t\t\tconst clickedInDialog = (\n\t\t\t\t\t\t\t\tevent.clientX >= rect.left &&\n\t\t\t\t\t\t\t\tevent.clientX <= rect.right &&\n\t\t\t\t\t\t\t\tevent.clientY >= rect.top &&\n\t\t\t\t\t\t\t\tevent.clientY <= rect.bottom\n\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\tif (!clickedInDialog) {\n\t\t\t\t\t\t\t\tdialog.close();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t</script></section></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

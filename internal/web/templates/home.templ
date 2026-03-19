@@ -26,11 +26,15 @@ templ HomePage(user, csrf_token string, accounts []store.Account) {
 					</p>
 					<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
 						<p class="text-sm font-semibold text-finops-800">Sessão ativa e protegida por CSRF.</p>
-						<p class="mt-1 text-sm text-finops-700">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p>
+						if len(accounts) == 0  {
+							<p class="mt-1 text-sm text-finops-700">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p>
+						} 
 					</div>
 					<div
 						class="flex gap-2 mt-8 justify-end"
 					>
+					if len(accounts) > 0 {
+
 						<form
 							method="get"
 							action="/transaction-modal"
@@ -42,14 +46,18 @@ templ HomePage(user, csrf_token string, accounts []store.Account) {
 							<input type="hidden" name="_csrf" value={ csrf_token }/>
 							@SecondaryButton("submit", "Registrar Transação")
 						</form>
+					}
 						<form method="post" action="/logout" class="mt-8">
 							<input type="hidden" name="_csrf" value={ csrf_token }/>
 							@PrimaryButton("submit", "Sair", false)
 						</form>
 					</div>
-					<div class="mt-8">
-						@AccountPanels(csrf_token, accounts, NewCreateAccountFormState())
-					</div>
+					if len(accounts) > 0 {
+						<div class="mt-8">
+
+							@AccountPanels(csrf_token, accounts, NewCreateAccountFormState())
+						</div>
+					}
 					<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
 						<div id="transaction-modal-body"></div>
 					</dialog>

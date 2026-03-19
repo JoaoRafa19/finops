@@ -6,7 +6,7 @@ A implementação segue MVC com camada de serviço:
 
 - Model: `internal/store` (código gerado por sqlc + queries SQL).
 - Service: `internal/service` (regras de negócio; acesso a DB e integrações externas).
-- Controller: `internal/controllers/api` e `internal/controllers/web` (processa request/response HTTP).
+- HTTP: `internal/modules/<dominio>/{api,web}` (processa request/response HTTP por domínio).
 - Router: `internal/web/router.go` (registro de rotas e injeção de controllers).
 - Composition root: `cmd/finops/main.go` (monta config, DB, services e controllers).
 - Separação de roteamento: API em `/api/*` e páginas em `/`.

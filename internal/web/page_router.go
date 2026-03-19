@@ -1,42 +1,28 @@
 package web
 
 import (
-	"database/sql"
-	"finops/internal/controllers/web"
-	service "finops/internal/services"
+	"finops/internal/modules/accounts/web"
+	"finops/internal/modules/auth/web"
+	"finops/internal/modules/home/web"
+	"finops/internal/modules/onboarding/web"
+	"finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
 	"net/http"
-	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
-type PageRouterDeps struct {
-	AuthService        service.AuthService
-	AccountService     service.AccountService
-	WorkspaceService   service.WorkspaceService
-	CategoryService    service.CategoryService
-	TransactionService service.TransactionService
-	DB                 *sql.DB
-	RedisClient        *redis.Client
-	SessionCookie      string
-	CookieSecure       bool
-	RememberMeTTL      time.Duration
-}
-
-func newPageRouter(deps PageRouterDeps) http.Handler {
+func newPageRouter(deps RouterDeps) http.Handler {
 	mux := http.NewServeMux()
 
-	homeController := web.NewHomeController(
+	homeController := home.NewController(
 		deps.AccountService,
 		deps.WorkspaceService,
 	)
-	accountController := web.NewAccountController(deps.AccountService)
+	accountController := accounts.NewController(deps.AccountService)
 
-	onboardingController := web.NewOnboardingController(deps.WorkspaceService)
+	onboardingController := onboarding.NewController(deps.WorkspaceService)
 
-	transactionController := web.NewTransactionController(deps.TransactionService, deps.AccountService)
-	authController := web.NewAuthController(
+	transactionController := transactions.NewController(deps.TransactionService, deps.AccountService)
+	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
 		deps.CookieSecure,
@@ -52,8 +38,8 @@ func newPageRouter(deps PageRouterDeps) http.Handler {
 	private.HandleFunc("GET /", homeController.Home)
 	private.HandleFunc("POST /accounts", accountController.Create)
 	private.HandleFunc("GET /accounts/{id}/edit", accountController.EditForm)
-	private.HandleFunc("POST /account/{id}", accountController.Update)
-	private.HandleFunc("GET /account/{id}", accountController.ShowItem)
+	private.HandleFunc("POST /accounts/{id}", accountController.Update)
+	private.HandleFunc("GET /accounts/{id}", accountController.ShowItem)
 	private.HandleFunc("GET /onboarding", onboardingController.Page)
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)

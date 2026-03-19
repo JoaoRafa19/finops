@@ -74,7 +74,7 @@ func accountFormAction(form AccountFormState) string {
 	if !form.IsEdit {
 		return "/accounts"
 	}
-	return fmt.Sprintf("/account/%d", form.AccountID)
+	return fmt.Sprintf("/accounts/%d", form.AccountID)
 }
 
 func accountFormTarget(form AccountFormState) string {

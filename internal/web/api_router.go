@@ -2,7 +2,7 @@ package web
 
 import (
 	"database/sql"
-	apiCtrl "finops/internal/controllers/api"
+	"finops/internal/modules/health/api"
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
@@ -11,7 +11,7 @@ import (
 func newAPIRouter(db *sql.DB, redisClient *redis.Client) http.Handler {
 	mux := http.NewServeMux()
 
-	healthController := apiCtrl.NewHealthController(db, redisClient)
+	healthController := health.NewController(db, redisClient)
 	mux.HandleFunc("GET /health", healthController.Health)
 
 	return mux

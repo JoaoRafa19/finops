@@ -1,11 +1,29 @@
 package web
 
 import (
+	"database/sql"
+	service "finops/internal/services"
 	"finops/internal/web/middleware"
 	"net/http"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
-func NewRouter(deps PageRouterDeps) http.Handler {
+type RouterDeps struct {
+	AuthService        service.AuthService
+	AccountService     service.AccountService
+	WorkspaceService   service.WorkspaceService
+	CategoryService    service.CategoryService
+	TransactionService service.TransactionService
+	DB                 *sql.DB
+	RedisClient        *redis.Client
+	SessionCookie      string
+	CookieSecure       bool
+	RememberMeTTL      time.Duration
+}
+
+func NewRouter(deps RouterDeps) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("/", newPageRouter(deps))

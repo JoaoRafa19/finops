@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"finops/internal/app"
-	service "finops/internal/services"
-	"finops/internal/store"
 	"finops/internal/web"
 	"fmt"
 	"log/slog"
@@ -26,52 +24,32 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	db, err := app.NewDB(ctx, cfg.DbURL)
+	runtime, err := app.Bootstrap(ctx, cfg)
 	if err != nil {
-		logger.Error("database_connection_failed", slog.Any("error", err))
+		logger.Error("application_bootstrap_failed", slog.Any("error", err))
 		os.Exit(1)
 	}
-	defer db.Close()
-	queries := store.New(db)
-	if queries == nil {
-		logger.Error("queries_initialization_failed")
-		os.Exit(1)
-	}
+	defer func() {
+		if err := runtime.Close(); err != nil {
+			logger.Error("application_close_failed", slog.Any("error", err))
+		}
+	}()
 
-	redisClient, err := app.NewRedisClient(ctx, cfg)
-	if err != nil {
-		logger.Error("redis_connection_failed", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	authService := service.NewRedisAuthService(
-		redisClient,
-		queries,
-		cfg.SessionTTL,
-		cfg.RememberMeTTL,
-		cfg.SlidingSessionTTL,
-	)
-
-	accountService := service.NewPGAccountService(queries)
-	workspaceService := service.NewPGWorkspaceService(queries)
-	transactionService := service.NewPGTransactionService(queries)
-	categoryService := service.NewPGCategoryService(queries)
-
-	router := web.NewRouter(web.PageRouterDeps{
-		TransactionService: transactionService,
-		AuthService:        authService,
-		CategoryService:    categoryService,
-		SessionCookie:      cfg.SessionCookie,
-		CookieSecure:       cfg.CookieSecure,
-		RememberMeTTL:      cfg.RememberMeTTL,
-		AccountService:     accountService,
-		WorkspaceService:   workspaceService,
-		DB:                 db,
-		RedisClient:        redisClient,
+	router := web.NewRouter(web.RouterDeps{
+		TransactionService: runtime.Services.Transaction,
+		AuthService:        runtime.Services.Auth,
+		CategoryService:    runtime.Services.Category,
+		SessionCookie:      runtime.Config.SessionCookie,
+		CookieSecure:       runtime.Config.CookieSecure,
+		RememberMeTTL:      runtime.Config.RememberMeTTL,
+		AccountService:     runtime.Services.Account,
+		WorkspaceService:   runtime.Services.Workspace,
+		DB:                 runtime.DB,
+		RedisClient:        runtime.RedisClient,
 	})
 
 	s := http.Server{
-		Addr:              cfg.HTTPAddr,
+		Addr:              runtime.Config.HTTPAddr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}

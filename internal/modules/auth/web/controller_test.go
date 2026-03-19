@@ -1,4 +1,4 @@
-package web
+package auth
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func TestAuthControllerLoginRedirectsAfterSuccess(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now().UTC().Add(30 * time.Minute)
-	controller := NewAuthController(authServiceStub{
+	controller := NewController(authServiceStub{
 		loginFn: func(ctx context.Context, email, password string, rememberMe bool) (models.Session, error) {
 			if email != "user@example.com" || password != "secret" || !rememberMe {
 				t.Fatalf("unexpected login payload: email=%q password=%q remember=%v", email, password, rememberMe)
@@ -95,7 +95,7 @@ func TestAuthControllerLoginRedirectsAfterSuccess(t *testing.T) {
 func TestAuthControllerLoginPageRedirectsAuthenticatedUser(t *testing.T) {
 	t.Parallel()
 
-	controller := NewAuthController(authServiceStub{}, "finops_session", false, 7*24*time.Hour)
+	controller := NewController(authServiceStub{}, "finops_session", false, 7*24*time.Hour)
 
 	req := httptest.NewRequest(http.MethodGet, "/login", nil)
 	req = req.WithContext(context.WithValue(req.Context(), models.SessionCtxKey, models.Session{
@@ -120,7 +120,7 @@ func TestAuthControllerLoginPageRedirectsAuthenticatedUser(t *testing.T) {
 func TestAuthControllerLoginReturnsUnauthorizedForInvalidCredentials(t *testing.T) {
 	t.Parallel()
 
-	controller := NewAuthController(authServiceStub{
+	controller := NewController(authServiceStub{
 		loginFn: func(ctx context.Context, email, password string, rememberMe bool) (models.Session, error) {
 			return models.Session{}, service.ErrInvalidCredentials
 		},
@@ -146,7 +146,7 @@ func TestAuthControllerLoginReturnsUnauthorizedForInvalidCredentials(t *testing.
 func TestAuthControllerLoginReturnsInternalServerErrorOnUnexpectedFailure(t *testing.T) {
 	t.Parallel()
 
-	controller := NewAuthController(authServiceStub{
+	controller := NewController(authServiceStub{
 		loginFn: func(ctx context.Context, email, password string, rememberMe bool) (models.Session, error) {
 			return models.Session{}, errors.New("redis down")
 		},

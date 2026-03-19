@@ -1,54 +1,27 @@
-package web
+package home
 
 import (
 	"finops/internal/observability"
-	"net/http"
-	"strconv"
-
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
+	"finops/internal/web/render"
 	"finops/internal/web/templates"
+	"net/http"
 )
 
-type HomeController struct {
+type Controller struct {
 	accountService   service.AccountService
 	workspaceService service.WorkspaceService
 }
 
-func NewHomeController(accountService service.AccountService, workspaceService service.WorkspaceService) *HomeController {
-	return &HomeController{
+func NewController(accountService service.AccountService, workspaceService service.WorkspaceService) *Controller {
+	return &Controller{
 		accountService:   accountService,
 		workspaceService: workspaceService,
 	}
 }
 
-func (c *AccountController) ShowItem(w http.ResponseWriter, r *http.Request) {
-	logger := observability.Logger(r.Context())
-
-	session, ok := middleware.SessionFromContext(r.Context())
-	if !ok {
-		logger.Warn("account_show_unauthorized")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	accountID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
-		return
-	}
-
-	account, err := c.accountService.GetByID(r.Context(), session.UserID, accountID)
-	if err != nil {
-		logger.Error("account_show_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
-		http.Error(w, "failed to load account", http.StatusInternalServerError)
-		return
-	}
-
-	renderTempl(w, r, http.StatusOK, templates.AccountItem(account))
-}
-
-func (c *HomeController) Home(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
@@ -78,6 +51,5 @@ func (c *HomeController) Home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Debug("home_rendered", "user_id", session.UserID, "accounts_count", len(accounts))
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	renderTempl(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accounts))
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accounts))
 }

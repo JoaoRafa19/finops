@@ -10,9 +10,10 @@ import (
 )
 
 type CreateCategoryDTO struct {
-	Kind   CategoryKind
-	UserID int64
-	Name   string
+	Kind        CategoryKind
+	UserID      int64
+	Name        string
+	WorkspaceID int64
 }
 
 type CategoryKind string
@@ -44,17 +45,13 @@ func (p *PGCategoryService) CreateCategory(ctx context.Context, dto CreateCatego
 		return nil, errors.New("unexpected category kind")
 	}
 
-	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, dto.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("error geting workspace %w", err)
-	}
-
 	cat, err := p.db.CreateCategory(ctx, store.CreateCategoryParams{
-		WorkspaceID: workspace.ID,
+		WorkspaceID: dto.WorkspaceID,
 		Name:        strings.TrimSpace(dto.Name),
 		ParentID:    sql.NullInt64{},
 		Kind:        string(dto.Kind),
 	})
+	
 	if err != nil {
 		return nil, fmt.Errorf("error creating category, %w", err)
 	}

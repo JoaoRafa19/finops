@@ -167,17 +167,30 @@ templ AccountListItem(account store.Account, balance float64) {
 		</div>
 		<div class="flex gap-2">
 			<a
-				href={ fmt.Sprintf("/account/%d/edit", account.ID) }
+				href={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
 				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
 			>Editar</a>
 			<button
-				hx-delete={ fmt.Sprintf("/account/%d", account.ID) }
 				hx-target="closest li"
 				hx-swap="outerHTML"
 				class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
 			>Excluir</button>
 		</div>
 	</li>
+}
+
+templ TransactionModalBlocked() {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
+			<form method="dialog">
+				<button type="submit" 
+					
+				>
+				</button>
+			</form>
+		</div>
+	</div>
 }
 
 func buildTransactionDirectionOptions() []SelectOption {

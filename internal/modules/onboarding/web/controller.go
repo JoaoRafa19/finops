@@ -1,24 +1,25 @@
-package web
+package onboarding
 
 import (
 	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
+	"finops/internal/web/render"
 	"finops/internal/web/templates"
 	"net/http"
 )
 
-type OnboardingController struct {
+type Controller struct {
 	workspaceService service.WorkspaceService
 }
 
-func NewOnboardingController(service service.WorkspaceService) *OnboardingController {
-	return &OnboardingController{
+func NewController(service service.WorkspaceService) *Controller {
+	return &Controller{
 		workspaceService: service,
 	}
 }
 
-func (c *OnboardingController) Page(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Page(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
@@ -41,10 +42,10 @@ func (c *OnboardingController) Page(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Debug("onboarding_page_rendered", "user_id", session.UserID)
-	renderTempl(w, r, http.StatusOK, templates.OnboardingPage("", session.CSRFToken))
+	render.Templ(w, r, http.StatusOK, templates.OnboardingPage("", session.CSRFToken))
 }
 
-func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
@@ -55,7 +56,7 @@ func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Re
 
 	if err := r.ParseForm(); err != nil {
 		logger.Warn("onboarding_create_invalid_form", "user_id", session.UserID, "error", err)
-		renderTempl(w, r, http.StatusBadRequest, templates.OnboardingPage("dados invalidos", session.CSRFToken))
+		render.Templ(w, r, http.StatusBadRequest, templates.OnboardingPage("dados invalidos", session.CSRFToken))
 		return
 	}
 
@@ -64,10 +65,9 @@ func (c *OnboardingController) CreateWorkspace(w http.ResponseWriter, r *http.Re
 		Name:            r.FormValue("name"),
 		DefaultCurrency: "BRL",
 	})
-
 	if err != nil {
 		logger.Error("onboarding_create_workspace_failed", "user_id", session.UserID, "error", err)
-		renderTempl(w, r, http.StatusInternalServerError, templates.OnboardingPage("Não foi possivel criar o workspace", session.CSRFToken))
+		render.Templ(w, r, http.StatusInternalServerError, templates.OnboardingPage("Não foi possivel criar o workspace", session.CSRFToken))
 		return
 	}
 

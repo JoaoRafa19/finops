@@ -12,3 +12,4 @@ type Session struct {
 	ExpiresAt  time.Time `json:"expires_at"`
 	RememberMe bool      `json:"remember_me"`
 }
+

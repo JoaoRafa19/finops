@@ -1,18 +1,20 @@
-package web
+package transactions
 
 import (
 	"errors"
 	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
+	"finops/internal/web/render"
 	"finops/internal/web/templates"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
 )
 
-type TransactionController struct {
+type Controller struct {
 	transactionService service.TransactionService
 	accountService     service.AccountService
 }
@@ -25,14 +27,14 @@ type transactionPayload struct {
 	Direction   string
 }
 
-func NewTransactionController(transactionService service.TransactionService, accountService service.AccountService) *TransactionController {
-	return &TransactionController{
+func NewController(transactionService service.TransactionService, accountService service.AccountService) *Controller {
+	return &Controller{
 		transactionService: transactionService,
 		accountService:     accountService,
 	}
 }
 
-func (c *TransactionController) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 
 	session, ok := middleware.SessionFromContext(r.Context())
@@ -57,7 +59,6 @@ func (c *TransactionController) CreateTransaction(w http.ResponseWriter, r *http
 		Amount:      payload.Amount,
 		Direction:   payload.Direction,
 	})
-
 	if err != nil {
 		logger.Error("create_transaction_failed", "user_id", session.UserID, "error", err)
 		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, "Erro ao criar transacao")
@@ -69,7 +70,7 @@ func (c *TransactionController) CreateTransaction(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *TransactionController) RegisterTransactionModal(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 
 	session, ok := middleware.SessionFromContext(r.Context())
@@ -86,17 +87,21 @@ func (c *TransactionController) RegisterTransactionModal(w http.ResponseWriter, 
 		return
 	}
 
-	renderTempl(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts))
+	if len(accounts) == 0 {
+		render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalBlocked())
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts))
 }
 
-func (c *TransactionController) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken, errMsg string) {
+func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken, errMsg string) {
 	accounts, err := c.accountService.ListByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
 	}
 
-	renderTempl(w, r, http.StatusBadRequest, templates.TransactionModalDialog(csrfToken, errMsg, accounts))
+	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(csrfToken, errMsg, accounts))
 }
 
 func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
@@ -104,8 +109,8 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("invalid form data")
 	}
 
-	accountId := r.FormValue("account_id")
-	if accountId == "" {
+	accountID := r.FormValue("account_id")
+	if accountID == "" {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("account_id is required")
 	}
 
@@ -129,7 +134,7 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("direction must be either 'credit' or 'debit'")
 	}
 
-	account, err := strconv.ParseInt(accountId, 10, 64)
+	account, err := strconv.ParseInt(accountID, 10, 64)
 	if err != nil {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("invalid account_id")
 	}
@@ -151,4 +156,17 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 		Amount:      amountValueFloat,
 		Direction:   direction,
 	}, http.StatusOK, nil
+}
+
+func normalizeAmount(value string) string {
+	amount := strings.TrimSpace(value)
+	if amount == "" {
+		return ""
+	}
+
+	if strings.Count(amount, ",") == 1 && !strings.Contains(amount, ".") {
+		return strings.Replace(amount, ",", ".", 1)
+	}
+
+	return amount
 }

@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"database/sql"
@@ -9,19 +9,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type HealthController struct {
+type Controller struct {
 	db    *sql.DB
 	redis *redis.Client
 }
 
-func NewHealthController(db *sql.DB, rdb *redis.Client) *HealthController {
-	return &HealthController{
+func NewController(db *sql.DB, redis *redis.Client) *Controller {
+	return &Controller{
 		db:    db,
-		redis: rdb,
+		redis: redis,
 	}
 }
 
-func (c *HealthController) Health(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Health(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 
 	if err := c.db.PingContext(r.Context()); err != nil {

@@ -92,7 +92,7 @@ templ AccountForm(form AccountFormState, csrf_token string) {
 			if form.IsEdit {
 				<button
 					type="button"
-					hx-get={ fmt.Sprintf("/account/%d", form.AccountID) }
+					hx-get={ fmt.Sprintf("/accounts/%d", form.AccountID) }
 					hx-target="closest li"
 					hx-swap="outerHTML"
 					class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
