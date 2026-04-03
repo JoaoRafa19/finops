@@ -1,11 +1,11 @@
 package web
 
 import (
-	"finops/internal/modules/accounts/web"
-	"finops/internal/modules/auth/web"
-	"finops/internal/modules/home/web"
-	"finops/internal/modules/onboarding/web"
-	"finops/internal/modules/transactions/web"
+	accounts "finops/internal/modules/accounts/web"
+	auth "finops/internal/modules/auth/web"
+	home "finops/internal/modules/home/web"
+	onboarding "finops/internal/modules/onboarding/web"
+	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
 	"net/http"
 )
@@ -37,6 +37,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
 	private.HandleFunc("POST /accounts", accountController.Create)
+	private.HandleFunc("GET /account-modal", accountController.AccountModal)
 	private.HandleFunc("GET /accounts/{id}/edit", accountController.EditForm)
 	private.HandleFunc("POST /accounts/{id}", accountController.Update)
 	private.HandleFunc("GET /accounts/{id}", accountController.ShowItem)

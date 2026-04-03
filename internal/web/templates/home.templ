@@ -3,80 +3,95 @@ package templates
 import "finops/internal/store"
 
 var accountTypeOptions = []SelectOption{
-	{Value: "", Label: "Selecione", Selected: true},
-	{Value: "checking", Label: "Conta corrente"},
-	{Value: "savings", Label: "Poupanca"},
-	{Value: "cash", Label: "Dinheiro"},
-	{Value: "credit_card", Label: "Cartao"},
-	{Value: "investment", Label: "Investimento"},
+{Value: "", Label: "Selecione", Selected: true},
+{Value: "checking", Label: "Conta corrente"},
+{Value: "savings", Label: "Poupanca"},
+{Value: "cash", Label: "Dinheiro"},
+{Value: "credit_card", Label: "Cartao"},
+{Value: "investment", Label: "Investimento"},
 }
 
 templ HomePage(user, csrf_token string, accounts []store.Account) {
-	<!DOCTYPE html>
-	<html lang="pt-BR">
-		@AppHead("Finops", true)
-		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
-			<main class="mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 sm:px-6">
-				<section class="w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10">
-					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Workspace</p>
-					<h1 class="mt-3 text-3xl font-extrabold sm:text-4xl">Finops online</h1>
-					<p class="mt-3 text-sm text-finops-700">
-						Você está autenticado como              
-						<span class="font-bold text-finops-900">{ user }</span>.                                                                        
-					</p>
-					<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-						<p class="text-sm font-semibold text-finops-800">Sessão ativa e protegida por CSRF.</p>
-						if len(accounts) == 0  {
-							<p class="mt-1 text-sm text-finops-700">Seu workspace já está pronto. O próximo passo é cadastrar sua primeira conta.</p>
-						} 
-					</div>
-					<div
-						class="flex gap-2 mt-8 justify-end"
-					>
-					if len(accounts) > 0 {
+<!DOCTYPE html>
+<html lang="pt-BR">
+@AppHead("Finops", true)
 
-						<form
-							method="get"
-							action="/transaction-modal"
-							hx-get="/transaction-modal"
-							hx-target="#transaction-modal-body"
-							hx-swap="innerHTML"
-							class="mt-8"
-						>
-							<input type="hidden" name="_csrf" value={ csrf_token }/>
-							@SecondaryButton("submit", "Registrar Transação")
-						</form>
+<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+	<main class="mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 sm:px-6">
+		<section
+			class="w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10">
+			<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Workspace</p>
+			<h1 class="mt-3 text-3xl font-extrabold sm:text-4xl">Finops online</h1>
+			<p class="mt-3 text-sm text-finops-700">
+				Você está autenticado como
+				<span class="font-bold text-finops-900">{ user }</span>.
+			</p>
+			<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+				<p class="text-sm font-semibold text-finops-800">Sessão ativa e protegida por CSRF.</p>
+				if len(accounts) == 0 {
+				<p class="mt-1 text-sm text-finops-700">Seu workspace já está pronto. O próximo passo é cadastrar sua
+					primeira conta.</p>
+				}
+			</div>
+			<div class="flex gap-2 mt-8 justify-end">
+				<form 
+				method="get" 
+				action="/account-modal" 
+				hx-get="/account-modal" 
+				hx-target="#account-modal-body"
+				hx-swap="innerHTML"
+				hx-on::after-request="document.getElementById('account-modal')?.showModal()"
+				class="mt-8">
+					<input type="hidden" name="_csrf" value={ csrf_token } />
+					@SecondaryButton("submit", "Cadastrar Conta")
+
+				</form>
+
+			</div>
+			<div class="flex gap-2 mt-8 justify-end">
+				if len(accounts) > 0 {
+
+				<form method="get" action="/transaction-modal" hx-get="/transaction-modal"
+					hx-target="#transaction-modal-body" hx-swap="innerHTML" class="mt-8">
+					<input type="hidden" name="_csrf" value={ csrf_token } />
+					@SecondaryButton("submit", "Registrar Transação")
+				</form>
+				}
+				<form method="post" action="/logout" class="mt-8">
+					<input type="hidden" name="_csrf" value={ csrf_token } />
+					@PrimaryButton("submit", "Sair", false)
+				</form>
+			</div>
+
+			<div class="mt-8">
+
+				@AccountPanels(csrf_token, accounts, NewCreateAccountFormState())
+			</div>
+			<dialog id="account-modal"
+				class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+				<div id="account-modal-body"></div>
+			</dialog>
+
+			<dialog id="transaction-modal"
+				class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+				<div id="transaction-modal-body"></div>
+			</dialog>
+			<script>
+
+
+				document.body.addEventListener("htmx:afterSwap", (event) => {
+					if (event.target.id === "transaction-modal-body") {
+						const dialog = document.getElementById("transaction-modal");
+						if (dialog && typeof dialog.showModal === "function" && !dialog.open) {
+							dialog.showModal();
+						}
 					}
-						<form method="post" action="/logout" class="mt-8">
-							<input type="hidden" name="_csrf" value={ csrf_token }/>
-							@PrimaryButton("submit", "Sair", false)
-						</form>
-					</div>
-					if len(accounts) > 0 {
-						<div class="mt-8">
+				});
 
-							@AccountPanels(csrf_token, accounts, NewCreateAccountFormState())
-						</div>
-					}
-					<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
-						<div id="transaction-modal-body"></div>
-					</dialog>
-					<script>
-						document.body.addEventListener("htmx:afterSwap", (event) => {
-							if (event.target.id === "transaction-modal-body") {
-								const dialog = document.getElementById("transaction-modal");
-								if (dialog && typeof dialog.showModal === "function" && !dialog.open) {
-									dialog.showModal();
-								}
-							}
-						});
-
-						document.body.addEventListener("click", (event) => {
-							const dialog = document.getElementById("transaction-modal");
-							if (!dialog || !dialog.open) {
-								return
-							}
-
+				document.body.addEventListener("click", (event) => {
+					["account-modal", "transaction-modal"].forEach((id) => {
+						const dialog = document.getElementById(id);
+						if (dialog && dialog.open) {
 							const rect = dialog.getBoundingClientRect();
 							const clickedInDialog = (
 								event.clientX >= rect.left &&
@@ -87,10 +102,14 @@ templ HomePage(user, csrf_token string, accounts []store.Account) {
 							if (!clickedInDialog) {
 								dialog.close();
 							}
-						});
-					</script>
-				</section>
-			</main>
-		</body>
-	</html>
+						}
+					});
+				});
+
+			</script>
+		</section>
+	</main>
+</body>
+
+</html>
 }

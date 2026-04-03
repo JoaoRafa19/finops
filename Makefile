@@ -3,7 +3,7 @@ CMD_PATH=./cmd/finops/
 include .env
 export 
 
-.PHONY: run build test fmt tidy start_db startf migrate gen sqlc
+.PHONY: run build test fmt tidy start_db startf migrate gen sqlc create_user
 
 run: # Run the application
 	go run $(CMD_PATH)
@@ -58,3 +58,10 @@ front: # Build and run the frontend with templ
 list: # List all available targets
 	@echo "Available targets:"
 	@awk '/^[A-Za-z0-9_.-]+:.*# / { i = index($$0, ":"); cmd = substr($$0, 1, i - 1); desc = substr($$0, i + 4); printf "%c[36m%-20s%c[0m %s\n", 27, cmd, 27, desc; }' $(MAKEFILE_LIST) | sort
+
+create_user: # Create user in DB. Usage: make create_user EMAIL=user@x.com PASSWORD=secret123 ADMIN=false
+	@if [ -z "$(EMAIL)" ] || [ -z "$(PASSWORD)" ]; then \
+		echo "Usage: make create_user EMAIL=user@x.com PASSWORD=secret123 [ADMIN=true]"; \
+		exit 1; \
+	fi
+	@GOCACHE=/tmp/go-build go run ./cmd/create-user -email "$(EMAIL)" -password "$(PASSWORD)" -admin "$(or $(ADMIN),false)"

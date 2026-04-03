@@ -36,14 +36,14 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
 		logger.Warn("account_create_unauthorized")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, templates.NewCreateAccountFormState())
 		return
 	}
 
 	payload, status, err := parseAccountPayload(r)
 	if err != nil {
 		logger.Warn("account_create_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
-		c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
+		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
 	}
 
@@ -57,12 +57,13 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("account_create_failed", "user_id", session.UserID, "error", err)
-		c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
+		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
 	}
 
 	logger.Debug("account_create_succeeded", "user_id", session.UserID, "account_name", strings.TrimSpace(r.FormValue("name")))
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.Header().Set("HX-Redirect", "/")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *Controller) EditForm(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +139,7 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = c.accountService.Update(r.Context(), service.UpdateAccountDTO{
+	updatedAccount, err := c.accountService.Update(r.Context(), service.UpdateAccountDTO{
 		UserID:         session.UserID,
 		AccountID:      accountID,
 		Name:           payload.Name,
@@ -153,7 +154,34 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.renderAccountsPanel(w, r, session.UserID, session.CSRFToken, templates.NewCreateAccountFormState())
+	render.Templ(w, r, http.StatusOK, templates.AccountItem(updatedAccount))
+}
+
+func (c *Controller) AccountModal(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		logger.Warn("account_modal_unauthorized")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), session.CSRFToken))
+}
+
+func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.AccountFormState) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		logger.Warn("render_accounts_modal_unauthorized")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if csrfToken == "" {
+		csrfToken = session.CSRFToken
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), session.CSRFToken))
 }
 
 func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.AccountFormState) {

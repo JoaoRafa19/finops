@@ -168,6 +168,7 @@ A tabela abaixo organiza o sistema por módulo, com ênfase nos itens “crític
 | Conciliação | Tela de “itens do extrato” vs “transações”; matching por data/valor/descrição/LLM | Guardar status: `unmatched`, `matched`, `duplicate`, `ignored`. |
 | Auditoria de ações | Registrar eventos (login, import, edição transação, categorização por IA, restore) | Trilhas de auditoria com controles de integridade são recomendadas em sistemas com “transações valiosas”. citeturn14search23turn14search3 |
 | Backups | Backup/restore guiado; snapshot “não é backup de DB” quando self-host | Para MySQL no Render, snapshot de disco não é recomendado; usar `mysqldump`. citeturn0search1turn0search5 |
+| Query em Linguagem Natual | Conseguir fazer queries em linguagem natual. Ex.: todas as transaçoes de fevereiro de 2026 | Usar a LLM integrada para converter uma busca em linguagem natual em uma query sql do banco, e entregar os dados formatados a partir da query |
 
 ### Requisitos não-funcionais
 

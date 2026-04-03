@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+
+
+
 type SelectOption struct {
 	Value    string
 	Label    string
@@ -19,6 +22,7 @@ type AccountFormState struct {
 	OpeningBalance string
 	OpeningDate    string
 	ErrorMessage   string
+	Target         string
 	Inline         bool
 	IsEdit         bool
 }
@@ -78,6 +82,10 @@ func accountFormAction(form AccountFormState) string {
 }
 
 func accountFormTarget(form AccountFormState) string {
+	if form.Target != "" {
+		return form.Target
+	}
+
 	if form.IsEdit {
 		return "closest li"
 	}
@@ -107,10 +115,17 @@ func accountFormClass(inline bool) string {
 }
 
 func NewCreateAccountFormState() AccountFormState {
-	return AccountFormState{}
+	return AccountFormState{
+		Currency: "BRL",
+		Target:   "#account-modal-body",
+	}
 }
 
 func NewCreateAccountFormStateFromValues(name, accountType, currency, openingBalance, openingDate, errorMessage string) AccountFormState {
+	if currency == "" {
+		currency = "BRL"
+	}
+
 	return AccountFormState{
 		Name:           name,
 		Type:           accountType,
@@ -118,6 +133,7 @@ func NewCreateAccountFormStateFromValues(name, accountType, currency, openingBal
 		OpeningBalance: openingBalance,
 		OpeningDate:    openingDate,
 		ErrorMessage:   errorMessage,
+		Target:         "#account-modal-body",
 	}
 
 }
