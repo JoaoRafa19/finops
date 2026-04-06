@@ -37,3 +37,9 @@ Cookie: finops_session={{session_id}}
 Content-Type: application/x-www-form-urlencoded
 
 _csrf=token_invalido
+
+
+### @name create_category 
+POST http://localhost:8080/category
+Cookie: finops_session={{session_id}}
+Content-Type: application/x-www-form-urlencoded

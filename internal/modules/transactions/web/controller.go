@@ -2,6 +2,7 @@ package transactions
 
 import (
 	"errors"
+	"finops/internal/models"
 	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
@@ -11,26 +12,32 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 )
 
 type Controller struct {
 	transactionService service.TransactionService
 	accountService     service.AccountService
+	categoryService    service.CategoryService
 }
 
 type transactionPayload struct {
 	AccountID   int64
+	CategoryID  *int64
 	PostedOn    time.Time
 	Description string
 	Amount      float64
 	Direction   string
 }
 
-func NewController(transactionService service.TransactionService, accountService service.AccountService) *Controller {
+func NewController(
+	transactionService service.TransactionService,
+	accountService service.AccountService,
+	categoryService service.CategoryService,
+) *Controller {
 	return &Controller{
 		transactionService: transactionService,
 		accountService:     accountService,
+		categoryService:    categoryService,
 	}
 }
 
@@ -51,9 +58,10 @@ func (c *Controller) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := c.transactionService.CreateManual(r.Context(), service.CreateTransactionDTO{
+	t, err := c.transactionService.CreateManual(r.Context(), models.CreateTransactionDTO{
 		UserID:      session.UserID,
 		AccountID:   payload.AccountID,
+		CategoryID:  payload.CategoryID,
 		PostedOn:    payload.PostedOn,
 		Description: payload.Description,
 		Amount:      payload.Amount,
@@ -87,12 +95,19 @@ func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	categories, err := c.categoryService.GetCategories(r.Context(), session.UserID)
+	if err != nil {
+		logger.Error("register_transaction_categories_lookup_failed", "user_id", session.UserID, "error", err)
+		http.Error(w, "failed to load categories", http.StatusInternalServerError)
+		return
+	}
+
 	if len(accounts) == 0 {
 		render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalBlocked())
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts))
+	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts, categories))
 }
 
 func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken, errMsg string) {
@@ -102,7 +117,13 @@ func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(csrfToken, errMsg, accounts))
+	categories, err := c.categoryService.GetCategories(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "failed to load categories", http.StatusInternalServerError)
+		return
+	}
+
+	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(csrfToken, errMsg, accounts, categories))
 }
 
 func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
@@ -114,6 +135,8 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 	if accountID == "" {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("account_id is required")
 	}
+
+	categoryIDValue := strings.TrimSpace(r.FormValue("category_id"))
 
 	amountValue := normalizeAmount(r.FormValue("amount"))
 	if amountValue == "" {
@@ -140,6 +163,15 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("invalid account_id")
 	}
 
+	var categoryID *int64
+	if categoryIDValue != "" {
+		parsedCategoryID, err := strconv.ParseInt(categoryIDValue, 10, 64)
+		if err != nil {
+			return transactionPayload{}, http.StatusBadRequest, errors.New("invalid category_id")
+		}
+		categoryID = &parsedCategoryID
+	}
+
 	parsedDate, err := time.Parse("2006-01-02", postedOnValue)
 	if err != nil {
 		return transactionPayload{}, http.StatusBadRequest, errors.New("posted_on must be in the format YYYY-MM-DD")
@@ -152,6 +184,7 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 
 	return transactionPayload{
 		AccountID:   account,
+		CategoryID:  categoryID,
 		PostedOn:    parsedDate,
 		Description: description,
 		Amount:      amountValueFloat,

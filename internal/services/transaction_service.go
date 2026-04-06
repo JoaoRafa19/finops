@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"finops/internal/models"
 	"finops/internal/observability"
 	"finops/internal/store"
 	"strconv"
@@ -11,14 +12,6 @@ import (
 	"time"
 )
 
-type CreateTransactionDTO struct {
-	UserID      int64
-	AccountID   int64
-	PostedOn    time.Time
-	Description string
-	Amount      float64
-	Direction   string
-}
 
 type TransactionListItem struct {
 	ID          int64
@@ -33,7 +26,7 @@ type TransactionListItem struct {
 }
 
 type TransactionService interface {
-	CreateManual(ctx context.Context, input CreateTransactionDTO) (store.Transaction, error)
+	CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error)
 	ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]TransactionListItem, error)
 }
 
@@ -45,7 +38,7 @@ func NewPGTransactionService(db *store.Queries) TransactionService {
 	return &PGTransactionService{db: db}
 }
 
-func (p *PGTransactionService) CreateManual(ctx context.Context, input CreateTransactionDTO) (store.Transaction, error) {
+func (p *PGTransactionService) CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error) {
 	logger := observability.Logger(ctx)
 
 	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, input.UserID)
@@ -80,10 +73,24 @@ func (p *PGTransactionService) CreateManual(ctx context.Context, input CreateTra
 		return store.Transaction{}, errors.New("amount must be greater than zero")
 	}
 
+	categoryID := sql.NullInt64{}
+	if input.CategoryID != nil {
+		category, err := p.db.GetCategoryByWorkspaceAndID(ctx, store.GetCategoryByWorkspaceAndIDParams{
+			WorkspaceID: workspace.ID,
+			ID:          *input.CategoryID,
+		})
+		if err != nil {
+			logger.Error("transaction_create_category_lookup_failed", "user_id", input.UserID, "account_id", input.AccountID, "category_id", *input.CategoryID, "error", err)
+			return store.Transaction{}, err
+		}
+
+		categoryID = sql.NullInt64{Int64: category.ID, Valid: true}
+	}
+
 	transaction, err := p.db.CreateTransaction(ctx, store.CreateTransactionParams{
 		WorkspaceID:     workspace.ID,
 		AccountID:       account.ID,
-		CategoryID:      sql.NullInt64{},
+		CategoryID:      categoryID,
 		PostedOn:        input.PostedOn,
 		Description:     description,
 		Amount:          formatNumeric(input.Amount),

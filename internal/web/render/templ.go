@@ -14,3 +14,6 @@ func Templ(w http.ResponseWriter, r *http.Request, status int, component templ.C
 		http.Error(w, "template render error", http.StatusInternalServerError)
 	}
 }
+
+
+ 

@@ -5,9 +5,6 @@ import (
 	"fmt"
 )
 
-
-
-
 type SelectOption struct {
 	Value    string
 	Label    string
@@ -33,6 +30,64 @@ func (s AccountFormState) ContainerID() string {
 	}
 
 	return "account-create-form"
+}
+
+type CategoryFormState struct {
+	Name         string
+	Kind         string
+	ErrorMessage string
+}
+
+func buildCategoryOptions(categories []store.Category) []SelectOption {
+	options := make([]SelectOption, 0, len(categories)+1)
+	options = append(options, SelectOption{
+		Value:    "",
+		Label:    "Sem categoria",
+		Selected: true,
+	})
+
+	for _, cat := range categories {
+		options = append(options, SelectOption{
+			Value: fmt.Sprintf("%d", cat.ID),
+			Label: cat.Name,
+		})
+	}
+
+	return options
+}
+
+func buildCategoryKindOptions(selected string) []SelectOption {
+	return []SelectOption{
+		{Value: "", Label: "Selecione", Selected: selected == ""},
+		{Value: "expense", Label: "Despesa", Selected: selected == "expense"},
+		{Value: "income", Label: "Receita", Selected: selected == "income"},
+		{Value: "transfer", Label: "Transferencia", Selected: selected == "transfer"},
+	}
+}
+
+func categoryKindLabel(kind string) string {
+	switch kind {
+	case "expense":
+		return "Despesa"
+	case "income":
+		return "Receita"
+	case "transfer":
+		return "Transferencia"
+	default:
+		return kind
+	}
+}
+
+func NewCategoryFormState() CategoryFormState {
+	return CategoryFormState{}
+}
+
+func NewCategoryFormStateFromValues(name, kind, errorMessage string) CategoryFormState {
+	return CategoryFormState{
+		Name:         name,
+		Kind:         kind,
+		ErrorMessage: errorMessage,
+	}
 }
 
 func primaryButtonClass(fullWidth bool) string {
@@ -63,6 +118,7 @@ func buildAccountOptions(accounts []store.Account) []SelectOption {
 			Label: acc.Name,
 		}
 	}
+
 	return options
 }
 
@@ -78,6 +134,7 @@ func accountFormAction(form AccountFormState) string {
 	if !form.IsEdit {
 		return "/accounts"
 	}
+
 	return fmt.Sprintf("/accounts/%d", form.AccountID)
 }
 
@@ -97,6 +154,7 @@ func accountFormTitle(form AccountFormState) string {
 	if !form.IsEdit {
 		return "Cadastrar nova conta"
 	}
+
 	return "Editar conta"
 }
 
@@ -104,13 +162,15 @@ func accountFormDescription(form AccountFormState) string {
 	if !form.IsEdit {
 		return "Cadastre a primeira conta para iniciar lancamentos e transferencias."
 	}
-	return "Salvar alterações"
+
+	return "Salvar alteracoes"
 }
 
 func accountFormClass(inline bool) string {
 	if inline {
 		return "grid gap-4 md:grid-cols-2"
 	}
+
 	return "mt-6 grid gap-4 md:grid-cols-2"
 }
 
@@ -135,7 +195,6 @@ func NewCreateAccountFormStateFromValues(name, accountType, currency, openingBal
 		ErrorMessage:   errorMessage,
 		Target:         "#account-modal-body",
 	}
-
 }
 
 func NewEditAccountFormState(account store.Account, errorMessage string) AccountFormState {

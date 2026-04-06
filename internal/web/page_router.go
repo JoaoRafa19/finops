@@ -3,6 +3,7 @@ package web
 import (
 	accounts "finops/internal/modules/accounts/web"
 	auth "finops/internal/modules/auth/web"
+	category "finops/internal/modules/category/web"
 	home "finops/internal/modules/home/web"
 	onboarding "finops/internal/modules/onboarding/web"
 	transactions "finops/internal/modules/transactions/web"
@@ -15,13 +16,17 @@ func newPageRouter(deps RouterDeps) http.Handler {
 
 	homeController := home.NewController(
 		deps.AccountService,
+		deps.CategoryService,
 		deps.WorkspaceService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
-
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
-
-	transactionController := transactions.NewController(deps.TransactionService, deps.AccountService)
+	transactionController := transactions.NewController(
+		deps.TransactionService,
+		deps.AccountService,
+		deps.CategoryService,
+	)
+	categoryController := category.NewCategoryController(deps.CategoryService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -29,11 +34,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.RememberMeTTL,
 	)
 
-	// Públicas
 	mux.HandleFunc("GET /login", authController.LoginPage)
 	mux.HandleFunc("POST /login", authController.Login)
 
-	// Privadas
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
 	private.HandleFunc("POST /accounts", accountController.Create)
@@ -44,7 +47,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /onboarding", onboardingController.Page)
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
-
+	private.HandleFunc("POST /categories", categoryController.CreateCategory)
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 

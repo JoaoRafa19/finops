@@ -11,12 +11,14 @@ import (
 
 type Controller struct {
 	accountService   service.AccountService
+	categoryService  service.CategoryService
 	workspaceService service.WorkspaceService
 }
 
-func NewController(accountService service.AccountService, workspaceService service.WorkspaceService) *Controller {
+func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService) *Controller {
 	return &Controller{
 		accountService:   accountService,
+		categoryService:  categoryService,
 		workspaceService: workspaceService,
 	}
 }
@@ -50,6 +52,13 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Debug("home_rendered", "user_id", session.UserID, "accounts_count", len(accounts))
-	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accounts))
+	categories, err := c.categoryService.GetCategories(r.Context(), session.UserID)
+	if err != nil {
+		logger.Error("home_load_categories_failed", "user_id", session.UserID, "error", err)
+		http.Error(w, "failed to load categories", http.StatusInternalServerError)
+		return
+	}
+
+	logger.Debug("home_rendered", "user_id", session.UserID, "accounts_count", len(accounts), "categories_count", len(categories))
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accounts, categories))
 }

@@ -23,3 +23,16 @@ SELECT
     kind,
     archived
 FROM categories WHERE archived = false AND workspace_id=$1 ORDER BY name ASC;
+
+-- name: GetCategoryByWorkspaceAndID :one
+SELECT
+    id,
+    workspace_id,
+    parent_id,
+    name,
+    kind,
+    archived
+FROM categories
+WHERE archived = false
+    AND workspace_id = $1
+    AND id = $2;

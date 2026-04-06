@@ -44,7 +44,7 @@ func AppHead(title string, includeHTMX bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<script>\n\t\t\ttailwind.config = {\n\t\t\t\ttheme: {\n\t\t\t\t\textend: {\n\t\t\t\t\t\tfontFamily: {\n\t\t\t\t\t\t\tdisplay: [\"Manrope\", \"sans-serif\"],\n\t\t\t\t\t\t},\n\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\tfinops: {\n\t\t\t\t\t\t\t\t900: \"#0f172a\",\n\t\t\t\t\t\t\t\t800: \"#1e293b\",\n\t\t\t\t\t\t\t\t700: \"#334155\",\n\t\t\t\t\t\t\t\t500: \"#0ea5a4\",\n\t\t\t\t\t\t\t\t400: \"#2dd4bf\",\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t}\n\t\t</script><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<script>\r\n\t\t\ttailwind.config = {\r\n\t\t\t\ttheme: {\r\n\t\t\t\t\textend: {\r\n\t\t\t\t\t\tfontFamily: {\r\n\t\t\t\t\t\t\tdisplay: [\"Manrope\", \"sans-serif\"],\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\tcolors: {\r\n\t\t\t\t\t\t\tfinops: {\r\n\t\t\t\t\t\t\t\t900: \"#0f172a\",\r\n\t\t\t\t\t\t\t\t800: \"#1e293b\",\r\n\t\t\t\t\t\t\t\t700: \"#334155\",\r\n\t\t\t\t\t\t\t\t500: \"#0ea5a4\",\r\n\t\t\t\t\t\t\t\t400: \"#2dd4bf\",\r\n\t\t\t\t\t\t\t},\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t},\r\n\t\t\t\t},\r\n\t\t\t}\r\n\t\t</script><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -518,7 +518,7 @@ func SecondaryLink(href, text string) templ.Component {
 	})
 }
 
-func TransactionModalDialog(csrf_token string, err string, accounts []store.Account) templ.Component {
+func TransactionModalDialog(csrf_token string, err string, accounts []store.Account, categories []store.Category) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -627,6 +627,18 @@ func TransactionModalDialog(csrf_token string, err string, accounts []store.Acco
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = FormLabel("category_id", "Categoria").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SelectInput("category_id", "category_id", buildCategoryOptions(categories), true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = FormLabel("direction", "Tipo").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -635,7 +647,7 @@ func TransactionModalDialog(csrf_token string, err string, accounts []store.Acco
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><div class=\"md:col-span-2 flex flex-col gap-3 sm:flex-row\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div><div class=\"md:col-span-2 flex flex-col gap-3 sm:flex-row\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -643,7 +655,7 @@ func TransactionModalDialog(csrf_token string, err string, accounts []store.Acco
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -672,72 +684,72 @@ func AccountListItem(account store.Account, balance float64) templ.Component {
 			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<li class=\"flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3\"><div><p class=\"font-semibold text-finops-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<li class=\"flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3\"><div><p class=\"font-semibold text-finops-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(account.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 164, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 168, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</p><p class=\"text-sm text-finops-700\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</p><p class=\"text-sm text-finops-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(account.Type)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 165, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 169, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, " • ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " • ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(account.Currency)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 165, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 169, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</p><p class=\"text-sm text-finops-700\">Saldo: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</p><p class=\"text-sm text-finops-700\">Saldo: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", balance))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 166, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 170, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</p></div><div class=\"flex gap-2\"><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</p></div><div class=\"flex gap-2\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var36 templ.SafeURL
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/accounts/%d/edit", account.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 170, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 174, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\" class=\"inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\">Editar</a> <button hx-target=\"closest li\" hx-swap=\"outerHTML\" class=\"inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100\">Excluir</button></div></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" class=\"inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\">Editar</a> <button hx-target=\"closest li\" hx-swap=\"outerHTML\" class=\"inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100\">Excluir</button></div></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -766,7 +778,7 @@ func TransactionModalBlocked() templ.Component {
 			templ_7745c5c3_Var37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<div class=\"p-6\"><div class=\"flex items-center justify-between\"><p class=\"text-lg font-bold text-finops-900\">Adicionar Transacao</p><form method=\"dialog\"><button type=\"submit\"></button></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"p-6\"><div class=\"flex items-center justify-between\"><p class=\"text-lg font-bold text-finops-900\">Adicionar Transacao</p><form method=\"dialog\"><button type=\"submit\"></button></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

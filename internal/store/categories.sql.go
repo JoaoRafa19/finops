@@ -91,3 +91,36 @@ func (q *Queries) GetCategories(ctx context.Context, workspaceID int64) ([]Categ
 	}
 	return items, nil
 }
+
+const getCategoryByWorkspaceAndID = `-- name: GetCategoryByWorkspaceAndID :one
+SELECT
+    id,
+    workspace_id,
+    parent_id,
+    name,
+    kind,
+    archived
+FROM categories
+WHERE archived = false
+    AND workspace_id = $1
+    AND id = $2
+`
+
+type GetCategoryByWorkspaceAndIDParams struct {
+	WorkspaceID int64
+	ID          int64
+}
+
+func (q *Queries) GetCategoryByWorkspaceAndID(ctx context.Context, arg GetCategoryByWorkspaceAndIDParams) (Category, error) {
+	row := q.db.QueryRowContext(ctx, getCategoryByWorkspaceAndID, arg.WorkspaceID, arg.ID)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.ParentID,
+		&i.Name,
+		&i.Kind,
+		&i.Archived,
+	)
+	return i, err
+}

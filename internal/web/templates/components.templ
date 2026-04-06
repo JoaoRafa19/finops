@@ -106,7 +106,7 @@ templ SecondaryLink(href, text string) {
 	</a>
 }
 
-templ TransactionModalDialog(csrf_token string, err string, accounts []store.Account) {
+templ TransactionModalDialog(csrf_token string, err string, accounts []store.Account, categories []store.Category) {
 	<div class="p-6">
 		<div class="flex items-center justify-between">
 			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
@@ -146,6 +146,10 @@ templ TransactionModalDialog(csrf_token string, err string, accounts []store.Acc
 			<div>
 				@FormLabel("posted_on", "Data")
 				@TextInput("posted_on", "posted_on", "date", "", "", true)
+			</div>
+			<div>
+				@FormLabel("category_id", "Categoria")
+				@SelectInput("category_id", "category_id", buildCategoryOptions(categories), true)
 			</div>
 			<div>
 				@FormLabel("direction", "Tipo")
@@ -200,3 +204,5 @@ func buildTransactionDirectionOptions() []SelectOption {
 		{Value: "debit", Label: "Saida"},
 	}
 }
+
+

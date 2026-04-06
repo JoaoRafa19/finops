@@ -1,9 +1,13 @@
 APP_NAME=finops
 CMD_PATH=./cmd/finops/
+DB_USER=$DB_USER
 include .env
 export 
 
 .PHONY: run build test fmt tidy start_db startf migrate gen sqlc create_user
+
+test_db:
+	echo ${DB_USER}
 
 run: # Run the application
 	go run $(CMD_PATH)
