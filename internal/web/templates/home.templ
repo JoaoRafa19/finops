@@ -77,8 +77,6 @@ templ HomePage(user, csrf_token string, accounts []store.Account) {
 				<div id="transaction-modal-body"></div>
 			</dialog>
 			<script>
-
-
 				document.body.addEventListener("htmx:afterSwap", (event) => {
 					if (event.target.id === "transaction-modal-body") {
 						const dialog = document.getElementById("transaction-modal");

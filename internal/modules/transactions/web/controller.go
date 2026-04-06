@@ -89,6 +89,7 @@ func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Req
 
 	if len(accounts) == 0 {
 		render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalBlocked())
+		return
 	}
 
 	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts))

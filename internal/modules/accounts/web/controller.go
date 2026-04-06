@@ -36,14 +36,14 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
 		logger.Warn("account_create_unauthorized")
-		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, templates.NewCreateAccountFormState())
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	payload, status, err := parseAccountPayload(r)
 	if err != nil {
 		logger.Warn("account_create_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
-		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
+		c.renderAccountsModal(w, r, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
 	}
 
@@ -57,7 +57,7 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("account_create_failed", "user_id", session.UserID, "error", err)
-		c.renderAccountsModal(w, r, session.UserID, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
+		c.renderAccountsModal(w, r, session.CSRFToken, buildCreateAccountFormState(r, err.Error()))
 		return
 	}
 
@@ -169,19 +169,20 @@ func (c *Controller) AccountModal(w http.ResponseWriter, r *http.Request) {
 	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), session.CSRFToken))
 }
 
-func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.AccountFormState) {
-	logger := observability.Logger(r.Context())
-	session, ok := middleware.SessionFromContext(r.Context())
-	if !ok {
-		logger.Warn("render_accounts_modal_unauthorized")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
+func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request, csrfToken string, form templates.AccountFormState) {
+
 	if csrfToken == "" {
+		logger := observability.Logger(r.Context())
+		session, ok := middleware.SessionFromContext(r.Context())
+		if !ok {
+			logger.Warn("render_accounts_modal_unauthorized")
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
 		csrfToken = session.CSRFToken
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), session.CSRFToken))
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), csrfToken))
 }
 
 func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.AccountFormState) {
