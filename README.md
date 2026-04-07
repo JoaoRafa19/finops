@@ -5,31 +5,28 @@
 ## Roadmap
 ```mermaid
 gantt
-  title Roadmap operacional do FinOps
+  title Roadmap evolutivo do FinOps
   dateFormat  YYYY-MM-DD
   axisFormat  %d/%m
 
-  section Base concluída
-  Setup repo + compose + migrations                 :done1, 2026-02-26, 8d
-  Auth local + sessões Redis + CSRF                 :done2, 2026-03-05, 8d
-  Request ID + middleware base                      :done3, 2026-03-11, 4d
+  section Base do monolito
+  Setup repo, docker-compose e migracoes base      :a1, 2026-02-26, 8d
+  Autenticacao local, sessoes e CSRF               :a2, 2026-03-05, 8d
+  Request ID e middleware base                     :a3, 2026-03-11, 4d
 
-  section Core financeiro atual
-  Onboarding + workspace único MVP                  :done4, 2026-03-15, 5d
-  Contas: criação, listagem e edição                :active1, 2026-03-20, 12d
-  Transações: cadastro manual + listagem recente    :active2, 2026-04-01, 10d
-  Ajustes de UX home/HTMX para contas e transações  :active3, 2026-04-07, 7d
+  section Core financeiro
+  Onboarding e workspace unico MVP                 :b1, 2026-03-15, 5d
+  Contas, saldo atual e edicao por modal           :b2, 2026-03-20, 12d
+  Transacoes manuais e listagem recente            :b3, 2026-04-01, 10d
+  Ajustes HTMX na home e formularios               :b4, 2026-04-07, 7d
+  Transferencias entre contas                      :b5, 2026-04-14, 10d
+  Categorias e testes do core financeiro           :b6, 2026-04-21, 7d
 
-  section Próximo bloco
-  Transferências entre contas                       :next1, 2026-04-14, 10d
-  Categorias: fechamento do modal e fluxo HTMX      :next2, 2026-04-18, 5d
-  Testes de controllers do core financeiro          :next3, 2026-04-21, 7d
-
-  section Depois do core fechado
-  Relatórios básicos e visão consolidada            :later1, 2026-04-28, 10d
-  Importação CSV/OFX                                :later2, 2026-05-08, 12d
-  Observabilidade e health checks                   :later3, 2026-05-20, 8d
-  IA local e automações                             :later4, 2026-05-30, 14d
+  section Depois do core
+  Relatorios basicos e visao consolidada           :c1, 2026-04-28, 10d
+  Importacao CSV e OFX                             :c2, 2026-05-08, 12d
+  Observabilidade e health checks                  :c3, 2026-05-20, 8d
+  IA local e automacoes                            :c4, 2026-05-30, 14d
 ```
 
 ## Estado atual
