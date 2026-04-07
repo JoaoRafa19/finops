@@ -18,6 +18,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.AccountService,
 		deps.CategoryService,
 		deps.WorkspaceService,
+		deps.TransactionService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
@@ -48,6 +49,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
+	private.HandleFunc("GET /category-modal", categoryController.CategoryModal)
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 

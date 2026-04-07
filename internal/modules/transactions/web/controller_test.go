@@ -1,0 +1,194 @@
+package transactions
+
+import (
+	"context"
+	"finops/internal/models"
+	service "finops/internal/services"
+	"finops/internal/store"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+type transactionServiceStub struct {
+	createManualFn     func(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error)
+	listRecentByUserFn func(ctx context.Context, userID int64, limit int32) ([]service.TransactionListItem, error)
+}
+
+func (s transactionServiceStub) CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error) {
+	if s.createManualFn != nil {
+		return s.createManualFn(ctx, input)
+	}
+	return store.Transaction{}, nil
+}
+
+func (s transactionServiceStub) ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]service.TransactionListItem, error) {
+	if s.listRecentByUserFn != nil {
+		return s.listRecentByUserFn(ctx, userID, limit)
+	}
+	return nil, nil
+}
+
+type accountServiceStub struct {
+	listByUserFn       func(ctx context.Context, userID int64) ([]store.Account, error)
+	listSummariesByUserFn func(ctx context.Context, userID int64) ([]service.AccountSummary, error)
+	getByIDFn          func(ctx context.Context, userID, accountID int64) (store.Account, error)
+	createFn           func(ctx context.Context, createDto service.CreateAccountDTO) (store.Account, error)
+	updateFn           func(ctx context.Context, updateDto service.UpdateAccountDTO) (store.Account, error)
+}
+
+func (s accountServiceStub) ListByUser(ctx context.Context, userID int64) ([]store.Account, error) {
+	if s.listByUserFn != nil {
+		return s.listByUserFn(ctx, userID)
+	}
+	return nil, nil
+}
+
+func (s accountServiceStub) ListSummariesByUser(ctx context.Context, userID int64) ([]service.AccountSummary, error) {
+	if s.listSummariesByUserFn != nil {
+		return s.listSummariesByUserFn(ctx, userID)
+	}
+	return nil, nil
+}
+
+func (s accountServiceStub) GetByID(ctx context.Context, userID, accountID int64) (store.Account, error) {
+	if s.getByIDFn != nil {
+		return s.getByIDFn(ctx, userID, accountID)
+	}
+	return store.Account{}, nil
+}
+
+func (s accountServiceStub) Create(ctx context.Context, createDto service.CreateAccountDTO) (store.Account, error) {
+	if s.createFn != nil {
+		return s.createFn(ctx, createDto)
+	}
+	return store.Account{}, nil
+}
+
+func (s accountServiceStub) Update(ctx context.Context, updateDto service.UpdateAccountDTO) (store.Account, error) {
+	if s.updateFn != nil {
+		return s.updateFn(ctx, updateDto)
+	}
+	return store.Account{}, nil
+}
+
+type categoryServiceStub struct {
+	getCategoriesFn func(ctx context.Context, userID int64) ([]store.Category, error)
+	createCategoryFn func(ctx context.Context, dto service.CreateCategoryDTO) (*store.Category, error)
+}
+
+func (s categoryServiceStub) GetCategories(ctx context.Context, userID int64) ([]store.Category, error) {
+	if s.getCategoriesFn != nil {
+		return s.getCategoriesFn(ctx, userID)
+	}
+	return nil, nil
+}
+
+func (s categoryServiceStub) CreateCategory(ctx context.Context, dto service.CreateCategoryDTO) (*store.Category, error) {
+	if s.createCategoryFn != nil {
+		return s.createCategoryFn(ctx, dto)
+	}
+	return nil, nil
+}
+
+func TestCreateTransactionInvalidPayloadRendersModalWithSubmittedValues(t *testing.T) {
+	t.Parallel()
+
+	controller := NewController(
+		transactionServiceStub{},
+		accountServiceStub{
+			listByUserFn: func(ctx context.Context, userID int64) ([]store.Account, error) {
+				return []store.Account{
+					{ID: 1, Name: "Conta principal", Currency: "BRL", Type: "checking"},
+				}, nil
+			},
+		},
+		categoryServiceStub{
+			getCategoriesFn: func(ctx context.Context, userID int64) ([]store.Category, error) {
+				return []store.Category{
+					{ID: 2, Name: "Alimentacao", Kind: string(service.EXPENSE)},
+				}, nil
+			},
+		},
+	)
+
+	form := url.Values{
+		"description": {"Supermercado"},
+		"amount":      {"12,34"},
+		"account_id":  {"1"},
+		"category_id": {"2"},
+		"posted_on":   {""},
+		"direction":   {"debit"},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/transactions",
+		strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(context.WithValue(req.Context(), models.SessionCtxKey,
+		models.Session{
+			UserID:    10,
+			Email:     "user@example.com",
+			CSRFToken: "csrf-token",
+		}))
+
+	rec := httptest.NewRecorder()
+	controller.CreateTransaction(rec, req)
+
+	res := rec.Result()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, res.StatusCode)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Supermercado") {
+		t.Fatalf("expected submitted description to be preserved")
+	}
+	if !strings.Contains(body, "12,34") {
+		t.Fatalf("expected submitted amount to be preserved")
+	}
+}
+
+func TestBuildTransactionFormStatePreservesSubmittedFields(t *testing.T) {
+	t.Parallel()
+
+	form := url.Values{
+		"description": {"Supermercado"},
+		"amount":      {"12,34"},
+		"account_id":  {"1"},
+		"category_id": {"2"},
+		"posted_on":   {"2026-04-07"},
+		"direction":   {"debit"},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/transactions", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if err := req.ParseForm(); err != nil {
+		t.Fatalf("parse form: %v", err)
+	}
+
+	state := buildTransactionFormState(req, "validation error")
+
+	if state.Description != "Supermercado" {
+		t.Fatalf("unexpected description: %q", state.Description)
+	}
+	if state.Amount != "12,34" {
+		t.Fatalf("unexpected amount: %q", state.Amount)
+	}
+	if state.AccountID != "1" {
+		t.Fatalf("unexpected account id: %q", state.AccountID)
+	}
+	if state.CategoryID != "2" {
+		t.Fatalf("unexpected category id: %q", state.CategoryID)
+	}
+	if state.PostedOn != "2026-04-07" {
+		t.Fatalf("unexpected posted_on: %q", state.PostedOn)
+	}
+	if state.Direction != "debit" {
+		t.Fatalf("unexpected direction: %q", state.Direction)
+	}
+	if state.ErrorMessage != "validation error" {
+		t.Fatalf("unexpected error message: %q", state.ErrorMessage)
+	}
+}

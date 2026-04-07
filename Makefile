@@ -6,6 +6,9 @@ export
 
 .PHONY: run build test fmt tidy start_db startf migrate gen sqlc create_user
 
+start: gen run 
+	echo "Application started at http://localhost:8080"
+
 test_db:
 	echo ${DB_USER}
 

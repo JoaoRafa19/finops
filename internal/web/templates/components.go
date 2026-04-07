@@ -11,6 +11,84 @@ type SelectOption struct {
 	Selected bool
 }
 
+type AccountDTO struct {
+	ID             int64
+	Name           string
+	Type           string
+	Currency       string
+	OpeningBalance float64
+	CurrentBalance float64
+	OpeningDate    string
+}
+
+type TransactionFormState struct {
+	Description  string
+	Amount       string
+	AccountID    string
+	CategoryID   string
+	PostedOn     string
+	Direction    string
+	ErrorMessage string
+}
+
+func NewTransactionFormState() TransactionFormState {
+	return TransactionFormState{}
+}
+
+func NewTransactionFormStateFromValues(description, amount, accountID, categoryID, postedOn, direction, errorMessage string) TransactionFormState {
+	return TransactionFormState{
+		Description:  description,
+		Amount:       amount,
+		AccountID:    accountID,
+		PostedOn:     postedOn,
+		Direction:    direction,
+		CategoryID:   categoryID,
+		ErrorMessage: errorMessage,
+	}
+}
+
+func buildTransactionDirectionOptions(selected string) []SelectOption {
+	return []SelectOption{
+		{Value: "", Label: "Selecione", Selected: selected == ""},
+		{Value: "credit", Label: "Entrada", Selected: selected == "credit"},
+		{Value: "debit", Label: "Saida", Selected: selected == "debit"},
+	}
+}
+
+func buildCategoryOptions(categories []store.Category, selected string) []SelectOption {
+	options := make([]SelectOption, 0, len(categories)+1)
+	options = append(options, SelectOption{
+		Value:    "",
+		Label:    "Sem categoria",
+		Selected: true,
+	})
+
+	for _, cat := range categories {
+		value := fmt.Sprintf("%d", cat.ID)
+		options = append(options, SelectOption{
+			Value:    fmt.Sprintf("%d", cat.ID),
+			Label:    cat.Name,
+			Selected: value == selected,
+		})
+	}
+
+	return options
+}
+
+func buildAccountOptions(accounts []store.Account, selected string) []SelectOption {
+	options := make([]SelectOption, len(accounts))
+	for i, acc := range accounts {
+		value := fmt.Sprintf("%d", acc.ID)
+		options[i] = SelectOption{
+			Value:    fmt.Sprintf("%d", acc.ID),
+			Label:    acc.Name,
+			Selected: value == selected,
+		}
+	}
+
+	return options
+}
+
 type AccountFormState struct {
 	AccountID      int64
 	Name           string
@@ -36,24 +114,6 @@ type CategoryFormState struct {
 	Name         string
 	Kind         string
 	ErrorMessage string
-}
-
-func buildCategoryOptions(categories []store.Category) []SelectOption {
-	options := make([]SelectOption, 0, len(categories)+1)
-	options = append(options, SelectOption{
-		Value:    "",
-		Label:    "Sem categoria",
-		Selected: true,
-	})
-
-	for _, cat := range categories {
-		options = append(options, SelectOption{
-			Value: fmt.Sprintf("%d", cat.ID),
-			Label: cat.Name,
-		})
-	}
-
-	return options
 }
 
 func buildCategoryKindOptions(selected string) []SelectOption {
@@ -108,18 +168,6 @@ func buildAccountTypeOptions(selected string) []SelectOption {
 		{Value: "credit_card", Label: "Cartao", Selected: selected == "credit_card"},
 		{Value: "investment", Label: "Investimento", Selected: selected == "investment"},
 	}
-}
-
-func buildAccountOptions(accounts []store.Account) []SelectOption {
-	options := make([]SelectOption, len(accounts))
-	for i, acc := range accounts {
-		options[i] = SelectOption{
-			Value: fmt.Sprintf("%d", acc.ID),
-			Label: acc.Name,
-		}
-	}
-
-	return options
 }
 
 func accountFormSubmitLabel(form AccountFormState) string {
@@ -205,8 +253,8 @@ func NewEditAccountFormState(account store.Account, errorMessage string) Account
 		Currency:       account.Currency,
 		OpeningBalance: fmt.Sprintf("%.2f", account.OpeningBalance),
 		ErrorMessage:   errorMessage,
-		Inline:         true,
 		IsEdit:         true,
+		Target:         "#account-modal-body",
 	}
 
 	if account.OpeningDate.Valid {
@@ -225,7 +273,7 @@ func NewEditAccountFormStateFromValues(accountID int64, name, accountType, curre
 		OpeningBalance: openingBalance,
 		OpeningDate:    openingDate,
 		ErrorMessage:   errorMessage,
-		Inline:         true,
 		IsEdit:         true,
+		Target:         "#account-modal-body",
 	}
 }

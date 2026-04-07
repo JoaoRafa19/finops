@@ -85,6 +85,18 @@ func parseCategoryPayload(r *http.Request) (models.CreateCategoryDTO, int, error
 	}, http.StatusOK, nil
 }
 
+func (c *CategoryController) CategoryModal(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		logger.Warn("category_modal_unauthorized")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.CategoryModalDialog(templates.NewCategoryFormState(), session.CSRFToken))
+}
+
 func (c *CategoryController) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
