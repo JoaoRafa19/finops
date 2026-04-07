@@ -10,16 +10,18 @@ import (
 )
 
 type Controller struct {
-	accountService   service.AccountService
-	categoryService  service.CategoryService
-	workspaceService service.WorkspaceService
+	accountService     service.AccountService
+	categoryService    service.CategoryService
+	workspaceService   service.WorkspaceService
+	transactionService service.TransactionService
 }
 
-func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService) *Controller {
+func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService, transactionService service.TransactionService) *Controller {
 	return &Controller{
-		accountService:   accountService,
-		categoryService:  categoryService,
-		workspaceService: workspaceService,
+		accountService:     accountService,
+		categoryService:    categoryService,
+		workspaceService:   workspaceService,
+		transactionService: transactionService,
 	}
 }
 
@@ -45,7 +47,7 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accounts, err := c.accountService.ListByUser(r.Context(), session.UserID)
+	accounts, err := c.accountService.ListSummariesByUser(r.Context(), session.UserID)
 	if err != nil {
 		logger.Error("home_load_accounts_failed", "user_id", session.UserID, "error", err)
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
@@ -59,6 +61,40 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	transactions, err := c.transactionService.ListRecentByUser(r.Context(), session.UserID, 10)
+	if err != nil {
+		logger.Error("home_load_transactions_failed", "user_id", session.UserID, "error", err)
+		http.Error(w, "failed to load transactions", http.StatusInternalServerError)
+		return
+	}
+
+	transactions_dto := make([]templates.TransactionDTO, len(transactions))
+	for i, t := range transactions {
+		transactions_dto[i] = templates.TransactionDTO{
+			ID:          int(t.ID),
+			Description: t.Description,
+			Amount:      t.Amount,
+			Category:    t.Category,
+			CreatedAt:   t.PostedOn,
+			Account:     t.AccountName,
+			Direction:   t.Direction,
+			Currency:    t.Currency,
+		}
+	}
+
+	accountsDTO := make([]templates.AccountDTO, len(accounts))
+	for i, acc := range accounts {
+		accountsDTO[i] = templates.AccountDTO{
+			ID:             int64(acc.ID),
+			Name:           acc.Name,
+			Type:           acc.Type,
+			Currency:       acc.Currency,
+			OpeningBalance: acc.OpeningBalance,
+			CurrentBalance: acc.CurrentBalance,
+			OpeningDate:    "",
+		}
+	}
+
 	logger.Debug("home_rendered", "user_id", session.UserID, "accounts_count", len(accounts), "categories_count", len(categories))
-	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accounts, categories))
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accountsDTO, categories, transactions_dto))
 }

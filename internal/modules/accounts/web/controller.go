@@ -88,7 +88,7 @@ func (c *Controller) EditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountEditForm(templates.NewEditAccountFormState(account, ""), session.CSRFToken))
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewEditAccountFormState(account, ""), session.CSRFToken))
 }
 
 func (c *Controller) ShowItem(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,22 @@ func (c *Controller) ShowItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountItem(account))
+	openingDate := ""
+	if account.OpeningDate.Valid {
+		openingDate = account.OpeningDate.Time.Format("2006-01-02")
+	}
+
+	accountDTO := templates.AccountDTO{
+		ID:             account.ID,
+		Name:           account.Name,
+		Type:           account.Type,
+		Currency:       account.Currency,
+		OpeningBalance: account.OpeningBalance,
+		CurrentBalance: account.OpeningBalance,
+		OpeningDate:    openingDate,
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.AccountItem(accountDTO))
 }
 
 func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
@@ -135,11 +150,11 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	payload, status, err := parseAccountPayload(r)
 	if err != nil {
 		logger.Warn("account_update_error", "user_id", session.UserID, "account_id", accountID, "error", err)
-		render.Templ(w, r, status, templates.AccountEditForm(buildEditAccountFormState(accountID, r, err.Error()), session.CSRFToken))
+		render.Templ(w, r, status, templates.AccountModalDialog(buildEditAccountFormState(accountID, r, err.Error()), session.CSRFToken))
 		return
 	}
 
-	updatedAccount, err := c.accountService.Update(r.Context(), service.UpdateAccountDTO{
+	_, err = c.accountService.Update(r.Context(), service.UpdateAccountDTO{
 		UserID:         session.UserID,
 		AccountID:      accountID,
 		Name:           payload.Name,
@@ -150,11 +165,12 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("account_update_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
-		render.Templ(w, r, http.StatusInternalServerError, templates.AccountEditForm(buildEditAccountFormState(accountID, r, err.Error()), session.CSRFToken))
+		render.Templ(w, r, http.StatusInternalServerError, templates.AccountModalDialog(buildEditAccountFormState(accountID, r, err.Error()), session.CSRFToken))
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountItem(updatedAccount))
+	w.Header().Set("HX-Redirect", "/")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *Controller) AccountModal(w http.ResponseWriter, r *http.Request) {
@@ -182,17 +198,30 @@ func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request,
 		csrfToken = session.CSRFToken
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormState(), csrfToken))
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormStateFromValues(form.Name, form.Type, form.Currency, form.OpeningBalance, form.OpeningDate, form.ErrorMessage), csrfToken))
 }
 
-func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.AccountFormState) {
+func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64) {
 	accounts, err := c.accountService.ListByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountPanels(csrfToken, accounts, form))
+	accountsDTO := make([]templates.AccountDTO, len(accounts))
+
+	for i, account := range accounts {
+		accountsDTO[i] = templates.AccountDTO{
+			ID:             account.ID,
+			Name:           account.Name,
+			Type:           account.Type,
+			Currency:       account.Currency,
+			OpeningBalance: account.OpeningBalance,
+			OpeningDate:    account.OpeningDate.Time.Format("2006-01-02"),
+		}
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.AccountPanels(accountsDTO))
 }
 
 func parseAccountPayload(r *http.Request) (accountPayload, int, error) {

@@ -54,7 +54,7 @@ func (c *Controller) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	payload, status, err := parseTransactionPayload(r)
 	if err != nil {
 		logger.Warn("create_transaction_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
-		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, err.Error())
+		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, buildTransactionFormState(r, err.Error()))
 		return
 	}
 
@@ -69,7 +69,7 @@ func (c *Controller) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		logger.Error("create_transaction_failed", "user_id", session.UserID, "error", err)
-		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, "Erro ao criar transacao")
+		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, buildTransactionFormState(r, "erro ao criar transação"))
 		return
 	}
 
@@ -107,10 +107,10 @@ func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(session.CSRFToken, "", accounts, categories))
+	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(templates.NewTransactionFormState(), session.CSRFToken, accounts, categories))
 }
 
-func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken, errMsg string) {
+func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.TransactionFormState) {
 	accounts, err := c.accountService.ListByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
@@ -123,7 +123,7 @@ func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(csrfToken, errMsg, accounts, categories))
+	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(form, csrfToken, accounts, categories))
 }
 
 func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
@@ -203,4 +203,16 @@ func normalizeAmount(value string) string {
 	}
 
 	return amount
+}
+
+func buildTransactionFormState(r *http.Request, errorMessage string) templates.TransactionFormState {
+	return templates.NewTransactionFormStateFromValues(
+		r.FormValue("description"),
+		r.FormValue("amount"),
+		r.FormValue("account_id"),
+		r.FormValue("category_id"),
+		r.FormValue("posted_on"),
+		r.FormValue("direction"),
+		errorMessage,
+	)
 }

@@ -19,7 +19,7 @@ var accountTypeOptions = []SelectOption{
 	{Value: "investment", Label: "Investimento"},
 }
 
-func HomePage(user, csrf_token string, accounts []store.Account, categories []store.Category) templ.Component {
+func HomePage(user, csrf_token string, accounts []AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -97,14 +97,14 @@ func HomePage(user, csrf_token string, accounts []store.Account, categories []st
 			return templ_7745c5c3_Err
 		}
 		if len(accounts) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<form method=\"get\" action=\"/transaction-modal\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<form method=\"get\" action=\"/transaction-modal\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-on::after-request=\"document.getElementById('transaction-modal')?.showModal()\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 53, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 54, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -123,14 +123,14 @@ func HomePage(user, csrf_token string, accounts []store.Account, categories []st
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<form method=\"post\" action=\"/logout\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<form method=\"get\" action=\"/category-modal\" hx-get=\"/category-modal\" hx-target=\"#category-modal-body\" hx-on::after-request=\"document.getElementById('category-modal')?.showModal()\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 58, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 66, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -140,19 +140,48 @@ func HomePage(user, csrf_token string, accounts []store.Account, categories []st
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = SecondaryButton("submit", "Criar Categoria").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</form><form method=\"post\" action=\"/logout\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(csrf_token)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 70, Col: 59}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = PrimaryButton("submit", "Sair", false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</form></div><div class=\"mt-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</form></div><div class=\"mt-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AccountPanels(csrf_token, accounts, NewCreateAccountFormState()).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = AccountPanels(accounts).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><div class=\"mt-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"mt-8\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TransactionPanel(transactions_dto).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"mt-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -160,7 +189,7 @@ func HomePage(user, csrf_token string, accounts []store.Account, categories []st
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div><dialog id=\"account-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-modal-body\"></div></dialog> <dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog><script>\n\t\t\t\t\t\tdocument.body.addEventListener(\"htmx:afterSwap\", (event) => {\n\t\t\t\t\t\t\tif (event.target.id === \"transaction-modal-body\") {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(\"transaction-modal\");\n\t\t\t\t\t\t\t\tif (dialog && typeof dialog.showModal === \"function\" && !dialog.open) {\n\t\t\t\t\t\t\t\t\tdialog.showModal();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tdocument.body.addEventListener(\"click\", (event) => {\n\t\t\t\t\t\t\t[\"account-modal\", \"transaction-modal\"].forEach((id) => {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(id);\n\t\t\t\t\t\t\t\tif (dialog && dialog.open) {\n\t\t\t\t\t\t\t\t\tconst rect = dialog.getBoundingClientRect();\n\t\t\t\t\t\t\t\t\tconst clickedInDialog = (\n\t\t\t\t\t\t\t\t\t\tevent.clientX >= rect.left &&\n\t\t\t\t\t\t\t\t\t\tevent.clientX <= rect.right &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY >= rect.top &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY <= rect.bottom\n\t\t\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\t\t\tif (!clickedInDialog) {\n\t\t\t\t\t\t\t\t\t\tdialog.close();\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t});\n\t\t\t\t\t</script></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div><dialog id=\"account-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-modal-body\"></div></dialog> <dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog> <dialog id=\"category-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"category-modal-body\"></div></dialog><script>\n\t\t\t\t\t\tdocument.body.addEventListener(\"click\", (event) => {\n\t\t\t\t\t\t\t[\"account-modal\", \"transaction-modal\", \"category-modal\"].forEach((id) => {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(id);\n\t\t\t\t\t\t\t\tif (dialog && dialog.open) {\n\t\t\t\t\t\t\t\t\tconst rect = dialog.getBoundingClientRect();\n\t\t\t\t\t\t\t\t\tconst clickedInDialog = (\n\t\t\t\t\t\t\t\t\t\tevent.clientX >= rect.left &&\n\t\t\t\t\t\t\t\t\t\tevent.clientX <= rect.right &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY >= rect.top &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY <= rect.bottom\n\t\t\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\t\t\tif (!clickedInDialog) {\n\t\t\t\t\t\t\t\t\t\tdialog.close();\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t});\n\t\t\t\t\t</script></section></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,68 @@
+package templates 
+
+import "finops/internal/store"
+
+templ CategoryPannels(csrf_token string, categories []store.Category, form CategoryFormState) {
+	<div id="categories-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Categorias</p>
+			<p class="mt-01 text-sm text-finops-700">Crie categorias para classificar suas transacoes</p>
+		</div>
+		if len(categories) > 0 {
+			<ul class="mt-6 space-y-3">
+				for _, cat := range categories {
+					<li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+						<p class="font-semibold text-finops-900">{ cat.Name }</p>
+						<p class="text-sm text-finops-700">{ categoryKindLabel(cat.Kind) }</p>
+					</li>
+				}
+			</ul>
+		}
+	</div>
+}
+
+templ CategoryModalDialog(form CategoryFormState, csrf_token string) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Cadastrar nova categoria</p>
+			<form method="dialog">
+				<button
+					type="submit"
+					class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
+					title="Fechar modal"
+				><i class="fa-solid fa-xmark"></i></button>
+			</form>
+		</div>
+		<p class="mt-2 text-sm text-finops-700">Crie categorias para classificar suas transacoes</p>
+		@CategoryForm(form, csrf_token)
+	</div>
+}
+
+templ CategoryForm(form CategoryFormState, csrf_token string) {
+	<form
+		method="post"
+		action="/categories"
+		hx-post="/categories"
+		hx-target="#categories-panel"
+		hx-swap="outerHTML"
+		class="mt-6 grid gap-4 md:grid-cols-2"
+	>
+		<input type="hidden" name="_csrf" value={ csrf_token }/>
+		if form.ErrorMessage != "" {
+			<div class="col-span-full rounded-lg bg-red-100 p-4 text-sm text-red-700">
+				{ form.ErrorMessage }
+			</div>
+		}
+		<div>
+			@FormLabel("name", "Nome da Categoria")
+			@TextInput("name", "name", "text", form.Name, "Ex: Alimentacao, Salario, etc", true)
+		</div>
+		<div>
+			@FormLabel("category_kind", "Tipo")
+			@SelectInput("category_kind", "category_kind", buildCategoryKindOptions(form.Kind), true)
+		</div>
+		<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+			@PrimaryButton("submit", "Criar Categoria", true)
+		</div>
+	</form>
+}

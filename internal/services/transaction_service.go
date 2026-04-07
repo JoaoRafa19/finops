@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-
 type TransactionListItem struct {
 	ID          int64
 	AccountID   int64
@@ -23,6 +22,7 @@ type TransactionListItem struct {
 	Direction   string
 	Currency    string
 	Source      string
+	Category    string
 }
 
 type TransactionService interface {
@@ -139,6 +139,19 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 			return nil, parseErr
 		}
 
+		category := ""
+		if row.CategoryID.Valid {
+			categoryRow, err := p.db.GetCategoryByWorkspaceAndID(ctx, store.GetCategoryByWorkspaceAndIDParams{
+				WorkspaceID: workspace.ID,
+				ID:          row.CategoryID.Int64,
+			})
+			if err != nil {
+				logger.Error("transaction_list_recent_category_lookup_failed", "user_id", userID, "transaction_id", row.ID, "category_id", row.CategoryID.Int64, "error", err)
+				return nil, err
+			}
+			category = categoryRow.Name
+		}
+
 		items = append(items, TransactionListItem{
 			ID:          row.ID,
 			AccountID:   row.AccountID,
@@ -149,6 +162,7 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 			Direction:   row.Direction,
 			Currency:    row.Currency,
 			Source:      row.Source,
+			Category:    category,
 		})
 	}
 

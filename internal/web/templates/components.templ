@@ -1,10 +1,5 @@
 package templates
 
-import (
-	"finops/internal/store"
-	"fmt"
-)
-
 templ AppHead(title string, includeHTMX bool) {
 	<head>
 		<meta charset="utf-8"/>
@@ -106,103 +101,15 @@ templ SecondaryLink(href, text string) {
 	</a>
 }
 
-templ TransactionModalDialog(csrf_token string, err string, accounts []store.Account, categories []store.Category) {
-	<div class="p-6">
-		<div class="flex items-center justify-between">
-			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
-			<form method="dialog">
-				<button
-					type="submit"
-					class="inline-flex size-9 items-center justify-center rounded-lg border border-slate-300 text-finops-800 transition hover:bg-slate-100"
-				>
-					<i class="fa-solid fa-xmark"></i>
-				</button>
-			</form>
-		</div>
-		if err != "" {
-			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ err }</p>
-		}
-		<form
-			method="post"
-			action="/transactions"
-			hx-post="/transactions"
-			hx-target="#transaction-modal-body"
-			hx-swap="innerHTML"
-			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
-		>
-			<input type="hidden" name="_csrf" value={ csrf_token }/>
-			<div class="md:col-span-2">
-				@FormLabel("description", "Descricao")
-				@TextInput("description", "description", "text", "", "Compra no supermercado", true)
-			</div>
-			<div>
-				@FormLabel("amount", "Valor")
-				@TextInput("amount", "amount", "text", "", "0.00", true)
-			</div>
-			<div>
-				@FormLabel("account_id", "Conta")
-				@SelectInput("account_id", "account_id", buildAccountOptions(accounts), true)
-			</div>
-			<div>
-				@FormLabel("posted_on", "Data")
-				@TextInput("posted_on", "posted_on", "date", "", "", true)
-			</div>
-			<div>
-				@FormLabel("category_id", "Categoria")
-				@SelectInput("category_id", "category_id", buildCategoryOptions(categories), true)
-			</div>
-			<div>
-				@FormLabel("direction", "Tipo")
-				@SelectInput("direction", "direction", buildTransactionDirectionOptions(), true)
-			</div>
-			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
-				@PrimaryButton("submit", "Adicionar Transacao", true)
-			</div>
-		</form>
-	</div>
+templ DefaultCloseModalButton() {
+	<button
+		type="submit"
+		class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
+		title="Fechar modal"
+	><i class="fa-solid fa-xmark"></i></button>
 }
 
-templ AccountListItem(account store.Account, balance float64) {
-	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-		<div>
-			<p class="font-semibold text-finops-900">{ account.Name }</p>
-			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
-			<p class="text-sm text-finops-700">Saldo: { fmt.Sprintf("%.2f", balance) }</p>
-		</div>
-		<div class="flex gap-2">
-			<a
-				href={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
-				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-			>Editar</a>
-			<button
-				hx-target="closest li"
-				hx-swap="outerHTML"
-				class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-			>Excluir</button>
-		</div>
-	</li>
+templ LabledInput(id, name, label, inputType, value, placeholder string, required bool) {
+	@FormLabel("description", "Descricao")
+	@TextInput("description", "description", "text", "", "Compra no supermercado", true)
 }
-
-templ TransactionModalBlocked() {
-	<div class="p-6">
-		<div class="flex items-center justify-between">
-			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
-			<form method="dialog">
-				<button type="submit" 
-					
-				>
-				</button>
-			</form>
-		</div>
-	</div>
-}
-
-func buildTransactionDirectionOptions() []SelectOption {
-	return []SelectOption{
-		{Value: "", Label: "Selecione", Selected: true},
-		{Value: "credit", Label: "Entrada"},
-		{Value: "debit", Label: "Saida"},
-	}
-}
-
-

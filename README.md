@@ -5,50 +5,50 @@
 ## Roadmap
 ```mermaid
 gantt
-  title Roadmap evolutivo do FinOps
+  title Roadmap operacional do FinOps
   dateFormat  YYYY-MM-DD
   axisFormat  %d/%m
 
-  section Base do monólito
-  Setup repo, docker-compose, migrações base        :a1, 2026-02-26, 10d
-  Autenticação local + sessões + CSRF               :a2, 2026-03-03, 7d
-  Request ID middleware + logs estruturados         :a3, 2026-03-06, 4d
+  section Base concluída
+  Setup repo + compose + migrations                 :done1, 2026-02-26, 8d
+  Auth local + sessões Redis + CSRF                 :done2, 2026-03-05, 8d
+  Request ID + middleware base                      :done3, 2026-03-11, 4d
 
-  section Core financeiro
-  Contas + transações + transferência               :b1, 2026-03-10, 10d
-  Categorias + relatórios básicos                   :b2, 2026-03-17, 10d
-  Sistema de regras automáticas de categorização    :b3, 2026-03-22, 6d
+  section Core financeiro atual
+  Onboarding + workspace único MVP                  :done4, 2026-03-15, 5d
+  Contas: criação, listagem e edição                :active1, 2026-03-20, 12d
+  Transações: cadastro manual + listagem recente    :active2, 2026-04-01, 10d
+  Ajustes de UX home/HTMX para contas e transações  :active3, 2026-04-07, 7d
 
-  section Importação e conciliação
-  Import CSV + templates de mapeamento              :c1, 2026-03-24, 7d
-  Import OFX + staging + dedupe                     :c2, 2026-03-31, 10d
-  Conciliação manual + matching automático básico   :c3, 2026-04-07, 7d
-  Worker system para processamento assíncrono       :c4, 2026-04-10, 6d
+  section Próximo bloco
+  Transferências entre contas                       :next1, 2026-04-14, 10d
+  Categorias: fechamento do modal e fluxo HTMX      :next2, 2026-04-18, 5d
+  Testes de controllers do core financeiro          :next3, 2026-04-21, 7d
 
-  section Infraestrutura avançada
-  Redis cache (dashboard + relatórios)              :d1, 2026-04-14, 6d
-  Rate limiting + segurança API                     :d2, 2026-04-18, 4d
-  Métricas Prometheus + health checks               :d3, 2026-04-20, 5d
-
-  section IA local
-  Integração Ollama (generate + schema)             :e1, 2026-04-24, 7d
-  Embeddings + persistência + busca                 :e2, 2026-05-01, 7d
-  Categorização automática com IA                   :e3, 2026-05-05, 5d
-
-  section IA avançada e insights
-  Busca semântica de transações                     :f1, 2026-05-10, 6d
-  Copilot financeiro (perguntas em linguagem natural):f2, 2026-05-16, 7d
-  Forecast financeiro e insights automáticos        :f3, 2026-05-23, 7d
-
-  section Qualidade e deploy
-  Testes (unit/integration/E2E)                     :g1, 2026-05-30, 10d
-  Observabilidade completa (logs + metrics + trace) :g2, 2026-06-08, 7d
-  Render deploy (Blueprint) + CI/CD                 :g3, 2026-06-15, 7d
+  section Depois do core fechado
+  Relatórios básicos e visão consolidada            :later1, 2026-04-28, 10d
+  Importação CSV/OFX                                :later2, 2026-05-08, 12d
+  Observabilidade e health checks                   :later3, 2026-05-20, 8d
+  IA local e automações                             :later4, 2026-05-30, 14d
 ```
 
-Critérios de aceitação por marco (amostra):
-- **Base**: subir app + DB via compose; `templ generate --watch` funcionando; login OK com cookie seguro e CSRF em POSTs. 
-- **Core**: criar transação e ver refletir no saldo; transferência não conta em relatórios.  
-- **Import**: importar OFX/CSV e deduplicar por `FITID`/hash; staging revisável. 
-- **IA**: categorização retorna JSON válido via schema (sem texto extra) e é auditada; embeddings gerados via `/api/embed`.
-- **Deploy**: `render.yaml` provisiona web+DB; backups planejados; logs sem dados sensíveis.
+## Estado atual
+
+- Base do monólito concluída: app sobe com Go + Postgres + Redis, autenticação por sessão e proteção CSRF já estão implementadas.
+- Onboarding do workspace MVP concluído: usuário autenticado sem workspace é direcionado para criação inicial.
+- Core financeiro em andamento: contas já possuem criação, listagem e edição; transações manuais já possuem cadastro e listagem recente na home.
+- O foco atual é fechar o slice `contas -> transações -> transferências` antes de abrir novas frentes.
+
+## Próximos passos
+
+- Fechar UX de contas na home: garantir que saldo atual e edição por modal fiquem consistentes.
+- Fechar UX de transações: preservar estado do formulário em erro e manter a listagem recente consistente.
+- Implementar transferências entre contas como duas transações vinculadas.
+- Consolidar testes dos controllers e fluxos HTMX do core financeiro.
+
+## Critérios de aceitação do bloco atual
+
+- **Contas**: criar e editar conta pela home, com retorno consistente via modal e saldo atual correto.
+- **Transações**: registrar transação manual e ver o efeito refletido na home.
+- **Transferências**: movimentar valor entre duas contas sem distorcer o saldo consolidado.
+- **Qualidade**: `go test ./...` passando ao final de cada bloco.
