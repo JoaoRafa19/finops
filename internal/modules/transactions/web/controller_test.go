@@ -14,6 +14,7 @@ import (
 
 type transactionServiceStub struct {
 	createManualFn     func(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error)
+	createTransferFn   func(ctx context.Context, input models.CreateTransferDTO) ([]store.Transaction, error)
 	listRecentByUserFn func(ctx context.Context, userID int64, limit int32) ([]service.TransactionListItem, error)
 }
 
@@ -22,6 +23,13 @@ func (s transactionServiceStub) CreateManual(ctx context.Context, input models.C
 		return s.createManualFn(ctx, input)
 	}
 	return store.Transaction{}, nil
+}
+
+func (s transactionServiceStub) CreateTransfer(ctx context.Context, input models.CreateTransferDTO) ([]store.Transaction, error) {
+	if s.createTransferFn != nil {
+		return s.createTransferFn(ctx, input)
+	}
+	return nil, nil
 }
 
 func (s transactionServiceStub) ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]service.TransactionListItem, error) {
@@ -190,5 +198,52 @@ func TestBuildTransactionFormStatePreservesSubmittedFields(t *testing.T) {
 	}
 	if state.ErrorMessage != "validation error" {
 		t.Fatalf("unexpected error message: %q", state.ErrorMessage)
+	}
+}
+
+func TestCreateTransferInvalidPayloadRendersModalWithSubmittedValues(t *testing.T) {
+	t.Parallel()
+
+	controller := NewController(
+		transactionServiceStub{},
+		accountServiceStub{
+			listByUserFn: func(ctx context.Context, userID int64) ([]store.Account, error) {
+				return []store.Account{
+					{ID: 1, Name: "Conta origem", Currency: "BRL", Type: "checking"},
+					{ID: 2, Name: "Conta destino", Currency: "BRL", Type: "checking"},
+				}, nil
+			},
+		},
+		categoryServiceStub{},
+	)
+
+	form := url.Values{
+		"from_account_id": {"1"},
+		"to_account_id":   {"1"},
+		"amount":          {"10,50"},
+		"posted_on":       {"2026-04-07"},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/transfers", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(context.WithValue(req.Context(), models.SessionCtxKey, models.Session{
+		UserID:    10,
+		Email:     "user@example.com",
+		CSRFToken: "csrf-token",
+	}))
+
+	rec := httptest.NewRecorder()
+	controller.CreateTransfer(rec, req)
+
+	if rec.Result().StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Result().StatusCode)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "10,50") {
+		t.Fatalf("expected submitted amount to be preserved")
+	}
+	if !strings.Contains(body, "2026-04-07") {
+		t.Fatalf("expected submitted date to be preserved")
 	}
 }

@@ -27,15 +27,20 @@ type TransactionListItem struct {
 
 type TransactionService interface {
 	CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error)
+	CreateTransfer(ctx context.Context, input models.CreateTransferDTO) ([]store.Transaction, error)
 	ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]TransactionListItem, error)
 }
 
 type PGTransactionService struct {
-	db *store.Queries
+	sqlDB *sql.DB
+	db    *store.Queries
 }
 
-func NewPGTransactionService(db *store.Queries) TransactionService {
-	return &PGTransactionService{db: db}
+func NewPGTransactionService(sqlDB *sql.DB, db *store.Queries) TransactionService {
+	return &PGTransactionService{
+		sqlDB: sqlDB,
+		db:    db,
+	}
 }
 
 func (p *PGTransactionService) CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error) {
@@ -109,6 +114,109 @@ func (p *PGTransactionService) CreateManual(ctx context.Context, input models.Cr
 	return transaction, nil
 }
 
+func (p *PGTransactionService) CreateTransfer(ctx context.Context, input models.CreateTransferDTO) ([]store.Transaction, error) {
+	logger := observability.Logger(ctx)
+
+	if input.FromAccountID == input.ToAccountID {
+		return nil, errors.New("source and destination accounts must be different")
+	}
+	if input.Amount <= 0 {
+		return nil, errors.New("amount must be greater than zero")
+	}
+
+	tx, err := p.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Error("transfer_begin_tx_failed", "user_id", input.UserID, "error", err)
+		return nil, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	queries := p.db.WithTx(tx)
+
+	workspace, err := queries.GetWorkSpaceByOwnerUserID(ctx, input.UserID)
+	if err != nil {
+		logger.Error("transfer_workspace_lookup_failed", "user_id", input.UserID, "error", err)
+		return nil, err
+	}
+
+	fromAccount, err := queries.GetAccountByWorkspaceAndID(ctx, store.GetAccountByWorkspaceAndIDParams{
+		WorkspaceID: workspace.ID,
+		ID:          input.FromAccountID,
+	})
+	if err != nil {
+		logger.Error("transfer_source_account_lookup_failed", "user_id", input.UserID, "account_id", input.FromAccountID, "error", err)
+		return nil, err
+	}
+
+	toAccount, err := queries.GetAccountByWorkspaceAndID(ctx, store.GetAccountByWorkspaceAndIDParams{
+		WorkspaceID: workspace.ID,
+		ID:          input.ToAccountID,
+	})
+	if err != nil {
+		logger.Error("transfer_destination_account_lookup_failed", "user_id", input.UserID, "account_id", input.ToAccountID, "error", err)
+		return nil, err
+	}
+
+	if fromAccount.Currency != toAccount.Currency {
+		return nil, errors.New("transfers between different currencies are not supported")
+	}
+
+	transferCategory, err := ensureTransferCategory(ctx, queries, workspace.ID)
+	if err != nil {
+		logger.Error("transfer_category_ensure_failed", "user_id", input.UserID, "workspace_id", workspace.ID, "error", err)
+		return nil, err
+	}
+
+	groupID := time.Now().UnixNano()
+	amount := formatNumeric(input.Amount)
+
+	debitTx, err := queries.CreateTransaction(ctx, store.CreateTransactionParams{
+		WorkspaceID:     workspace.ID,
+		AccountID:       fromAccount.ID,
+		CategoryID:      sql.NullInt64{Int64: transferCategory.ID, Valid: true},
+		PostedOn:        input.PostedOn,
+		Description:     "Transferencia para " + toAccount.Name,
+		Amount:          amount,
+		Direction:       "debit",
+		Currency:        fromAccount.Currency,
+		TransferGroupID: sql.NullInt64{Int64: groupID, Valid: true},
+		ExternalFitid:   sql.NullString{},
+		Source:          "manual",
+	})
+	if err != nil {
+		logger.Error("transfer_create_debit_failed", "user_id", input.UserID, "error", err)
+		return nil, err
+	}
+
+	creditTx, err := queries.CreateTransaction(ctx, store.CreateTransactionParams{
+		WorkspaceID:     workspace.ID,
+		AccountID:       toAccount.ID,
+		CategoryID:      sql.NullInt64{Int64: transferCategory.ID, Valid: true},
+		PostedOn:        input.PostedOn,
+		Description:     "Transferencia de " + fromAccount.Name,
+		Amount:          amount,
+		Direction:       "credit",
+		Currency:        toAccount.Currency,
+		TransferGroupID: sql.NullInt64{Int64: groupID, Valid: true},
+		ExternalFitid:   sql.NullString{},
+		Source:          "manual",
+	})
+	if err != nil {
+		logger.Error("transfer_create_credit_failed", "user_id", input.UserID, "error", err)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Error("transfer_commit_failed", "user_id", input.UserID, "error", err)
+		return nil, err
+	}
+
+	logger.Info("transfer_create_succeeded", "user_id", input.UserID, "group_id", groupID, "from_account_id", fromAccount.ID, "to_account_id", toAccount.ID)
+	return []store.Transaction{debitTx, creditTx}, nil
+}
+
 func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]TransactionListItem, error) {
 	logger := observability.Logger(ctx)
 
@@ -172,4 +280,24 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 
 func formatNumeric(value float64) string {
 	return strconv.FormatFloat(value, 'f', 4, 64)
+}
+
+func ensureTransferCategory(ctx context.Context, queries *store.Queries, workspaceID int64) (store.Category, error) {
+	categories, err := queries.GetCategories(ctx, workspaceID)
+	if err != nil {
+		return store.Category{}, err
+	}
+
+	for _, category := range categories {
+		if category.Kind == "transfer" {
+			return category, nil
+		}
+	}
+
+	return queries.CreateCategory(ctx, store.CreateCategoryParams{
+		WorkspaceID: workspaceID,
+		ParentID:    sql.NullInt64{},
+		Name:        "Transferencia",
+		Kind:        "transfer",
+	})
 }

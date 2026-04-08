@@ -29,6 +29,13 @@ type transactionPayload struct {
 	Direction   string
 }
 
+type transferPayload struct {
+	FromAccountID int64
+	ToAccountID   int64
+	PostedOn      time.Time
+	Amount        float64
+}
+
 func NewController(
 	transactionService service.TransactionService,
 	accountService service.AccountService,
@@ -110,6 +117,65 @@ func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Req
 	render.Templ(w, r, http.StatusOK, templates.TransactionModalDialog(templates.NewTransactionFormState(), session.CSRFToken, accounts, categories))
 }
 
+func (c *Controller) RegisterTransferModal(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		logger.Warn("register_transfer_unauthorized")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	accounts, err := c.accountService.ListByUser(r.Context(), session.UserID)
+	if err != nil {
+		logger.Error("register_transfer_accounts_lookup_failed", "user_id", session.UserID, "error", err)
+		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
+		return
+	}
+
+	if len(accounts) < 2 {
+		render.Templ(w, r, http.StatusBadRequest, templates.TransferModalBlocked())
+		return
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.TransferModalDialog(templates.NewTransferFormState(), session.CSRFToken, accounts))
+}
+
+func (c *Controller) CreateTransfer(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		logger.Warn("create_transfer_unauthorized")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	payload, status, err := parseTransferPayload(r)
+	if err != nil {
+		logger.Warn("create_transfer_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
+		c.renderTransferModal(w, r, session.UserID, session.CSRFToken, buildTransferFormState(r, err.Error()))
+		return
+	}
+
+	_, err = c.transactionService.CreateTransfer(r.Context(), models.CreateTransferDTO{
+		UserID:        session.UserID,
+		FromAccountID: payload.FromAccountID,
+		ToAccountID:   payload.ToAccountID,
+		PostedOn:      payload.PostedOn,
+		Amount:        payload.Amount,
+	})
+	if err != nil {
+		logger.Error("create_transfer_failed", "user_id", session.UserID, "error", err)
+		c.renderTransferModal(w, r, session.UserID, session.CSRFToken, buildTransferFormState(r, err.Error()))
+		return
+	}
+
+	w.Header().Set("HX-Redirect", "/")
+	w.WriteHeader(http.StatusOK)
+}
+
 func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.TransactionFormState) {
 	accounts, err := c.accountService.ListByUser(r.Context(), userID)
 	if err != nil {
@@ -124,6 +190,16 @@ func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Requ
 	}
 
 	render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalDialog(form, csrfToken, accounts, categories))
+}
+
+func (c *Controller) renderTransferModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.TransferFormState) {
+	accounts, err := c.accountService.ListByUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
+		return
+	}
+
+	render.Templ(w, r, http.StatusBadRequest, templates.TransferModalDialog(form, csrfToken, accounts))
 }
 
 func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
@@ -192,6 +268,53 @@ func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
 	}, http.StatusOK, nil
 }
 
+func parseTransferPayload(r *http.Request) (transferPayload, int, error) {
+	if err := r.ParseForm(); err != nil {
+		return transferPayload{}, http.StatusBadRequest, errors.New("invalid form data")
+	}
+
+	fromAccountID, err := strconv.ParseInt(strings.TrimSpace(r.FormValue("from_account_id")), 10, 64)
+	if err != nil {
+		return transferPayload{}, http.StatusBadRequest, errors.New("invalid from_account_id")
+	}
+
+	toAccountID, err := strconv.ParseInt(strings.TrimSpace(r.FormValue("to_account_id")), 10, 64)
+	if err != nil {
+		return transferPayload{}, http.StatusBadRequest, errors.New("invalid to_account_id")
+	}
+
+	if fromAccountID == toAccountID {
+		return transferPayload{}, http.StatusBadRequest, errors.New("source and destination accounts must be different")
+	}
+
+	amountValue := normalizeAmount(r.FormValue("amount"))
+	if amountValue == "" {
+		return transferPayload{}, http.StatusBadRequest, errors.New("amount must be a valid number")
+	}
+
+	amountValueFloat, err := strconv.ParseFloat(strings.TrimSpace(amountValue), 64)
+	if err != nil || amountValueFloat <= 0 {
+		return transferPayload{}, http.StatusBadRequest, errors.New("amount must be a valid number")
+	}
+
+	postedOnValue := strings.TrimSpace(r.FormValue("posted_on"))
+	if postedOnValue == "" {
+		return transferPayload{}, http.StatusBadRequest, errors.New("posted_on is required")
+	}
+
+	postedOn, err := time.Parse("2006-01-02", postedOnValue)
+	if err != nil {
+		return transferPayload{}, http.StatusBadRequest, errors.New("posted_on must be in the format YYYY-MM-DD")
+	}
+
+	return transferPayload{
+		FromAccountID: fromAccountID,
+		ToAccountID:   toAccountID,
+		PostedOn:      postedOn,
+		Amount:        amountValueFloat,
+	}, http.StatusOK, nil
+}
+
 func normalizeAmount(value string) string {
 	amount := strings.TrimSpace(value)
 	if amount == "" {
@@ -213,6 +336,16 @@ func buildTransactionFormState(r *http.Request, errorMessage string) templates.T
 		r.FormValue("category_id"),
 		r.FormValue("posted_on"),
 		r.FormValue("direction"),
+		errorMessage,
+	)
+}
+
+func buildTransferFormState(r *http.Request, errorMessage string) templates.TransferFormState {
+	return templates.NewTransferFormStateFromValues(
+		r.FormValue("from_account_id"),
+		r.FormValue("to_account_id"),
+		r.FormValue("amount"),
+		r.FormValue("posted_on"),
 		errorMessage,
 	)
 }

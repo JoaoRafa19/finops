@@ -51,7 +51,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
 	private.HandleFunc("GET /category-modal", categoryController.CategoryModal)
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
+	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
+	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)

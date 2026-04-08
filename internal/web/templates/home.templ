@@ -55,6 +55,19 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 								@SecondaryButton("submit", "Registrar Transacao")
 							</form>
 						}
+						if len(accounts) > 1 {
+							<form
+								method="get"
+								action="/transfer-modal"
+								hx-get="/transfer-modal"
+								hx-target="#transfer-modal-body"
+								hx-on::after-request="document.getElementById('transfer-modal')?.showModal()"
+								hx-swap="innerHTML"
+							>
+								<input type="hidden" name="_csrf" value={ csrf_token }/>
+								@SecondaryButton("submit", "Transferir")
+							</form>
+						}
 						<form
 							method="get"
 							action="/category-modal"
@@ -86,12 +99,15 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 					<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
 						<div id="transaction-modal-body"></div>
 					</dialog>
+					<dialog id="transfer-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="transfer-modal-body"></div>
+					</dialog>
 					<dialog id="category-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
 						<div id="category-modal-body"></div>
 					</dialog>
 					<script>
 						document.body.addEventListener("click", (event) => {
-							["account-modal", "transaction-modal", "category-modal"].forEach((id) => {
+							["account-modal", "transaction-modal", "transfer-modal", "category-modal"].forEach((id) => {
 								const dialog = document.getElementById(id);
 								if (dialog && dialog.open) {
 									const rect = dialog.getBoundingClientRect();

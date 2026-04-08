@@ -31,6 +31,14 @@ type TransactionFormState struct {
 	ErrorMessage string
 }
 
+type TransferFormState struct {
+	FromAccountID string
+	ToAccountID   string
+	Amount        string
+	PostedOn      string
+	ErrorMessage  string
+}
+
 func NewTransactionFormState() TransactionFormState {
 	return TransactionFormState{}
 }
@@ -44,6 +52,20 @@ func NewTransactionFormStateFromValues(description, amount, accountID, categoryI
 		Direction:    direction,
 		CategoryID:   categoryID,
 		ErrorMessage: errorMessage,
+	}
+}
+
+func NewTransferFormState() TransferFormState {
+	return TransferFormState{}
+}
+
+func NewTransferFormStateFromValues(fromAccountID, toAccountID, amount, postedOn, errorMessage string) TransferFormState {
+	return TransferFormState{
+		FromAccountID: fromAccountID,
+		ToAccountID:   toAccountID,
+		Amount:        amount,
+		PostedOn:      postedOn,
+		ErrorMessage:  errorMessage,
 	}
 }
 

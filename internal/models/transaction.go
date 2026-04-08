@@ -11,3 +11,11 @@ type CreateTransactionDTO struct {
 	Amount      float64
 	Direction   string
 }
+
+type CreateTransferDTO struct {
+	UserID        int64
+	FromAccountID int64
+	ToAccountID   int64
+	PostedOn      time.Time
+	Amount        float64
+}

@@ -53,7 +53,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		),
 		Account:     service.NewPGAccountService(queries),
 		Workspace:   service.NewPGWorkspaceService(queries),
-		Transaction: service.NewPGTransactionService(queries),
+		Transaction: service.NewPGTransactionService(db, queries),
 		Category:    service.NewPGCategoryService(queries),
 	}
 

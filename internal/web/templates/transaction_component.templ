@@ -130,7 +130,7 @@ templ TransactionModalDialog(form TransactionFormState, csrf_token string, accou
 			</div>
 			<div>
 				@FormLabel("posted_on", "Data")
-				@TextInput("posted_on", "posted_on", "date", "", "", true)
+				@TextInput("posted_on", "posted_on", "date", form.PostedOn, "", true)
 			</div>
 			<div>
 				@FormLabel("category_id", "Categoria")
@@ -142,6 +142,61 @@ templ TransactionModalDialog(form TransactionFormState, csrf_token string, accou
 			</div>
 			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
 				@PrimaryButton("submit", "Adicionar Transacao", true)
+			</div>
+		</form>
+	</div>
+}
+
+templ TransferModalBlocked() {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Transferir entre contas</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		<p class="mt-4 text-sm text-finops-700">Cadastre ao menos duas contas para registrar uma transferencia.</p>
+	</div>
+}
+
+templ TransferModalDialog(form TransferFormState, csrf_token string, accounts []store.Account) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Transferir entre contas</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		if form.ErrorMessage != "" {
+			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ form.ErrorMessage }</p>
+		}
+		<form
+			method="post"
+			action="/transfers"
+			hx-post="/transfers"
+			hx-target="#transfer-modal-body"
+			hx-swap="innerHTML"
+			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
+		>
+			<input type="hidden" name="_csrf" value={ csrf_token }/>
+			<div>
+				@FormLabel("from_account_id", "Conta de origem")
+				@SelectInput("from_account_id", "from_account_id", buildAccountOptions(accounts, form.FromAccountID), true)
+			</div>
+			<div>
+				@FormLabel("to_account_id", "Conta de destino")
+				@SelectInput("to_account_id", "to_account_id", buildAccountOptions(accounts, form.ToAccountID), true)
+			</div>
+			<div>
+				@FormLabel("amount", "Valor")
+				@TextInput("amount", "amount", "text", form.Amount, "0.00", true)
+			</div>
+			<div>
+				@FormLabel("posted_on", "Data")
+				@TextInput("posted_on", "posted_on", "date", form.PostedOn, "", true)
+			</div>
+			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+				@PrimaryButton("submit", "Transferir", true)
 			</div>
 		</form>
 	</div>
