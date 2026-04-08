@@ -16,9 +16,18 @@ import (
 func main() {
 	fmt.Printf("%d\n", os.Getpid())
 	cfg := app.LoadConfig()
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	}))
+	var logger *slog.Logger
+	if cfg.LogLevel == slog.LevelDebug {
+		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: cfg.LogLevel,
+		}))
+
+	} else {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: cfg.LogLevel,
+		}))
+	}
+
 	slog.SetDefault(logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)

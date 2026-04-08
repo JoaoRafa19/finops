@@ -153,6 +153,13 @@ func (c *Controller) CreateTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload, status, err := parseTransferPayload(r)
+
+	if payload.FromAccountID == payload.ToAccountID {
+		logger.Warn("create_transfer_invalid_payload_same_account", "user_id", session.UserID)
+		c.renderTransferModal(w, r, session.UserID, session.CSRFToken, buildTransferFormState(r, "contas de origem e destino devem ser diferentes"))
+		return
+	}
+
 	if err != nil {
 		logger.Warn("create_transfer_invalid_payload", "user_id", session.UserID, "status", status, "error", err)
 		c.renderTransferModal(w, r, session.UserID, session.CSRFToken, buildTransferFormState(r, err.Error()))
@@ -199,7 +206,7 @@ func (c *Controller) renderTransferModal(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	render.Templ(w, r, http.StatusBadRequest, templates.TransferModalDialog(form, csrfToken, accounts))
+	render.Templ(w, r, http.StatusOK, templates.TransferModalDialog(form, csrfToken, accounts))
 }
 
 func parseTransactionPayload(r *http.Request) (transactionPayload, int, error) {
