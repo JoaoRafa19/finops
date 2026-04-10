@@ -34,10 +34,13 @@ func main() {
 	defer cancel()
 
 	runtime, err := app.Bootstrap(ctx, cfg)
+
 	if err != nil {
 		logger.Error("application_bootstrap_failed", slog.Any("error", err))
 		os.Exit(1)
 	}
+
+	ctx = context.WithValue(ctx, "auth_service", runtime.Services.Auth)
 	defer func() {
 		if err := runtime.Close(); err != nil {
 			logger.Error("application_close_failed", slog.Any("error", err))

@@ -30,7 +30,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	mux.Handle("/api/", http.StripPrefix("/api", newAPIRouter(deps.DB, deps.RedisClient)))
 
 	handler := middleware.CSRFMiddleware(deps.AuthService)(mux)
-	handler = middleware.SessionLoader(deps.AuthService, deps.SessionCookie)(handler)
+	handler = middleware.SessionLoader(deps.AuthService, deps.SessionCookie, deps.CookieSecure)(handler)
 	handler = middleware.Logging(handler)
 	handler = middleware.RequestID(handler)
 

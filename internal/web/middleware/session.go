@@ -6,9 +6,10 @@ import (
 	"finops/internal/models"
 	service "finops/internal/services"
 	"net/http"
+	"time"
 )
 
-func SessionLoader(auth service.AuthService, cookieName string) func(http.Handler) http.Handler {
+func SessionLoader(auth service.AuthService, cookieName string, cookieSecure bool) func(http.Handler) http.Handler {
 	if cookieName == "" {
 		cookieName = models.DefaultAuthCookieName
 	}
@@ -37,8 +38,31 @@ func SessionLoader(auth service.AuthService, cookieName string) func(http.Handle
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), models.SessionCtxKey, session)
-			ctx = context.WithValue(ctx, models.SessionIDCtxKey, sessionID)
+			effectiveSessionID := sessionID
+			effectiveSession := session 
+
+
+			if time.Until(session.ExpiresAt) < 5*time.Minute {
+				newSession, err := auth.RotateSession(r.Context(), sessionID)
+				if err == nil {
+					effectiveSessionID = newSession.ID 
+					effectiveSession = newSession
+
+					http.SetCookie(w, &http.Cookie{
+						Name: cookieName,
+						Value: newSession.ID,
+						Path: "/",
+						HttpOnly: true,
+						Secure: cookieSecure,
+						SameSite: http.SameSiteLaxMode,
+						Expires: newSession.ExpiresAt,
+						MaxAge: int(time.Until(newSession.ExpiresAt).Seconds()),
+					})
+				}
+			}
+
+			ctx := context.WithValue(r.Context(), models.SessionCtxKey, effectiveSession)
+			ctx = context.WithValue(ctx, models.SessionIDCtxKey, effectiveSessionID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

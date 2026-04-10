@@ -290,6 +290,16 @@ func (s *RedisAuthService) saveSession(ctx context.Context, session models.Sessi
 	return nil
 }
 
+func (s *RedisAuthService) RemoveSession(ctx context.Context, sessionID string) error {
+
+	if err := s.rdb.Del(ctx, sessionID).Err(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // sessionKey centraliza o padrão de chave usado no Redis.
 func sessionKey(sessionId string) string {
 	return "sess:" + sessionId
