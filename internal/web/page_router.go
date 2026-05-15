@@ -49,6 +49,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
+	private.HandleFunc("DELETE /categories/{id}/delete", categoryController.DeleteCategory)
 	private.HandleFunc("GET /category-modal", categoryController.CategoryModal)
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)

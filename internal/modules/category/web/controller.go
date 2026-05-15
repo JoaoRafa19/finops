@@ -151,3 +151,36 @@ func (c *CategoryController) renderCategoryPannel(w http.ResponseWriter, r *http
 	}
 	render.Templ(w, r, http.StatusOK, templates.CategoryPannels(token, categories, form))
 }
+
+func (c *CategoryController) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+
+	if !ok {
+		logger.Warn("category_delete_unauthorized")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if id == "" {
+		return
+	}
+
+	intID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return
+	}
+
+	err = c.categoryService.DeleteCategory(r.Context(), session.UserID, intID)
+
+	if err != nil {
+		logger.Warn("category_delete_error", "user", session.UserID, "error", err.Error())
+		c.renderCategoryPannel(w, r, session.UserID, session.CSRFToken, buildCategoryFormState(r, "Erro ao deletar"))
+		return
+	}
+
+	w.Write([]byte{})
+	w.WriteHeader(http.StatusOK)
+
+}

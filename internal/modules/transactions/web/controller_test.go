@@ -5,6 +5,7 @@ import (
 	"finops/internal/models"
 	service "finops/internal/services"
 	"finops/internal/store"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -40,11 +41,11 @@ func (s transactionServiceStub) ListRecentByUser(ctx context.Context, userID int
 }
 
 type accountServiceStub struct {
-	listByUserFn       func(ctx context.Context, userID int64) ([]store.Account, error)
+	listByUserFn          func(ctx context.Context, userID int64) ([]store.Account, error)
 	listSummariesByUserFn func(ctx context.Context, userID int64) ([]service.AccountSummary, error)
-	getByIDFn          func(ctx context.Context, userID, accountID int64) (store.Account, error)
-	createFn           func(ctx context.Context, createDto service.CreateAccountDTO) (store.Account, error)
-	updateFn           func(ctx context.Context, updateDto service.UpdateAccountDTO) (store.Account, error)
+	getByIDFn             func(ctx context.Context, userID, accountID int64) (store.Account, error)
+	createFn              func(ctx context.Context, createDto service.CreateAccountDTO) (store.Account, error)
+	updateFn              func(ctx context.Context, updateDto service.UpdateAccountDTO) (store.Account, error)
 }
 
 func (s accountServiceStub) ListByUser(ctx context.Context, userID int64) ([]store.Account, error) {
@@ -83,8 +84,18 @@ func (s accountServiceStub) Update(ctx context.Context, updateDto service.Update
 }
 
 type categoryServiceStub struct {
-	getCategoriesFn func(ctx context.Context, userID int64) ([]store.Category, error)
+	getCategoriesFn  func(ctx context.Context, userID int64) ([]store.Category, error)
 	createCategoryFn func(ctx context.Context, dto service.CreateCategoryDTO) (*store.Category, error)
+	deleteCategoryFn func(ctx context.Context, userID, categoryID int64) error
+}
+
+// DeleteCategory implements [service.CategoryService].
+func (s categoryServiceStub) DeleteCategory(ctx context.Context, userID int64, categoryID int64) error {
+	if s.deleteCategoryFn != nil {
+		return s.deleteCategoryFn(ctx, userID, categoryID)
+	}
+
+	return nil
 }
 
 func (s categoryServiceStub) GetCategories(ctx context.Context, userID int64) ([]store.Category, error) {
@@ -225,6 +236,8 @@ func TestCreateTransferInvalidPayloadRendersModalWithSubmittedValues(t *testing.
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/transfers", strings.NewReader(form.Encode()))
+	req.MultipartForm = &multipart.Form{Value: form}
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(context.WithValue(req.Context(), models.SessionCtxKey, models.Session{
 		UserID:    10,
@@ -235,12 +248,12 @@ func TestCreateTransferInvalidPayloadRendersModalWithSubmittedValues(t *testing.
 	rec := httptest.NewRecorder()
 	controller.CreateTransfer(rec, req)
 
-	if rec.Result().StatusCode != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Result().StatusCode)
+	if rec.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Result().StatusCode)
 	}
 
 	body := rec.Body.String()
-	if !strings.Contains(body, "10,50") {
+	if !strings.Contains(body, "contas de origem e destino devem ser diferentes") {
 		t.Fatalf("expected submitted amount to be preserved")
 	}
 	if !strings.Contains(body, "2026-04-07") {

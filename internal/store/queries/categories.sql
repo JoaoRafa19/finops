@@ -24,6 +24,18 @@ SELECT
     archived
 FROM categories WHERE archived = false AND workspace_id=$1 ORDER BY name ASC;
 
+-- name: GetCategoryByWorkspaceAndName :one
+SELECT
+    id,
+    workspace_id,
+    parent_id,
+    name,
+    kind,
+    archived
+FROM categories
+WHERE workspace_id = $1
+    AND name = $2;
+
 -- name: GetCategoryByWorkspaceAndID :one
 SELECT
     id,
@@ -36,3 +48,10 @@ FROM categories
 WHERE archived = false
     AND workspace_id = $1
     AND id = $2;
+
+
+-- name: DeleteCategory :exec
+UPDATE categories SET archived = true WHERE workspace_id = $1 AND id = $2;
+
+-- name: UnarchiveCategory :exec
+UPDATE categories SET archived = false WHERE workspace_id = $1 AND name = $2;
