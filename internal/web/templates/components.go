@@ -136,6 +136,7 @@ type CategoryFormState struct {
 	Name         string
 	Kind         string
 	ErrorMessage string
+	Oob          bool
 }
 
 func buildCategoryKindOptions(selected string) []SelectOption {

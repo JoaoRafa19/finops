@@ -106,6 +106,12 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 						<div id="category-modal-body"></div>
 					</dialog>
 					<script>
+					 document.body.addEventListener("category-created", () => {
+						const dialog = document.getElementById("category-modal");
+						const body = document.getElementById("category-modal-body");
+						dialog?.close();
+						if (body) body.innerHTML = "";
+					});
 						document.body.addEventListener("click", (event) => {
 							["account-modal", "transaction-modal", "transfer-modal", "category-modal"].forEach((id) => {
 								const dialog = document.getElementById(id);

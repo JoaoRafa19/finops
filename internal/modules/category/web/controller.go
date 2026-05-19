@@ -110,7 +110,7 @@ func (c *CategoryController) CreateCategory(w http.ResponseWriter, r *http.Reque
 	categoryPayload, _, err := parseCategoryPayload(r)
 	if err != nil {
 		logger.Warn("category_create_invalid_payload", "user", session.UserID, "error", err.Error())
-		c.renderCategoryPannel(w, r, session.UserID, session.CSRFToken, buildCategoryFormState(r, err.Error()))
+		render.Templ(w, r, http.StatusOK, templates.CategoryModalDialog(buildCategoryFormState(r, err.Error()), session.CSRFToken))
 		return
 	}
 
@@ -122,13 +122,13 @@ func (c *CategoryController) CreateCategory(w http.ResponseWriter, r *http.Reque
 
 	if err != nil {
 		logger.Warn("category_create_error", "user", session.UserID, "error", err.Error())
-		c.renderCategoryPannel(w, r, session.UserID, session.CSRFToken, buildCategoryFormState(r, err.Error()))
+		render.Templ(w, r, http.StatusOK, templates.CategoryModalDialog(buildCategoryFormState(r, err.Error()), session.CSRFToken))
 		return
 	}
 
 	logger.Info("category_create_success", "user", session.UserID, "category", cat.ID)
-	c.renderCategoryPannel(w, r, session.UserID, session.CSRFToken, templates.NewCategoryFormState())
-
+	w.Header().Set("HX-Trigger-After-Swap", "category-created")
+	c.renderCategoryPannel(w, r, session.UserID, session.CSRFToken, templates.CategoryFormState{Oob: true})
 }
 
 func buildCategoryFormState(r *http.Request, errMsg string) templates.CategoryFormState {
@@ -180,7 +180,7 @@ func (c *CategoryController) DeleteCategory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	w.Write([]byte{})
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte{})
 
 }
