@@ -6,6 +6,7 @@ import (
 	"errors"
 	"finops/internal/observability"
 	"finops/internal/store"
+	"math"
 	"strings"
 	"time"
 )
@@ -15,8 +16,7 @@ type CreateAccountDTO struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
-	OpeningDate    *time.Time
+	CurrentBalance float64
 }
 
 type AccountSummary struct {
@@ -24,7 +24,6 @@ type AccountSummary struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
 	CurrentBalance float64
 }
 
@@ -34,8 +33,7 @@ type UpdateAccountDTO struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
-	OpeningDate    *time.Time
+	CurrentBalance float64
 }
 
 type AccountService interface {
@@ -47,18 +45,13 @@ type AccountService interface {
 }
 
 type PGAccountService struct {
-	db *store.Queries
+	sqlDB *sql.DB
+	db    *store.Queries
 }
 
 // Create implements [AccountService].
 func (p *PGAccountService) Create(ctx context.Context, createDto CreateAccountDTO) (store.Account, error) {
 	logger := observability.Logger(ctx)
-
-	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, createDto.UserID)
-	if err != nil {
-		logger.Error("account_service_workspace_lookup_failed", "user_id", createDto.UserID, "error", err)
-		return store.Account{}, err
-	}
 
 	name := strings.TrimSpace(createDto.Name)
 	accoutType := strings.TrimSpace(createDto.Type)
@@ -78,26 +71,41 @@ func (p *PGAccountService) Create(ctx context.Context, createDto CreateAccountDT
 		return store.Account{}, errors.New("currency is required")
 	}
 
-	openingDate := sql.NullTime{}
+	tx, err := p.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Error("account_service_create_begin_tx_failed", "user_id", createDto.UserID, "error", err)
+		return store.Account{}, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
-	if createDto.OpeningDate != nil {
-		openingDate = sql.NullTime{
-			Time:  createDto.OpeningDate.UTC(),
-			Valid: true,
-		}
+	queries := p.db.WithTx(tx)
+
+	workspace, err := queries.GetWorkSpaceByOwnerUserID(ctx, createDto.UserID)
+	if err != nil {
+		logger.Error("account_service_workspace_lookup_failed", "user_id", createDto.UserID, "error", err)
+		return store.Account{}, err
 	}
 
-	account, err := p.db.CreateAccount(ctx, store.CreateAccountParams{
-		WorkspaceID:    workspace.ID,
-		Name:           name,
-		Type:           accoutType,
-		Currency:       currency,
-		OpeningBalance: createDto.OpeningBalance,
-		OpeningDate:    openingDate,
+	account, err := queries.CreateAccount(ctx, store.CreateAccountParams{
+		WorkspaceID: workspace.ID,
+		Name:        name,
+		Type:        accoutType,
+		Currency:    currency,
 	})
-
 	if err != nil {
 		logger.Error("account_service_create_failed", "user_id", createDto.UserID, "workspace_id", workspace.ID, "error", err)
+		return store.Account{}, err
+	}
+
+	if err := createBalanceAdjustment(ctx, queries, workspace.ID, account, createDto.CurrentBalance); err != nil {
+		logger.Error("account_service_create_adjustment_failed", "user_id", createDto.UserID, "workspace_id", workspace.ID, "account_id", account.ID, "error", err)
+		return store.Account{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Error("account_service_create_commit_failed", "user_id", createDto.UserID, "workspace_id", workspace.ID, "error", err)
 		return store.Account{}, err
 	}
 
@@ -168,7 +176,6 @@ func (p *PGAccountService) ListSummariesByUser(ctx context.Context, userID int64
 			Name:           row.Name,
 			Type:           row.Type,
 			Currency:       row.Currency,
-			OpeningBalance: row.OpeningBalance,
 			CurrentBalance: row.CurrentBalance,
 		})
 	}
@@ -180,11 +187,6 @@ func (p *PGAccountService) ListSummariesByUser(ctx context.Context, userID int64
 // Update implements [AccountService].
 func (p *PGAccountService) Update(ctx context.Context, updateDto UpdateAccountDTO) (store.Account, error) {
 	logger := observability.Logger(ctx)
-	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, updateDto.UserID)
-	if err != nil {
-		logger.Error("account_service_update_workspace_lookup_failed", "user_id", updateDto.UserID, "error", err)
-		return store.Account{}, err
-	}
 
 	name := strings.TrimSpace(updateDto.Name)
 	accountType := strings.TrimSpace(updateDto.Type)
@@ -203,25 +205,48 @@ func (p *PGAccountService) Update(ctx context.Context, updateDto UpdateAccountDT
 		return store.Account{}, errors.New("currency is required")
 	}
 
-	openingDate := sql.NullTime{}
-	if updateDto.OpeningDate != nil {
-		openingDate = sql.NullTime{
-			Time:  updateDto.OpeningDate.UTC(),
-			Valid: true,
-		}
+	tx, err := p.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Error("account_service_update_begin_tx_failed", "user_id", updateDto.UserID, "account_id", updateDto.AccountID, "error", err)
+		return store.Account{}, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	queries := p.db.WithTx(tx)
+
+	workspace, err := queries.GetWorkSpaceByOwnerUserID(ctx, updateDto.UserID)
+	if err != nil {
+		logger.Error("account_service_update_workspace_lookup_failed", "user_id", updateDto.UserID, "error", err)
+		return store.Account{}, err
 	}
 
-	account, err := p.db.UpdateAccount(ctx, store.UpdateAccountParams{
-		WorkspaceID:    workspace.ID,
-		ID:             updateDto.AccountID,
-		Name:           name,
-		Type:           accountType,
-		Currency:       currency,
-		OpeningBalance: updateDto.OpeningBalance,
-		OpeningDate:    openingDate,
+	currentBalance, err := currentBalanceForAccount(ctx, queries, workspace.ID, updateDto.AccountID)
+	if err != nil {
+		logger.Error("account_service_update_current_balance_lookup_failed", "user_id", updateDto.UserID, "workspace_id", workspace.ID, "account_id", updateDto.AccountID, "error", err)
+		return store.Account{}, err
+	}
+
+	account, err := queries.UpdateAccount(ctx, store.UpdateAccountParams{
+		WorkspaceID: workspace.ID,
+		ID:          updateDto.AccountID,
+		Name:        name,
+		Type:        accountType,
+		Currency:    currency,
 	})
 	if err != nil {
 		logger.Error("account_service_update_failed", "user_id", updateDto.UserID, "workspace_id", workspace.ID, "account_id", updateDto.AccountID, "error", err)
+		return store.Account{}, err
+	}
+
+	if err := createBalanceAdjustment(ctx, queries, workspace.ID, account, updateDto.CurrentBalance-currentBalance); err != nil {
+		logger.Error("account_service_update_adjustment_failed", "user_id", updateDto.UserID, "workspace_id", workspace.ID, "account_id", updateDto.AccountID, "error", err)
+		return store.Account{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Error("account_service_update_commit_failed", "user_id", updateDto.UserID, "workspace_id", workspace.ID, "account_id", updateDto.AccountID, "error", err)
 		return store.Account{}, err
 	}
 
@@ -229,8 +254,50 @@ func (p *PGAccountService) Update(ctx context.Context, updateDto UpdateAccountDT
 	return account, nil
 }
 
-func NewPGAccountService(q *store.Queries) AccountService {
+func createBalanceAdjustment(ctx context.Context, queries *store.Queries, workspaceID int64, account store.Account, delta float64) error {
+	if math.Abs(delta) < 0.00005 {
+		return nil
+	}
+
+	direction := "credit"
+	if delta < 0 {
+		direction = "debit"
+	}
+
+	_, err := queries.CreateTransaction(ctx, store.CreateTransactionParams{
+		WorkspaceID:     workspaceID,
+		AccountID:       account.ID,
+		CategoryID:      sql.NullInt64{},
+		PostedOn:        time.Now().UTC(),
+		Description:     "Ajuste de saldo",
+		Amount:          formatNumeric(math.Abs(delta)),
+		Direction:       direction,
+		Currency:        account.Currency,
+		TransferGroupID: sql.NullInt64{},
+		ExternalFitid:   sql.NullString{},
+		Source:          "adjustment",
+	})
+	return err
+}
+
+func currentBalanceForAccount(ctx context.Context, queries *store.Queries, workspaceID, accountID int64) (float64, error) {
+	rows, err := queries.ListAccountSummariesByWorkspace(ctx, workspaceID)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, row := range rows {
+		if row.ID == accountID {
+			return row.CurrentBalance, nil
+		}
+	}
+
+	return 0, sql.ErrNoRows
+}
+
+func NewPGAccountService(sqlDB *sql.DB, q *store.Queries) AccountService {
 	return &PGAccountService{
-		db: q,
+		sqlDB: sqlDB,
+		db:    q,
 	}
 }

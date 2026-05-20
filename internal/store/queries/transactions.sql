@@ -36,5 +36,6 @@ FROM transactions t
 INNER JOIN accounts a
     ON a.id = t.account_id
 WHERE t.workspace_id = $1
+  AND t.source <> 'adjustment'
 ORDER BY t.posted_on DESC, t.id DESC
 LIMIT $2;

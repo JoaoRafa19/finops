@@ -10,14 +10,12 @@ import (
 )
 
 type Account struct {
-	ID             int64
-	WorkspaceID    int64
-	Name           string
-	Type           string
-	Currency       string
-	OpeningBalance float64
-	OpeningDate    sql.NullTime
-	Archived       bool
+	ID          int64
+	WorkspaceID int64
+	Name        string
+	Type        string
+	Currency    string
+	Archived    bool
 }
 
 type Category struct {

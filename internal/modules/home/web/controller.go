@@ -89,9 +89,7 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 			Name:           acc.Name,
 			Type:           acc.Type,
 			Currency:       acc.Currency,
-			OpeningBalance: acc.OpeningBalance,
 			CurrentBalance: acc.CurrentBalance,
-			OpeningDate:    "",
 		}
 	}
 

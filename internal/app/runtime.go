@@ -51,7 +51,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 			cfg.RememberMeTTL,
 			cfg.SlidingSessionTTL,
 		),
-		Account:     service.NewPGAccountService(queries),
+		Account:     service.NewPGAccountService(db, queries),
 		Workspace:   service.NewPGWorkspaceService(queries),
 		Transaction: service.NewPGTransactionService(db, queries),
 		Category:    service.NewPGCategoryService(queries),

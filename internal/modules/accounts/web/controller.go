@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"context"
 	"errors"
 	"finops/internal/observability"
 	service "finops/internal/services"
@@ -10,7 +11,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type Controller struct {
@@ -21,8 +21,7 @@ type accountPayload struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
-	OpeningDate    *time.Time
+	CurrentBalance float64
 }
 
 func NewController(accountService service.AccountService) *Controller {
@@ -52,8 +51,7 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		Name:           payload.Name,
 		Type:           payload.Type,
 		Currency:       payload.Currency,
-		OpeningBalance: payload.OpeningBalance,
-		OpeningDate:    payload.OpeningDate,
+		CurrentBalance: payload.CurrentBalance,
 	})
 	if err != nil {
 		logger.Error("account_create_failed", "user_id", session.UserID, "error", err)
@@ -88,7 +86,14 @@ func (c *Controller) EditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewEditAccountFormState(account, ""), session.CSRFToken))
+	accountDTO, err := c.accountDTOFromSummary(r.Context(), session.UserID, accountID)
+	if err != nil {
+		logger.Error("account_edit_form_summary_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
+		http.Error(w, "failed to load account summary", http.StatusInternalServerError)
+		return
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewEditAccountFormState(account, accountDTO.CurrentBalance, ""), session.CSRFToken))
 }
 
 func (c *Controller) ShowItem(w http.ResponseWriter, r *http.Request) {
@@ -106,26 +111,11 @@ func (c *Controller) ShowItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := c.accountService.GetByID(r.Context(), session.UserID, accountID)
+	accountDTO, err := c.accountDTOFromSummary(r.Context(), session.UserID, accountID)
 	if err != nil {
-		logger.Error("account_show_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
-		http.Error(w, "failed to load account", http.StatusInternalServerError)
+		logger.Error("account_show_summary_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
+		http.Error(w, "failed to load account summary", http.StatusInternalServerError)
 		return
-	}
-
-	openingDate := ""
-	if account.OpeningDate.Valid {
-		openingDate = account.OpeningDate.Time.Format("2006-01-02")
-	}
-
-	accountDTO := templates.AccountDTO{
-		ID:             account.ID,
-		Name:           account.Name,
-		Type:           account.Type,
-		Currency:       account.Currency,
-		OpeningBalance: account.OpeningBalance,
-		CurrentBalance: account.OpeningBalance,
-		OpeningDate:    openingDate,
 	}
 
 	render.Templ(w, r, http.StatusOK, templates.AccountItem(accountDTO))
@@ -160,8 +150,7 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		Name:           payload.Name,
 		Type:           payload.Type,
 		Currency:       payload.Currency,
-		OpeningBalance: payload.OpeningBalance,
-		OpeningDate:    payload.OpeningDate,
+		CurrentBalance: payload.CurrentBalance,
 	})
 	if err != nil {
 		logger.Error("account_update_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
@@ -198,11 +187,11 @@ func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request,
 		csrfToken = session.CSRFToken
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormStateFromValues(form.Name, form.Type, form.Currency, form.OpeningBalance, form.OpeningDate, form.ErrorMessage), csrfToken))
+	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormStateFromValues(form.Name, form.Type, form.Currency, form.CurrentBalance, form.ErrorMessage), csrfToken))
 }
 
 func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64) {
-	accounts, err := c.accountService.ListByUser(r.Context(), userID)
+	accounts, err := c.accountService.ListSummariesByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
 		return
@@ -216,12 +205,32 @@ func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request,
 			Name:           account.Name,
 			Type:           account.Type,
 			Currency:       account.Currency,
-			OpeningBalance: account.OpeningBalance,
-			OpeningDate:    account.OpeningDate.Time.Format("2006-01-02"),
+			CurrentBalance: account.CurrentBalance,
 		}
 	}
 
 	render.Templ(w, r, http.StatusOK, templates.AccountPanels(accountsDTO))
+}
+
+func (c *Controller) accountDTOFromSummary(ctx context.Context, userID, accountID int64) (templates.AccountDTO, error) {
+	summaries, err := c.accountService.ListSummariesByUser(ctx, userID)
+	if err != nil {
+		return templates.AccountDTO{}, err
+	}
+
+	for _, summary := range summaries {
+		if summary.ID == accountID {
+			return templates.AccountDTO{
+				ID:             summary.ID,
+				Name:           summary.Name,
+				Type:           summary.Type,
+				Currency:       summary.Currency,
+				CurrentBalance: summary.CurrentBalance,
+			}, nil
+		}
+	}
+
+	return templates.AccountDTO{}, errors.New("account summary not found")
 }
 
 func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
@@ -229,23 +238,14 @@ func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
 		return accountPayload{}, http.StatusBadRequest, errors.New("invalid form data")
 	}
 
-	openingBalance := normalizeAmount(r.FormValue("opening_balance"))
-	if openingBalance == "" {
-		return accountPayload{}, http.StatusBadRequest, errors.New("opening balance must be a valid number")
+	currentBalance := normalizeAmount(r.FormValue("current_balance"))
+	if currentBalance == "" {
+		return accountPayload{}, http.StatusBadRequest, errors.New("current balance must be a valid number")
 	}
 
-	openingBalanceFloat, err := strconv.ParseFloat(openingBalance, 64)
+	currentBalanceFloat, err := strconv.ParseFloat(currentBalance, 64)
 	if err != nil {
-		return accountPayload{}, http.StatusBadRequest, errors.New("opening balance must be a valid number")
-	}
-
-	var openingDate *time.Time
-	if value := strings.TrimSpace(r.FormValue("opening_date")); value != "" {
-		parsedDate, err := time.Parse("2006-01-02", value)
-		if err != nil {
-			return accountPayload{}, http.StatusBadRequest, errors.New("opening date must be in the format YYYY-MM-DD")
-		}
-		openingDate = &parsedDate
+		return accountPayload{}, http.StatusBadRequest, errors.New("current balance must be a valid number")
 	}
 
 	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
@@ -254,8 +254,7 @@ func parseAccountPayload(r *http.Request) (accountPayload, int, error) {
 	}
 
 	return accountPayload{
-		OpeningBalance: openingBalanceFloat,
-		OpeningDate:    openingDate,
+		CurrentBalance: currentBalanceFloat,
 		Name:           strings.TrimSpace(r.FormValue("name")),
 		Type:           strings.TrimSpace(r.FormValue("type")),
 		Currency:       currency,
@@ -280,8 +279,7 @@ func buildCreateAccountFormState(r *http.Request, errorMessage string) templates
 		strings.TrimSpace(r.FormValue("name")),
 		strings.TrimSpace(r.FormValue("type")),
 		strings.ToUpper(strings.TrimSpace(r.FormValue("currency"))),
-		strings.TrimSpace(r.FormValue("opening_balance")),
-		strings.TrimSpace(r.FormValue("opening_date")),
+		strings.TrimSpace(r.FormValue("current_balance")),
 		errorMessage,
 	)
 }
@@ -292,8 +290,7 @@ func buildEditAccountFormState(accountID int64, r *http.Request, errorMessage st
 		strings.TrimSpace(r.FormValue("name")),
 		strings.TrimSpace(r.FormValue("type")),
 		strings.ToUpper(strings.TrimSpace(r.FormValue("currency"))),
-		strings.TrimSpace(r.FormValue("opening_balance")),
-		strings.TrimSpace(r.FormValue("opening_date")),
+		strings.TrimSpace(r.FormValue("current_balance")),
 		errorMessage,
 	)
 }

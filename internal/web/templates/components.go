@@ -16,9 +16,7 @@ type AccountDTO struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
 	CurrentBalance float64
-	OpeningDate    string
 }
 
 type TransactionFormState struct {
@@ -116,8 +114,7 @@ type AccountFormState struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance string
-	OpeningDate    string
+	CurrentBalance string
 	ErrorMessage   string
 	Target         string
 	Inline         bool
@@ -247,54 +244,54 @@ func accountFormClass(inline bool) string {
 
 func NewCreateAccountFormState() AccountFormState {
 	return AccountFormState{
-		Currency: "BRL",
-		Target:   "#account-modal-body",
+		Currency:       "BRL",
+		CurrentBalance: "0.00",
+		Target:         "#account-modal-body",
 	}
 }
 
-func NewCreateAccountFormStateFromValues(name, accountType, currency, openingBalance, openingDate, errorMessage string) AccountFormState {
+func NewCreateAccountFormStateFromValues(name, accountType, currency, currentBalance, errorMessage string) AccountFormState {
 	if currency == "" {
 		currency = "BRL"
+	}
+	if currentBalance == "" {
+		currentBalance = "0.00"
 	}
 
 	return AccountFormState{
 		Name:           name,
 		Type:           accountType,
 		Currency:       currency,
-		OpeningBalance: openingBalance,
-		OpeningDate:    openingDate,
+		CurrentBalance: currentBalance,
 		ErrorMessage:   errorMessage,
 		Target:         "#account-modal-body",
 	}
 }
 
-func NewEditAccountFormState(account store.Account, errorMessage string) AccountFormState {
-	form := AccountFormState{
+func NewEditAccountFormState(account store.Account, currentBalance float64, errorMessage string) AccountFormState {
+	return AccountFormState{
 		AccountID:      account.ID,
 		Name:           account.Name,
 		Type:           account.Type,
 		Currency:       account.Currency,
-		OpeningBalance: fmt.Sprintf("%.2f", account.OpeningBalance),
+		CurrentBalance: fmt.Sprintf("%.2f", currentBalance),
 		ErrorMessage:   errorMessage,
 		IsEdit:         true,
 		Target:         "#account-modal-body",
 	}
-
-	if account.OpeningDate.Valid {
-		form.OpeningDate = account.OpeningDate.Time.Format("2006-01-02")
-	}
-
-	return form
 }
 
-func NewEditAccountFormStateFromValues(accountID int64, name, accountType, currency, openingBalance, openingDate, errorMessage string) AccountFormState {
+func NewEditAccountFormStateFromValues(accountID int64, name, accountType, currency, currentBalance, errorMessage string) AccountFormState {
+	if currentBalance == "" {
+		currentBalance = "0.00"
+	}
+
 	return AccountFormState{
 		AccountID:      accountID,
 		Name:           name,
 		Type:           accountType,
 		Currency:       currency,
-		OpeningBalance: openingBalance,
-		OpeningDate:    openingDate,
+		CurrentBalance: currentBalance,
 		ErrorMessage:   errorMessage,
 		IsEdit:         true,
 		Target:         "#account-modal-body",

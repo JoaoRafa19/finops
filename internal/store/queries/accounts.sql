@@ -5,8 +5,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts 
 WHERE workspace_id = $1 
@@ -20,20 +18,15 @@ SELECT
     a.name,
     a.type,
     a.currency,
-    a.opening_balance,
-    a.opening_date,
     a.archived,
-    (
-        a.opening_balance +
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN t.direction = 'credit' THEN t.amount
-                    ELSE -t.amount
-                END
-            ),
-            0
-        )
+    COALESCE(
+        SUM(
+            CASE
+                WHEN t.direction = 'credit' THEN t.amount
+                ELSE -t.amount
+            END
+        ),
+        0
     )::float8 AS current_balance
 FROM accounts a
 LEFT JOIN transactions t
@@ -47,8 +40,6 @@ GROUP BY
     a.name,
     a.type,
     a.currency,
-    a.opening_balance,
-    a.opening_date,
     a.archived
 ORDER BY a.name ASC;
 
@@ -59,8 +50,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts
 WHERE 
@@ -74,8 +63,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts
 WHERE workspace_id = $1
@@ -88,12 +75,10 @@ INSERT INTO accounts
     workspace_id,
     name,
     type,
-    currency,
-    opening_balance,
-    opening_date
+    currency
     )
 VALUES
-    ($1,$2,$3,$4,$5,$6)
+    ($1,$2,$3,$4)
 RETURNING *;
 
 -- name: UpdateAccount :one
@@ -101,9 +86,7 @@ UPDATE accounts
 SET
     name = $3,
     type = $4,
-    currency = $5,
-    opening_balance = $6,
-    opening_date = $7
+    currency = $5
 WHERE workspace_id = $1
     AND id = $2
     AND archived = FALSE

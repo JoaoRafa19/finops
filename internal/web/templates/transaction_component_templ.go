@@ -108,7 +108,7 @@ func TransactionPanel(transactions []TransactionDTO) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"mt-6 space-y-3\" id=\"transaction-list\">Nenhuma transação registrada ainda.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"mt-6\" id=\"empty-transaction-list\">Nenhuma transação registrada ainda.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

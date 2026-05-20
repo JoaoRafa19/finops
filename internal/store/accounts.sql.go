@@ -7,7 +7,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createAccount = `-- name: CreateAccount :one
@@ -16,22 +15,18 @@ INSERT INTO accounts
     workspace_id,
     name,
     type,
-    currency,
-    opening_balance,
-    opening_date
+    currency
     )
 VALUES
-    ($1,$2,$3,$4,$5,$6)
-RETURNING id, workspace_id, name, type, currency, opening_balance, opening_date, archived
+    ($1,$2,$3,$4)
+RETURNING id, workspace_id, name, type, currency, archived
 `
 
 type CreateAccountParams struct {
-	WorkspaceID    int64
-	Name           string
-	Type           string
-	Currency       string
-	OpeningBalance float64
-	OpeningDate    sql.NullTime
+	WorkspaceID int64
+	Name        string
+	Type        string
+	Currency    string
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
@@ -40,8 +35,6 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		arg.Name,
 		arg.Type,
 		arg.Currency,
-		arg.OpeningBalance,
-		arg.OpeningDate,
 	)
 	var i Account
 	err := row.Scan(
@@ -50,8 +43,6 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		&i.Name,
 		&i.Type,
 		&i.Currency,
-		&i.OpeningBalance,
-		&i.OpeningDate,
 		&i.Archived,
 	)
 	return i, err
@@ -64,8 +55,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts
 WHERE 
@@ -82,8 +71,6 @@ func (q *Queries) GetAccountByID(ctx context.Context, id int64) (Account, error)
 		&i.Name,
 		&i.Type,
 		&i.Currency,
-		&i.OpeningBalance,
-		&i.OpeningDate,
 		&i.Archived,
 	)
 	return i, err
@@ -96,8 +83,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts
 WHERE workspace_id = $1
@@ -119,8 +104,6 @@ func (q *Queries) GetAccountByWorkspaceAndID(ctx context.Context, arg GetAccount
 		&i.Name,
 		&i.Type,
 		&i.Currency,
-		&i.OpeningBalance,
-		&i.OpeningDate,
 		&i.Archived,
 	)
 	return i, err
@@ -133,20 +116,15 @@ SELECT
     a.name,
     a.type,
     a.currency,
-    a.opening_balance,
-    a.opening_date,
     a.archived,
-    (
-        a.opening_balance +
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN t.direction = 'credit' THEN t.amount
-                    ELSE -t.amount
-                END
-            ),
-            0
-        )
+    COALESCE(
+        SUM(
+            CASE
+                WHEN t.direction = 'credit' THEN t.amount
+                ELSE -t.amount
+            END
+        ),
+        0
     )::float8 AS current_balance
 FROM accounts a
 LEFT JOIN transactions t
@@ -160,8 +138,6 @@ GROUP BY
     a.name,
     a.type,
     a.currency,
-    a.opening_balance,
-    a.opening_date,
     a.archived
 ORDER BY a.name ASC
 `
@@ -172,8 +148,6 @@ type ListAccountSummariesByWorkspaceRow struct {
 	Name           string
 	Type           string
 	Currency       string
-	OpeningBalance float64
-	OpeningDate    sql.NullTime
 	Archived       bool
 	CurrentBalance float64
 }
@@ -193,8 +167,6 @@ func (q *Queries) ListAccountSummariesByWorkspace(ctx context.Context, workspace
 			&i.Name,
 			&i.Type,
 			&i.Currency,
-			&i.OpeningBalance,
-			&i.OpeningDate,
 			&i.Archived,
 			&i.CurrentBalance,
 		); err != nil {
@@ -218,8 +190,6 @@ SELECT
     name,
     type,
     currency,
-    opening_balance,
-    opening_date,
     archived
 FROM accounts 
 WHERE workspace_id = $1 
@@ -242,8 +212,6 @@ func (q *Queries) ListAccountsByWorkspace(ctx context.Context, workspaceID int64
 			&i.Name,
 			&i.Type,
 			&i.Currency,
-			&i.OpeningBalance,
-			&i.OpeningDate,
 			&i.Archived,
 		); err != nil {
 			return nil, err
@@ -264,23 +232,19 @@ UPDATE accounts
 SET
     name = $3,
     type = $4,
-    currency = $5,
-    opening_balance = $6,
-    opening_date = $7
+    currency = $5
 WHERE workspace_id = $1
     AND id = $2
     AND archived = FALSE
-RETURNING id, workspace_id, name, type, currency, opening_balance, opening_date, archived
+RETURNING id, workspace_id, name, type, currency, archived
 `
 
 type UpdateAccountParams struct {
-	WorkspaceID    int64
-	ID             int64
-	Name           string
-	Type           string
-	Currency       string
-	OpeningBalance float64
-	OpeningDate    sql.NullTime
+	WorkspaceID int64
+	ID          int64
+	Name        string
+	Type        string
+	Currency    string
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
@@ -290,8 +254,6 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (A
 		arg.Name,
 		arg.Type,
 		arg.Currency,
-		arg.OpeningBalance,
-		arg.OpeningDate,
 	)
 	var i Account
 	err := row.Scan(
@@ -300,8 +262,6 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (A
 		&i.Name,
 		&i.Type,
 		&i.Currency,
-		&i.OpeningBalance,
-		&i.OpeningDate,
 		&i.Archived,
 	)
 	return i, err

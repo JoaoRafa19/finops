@@ -115,12 +115,8 @@ templ AccountForm(form AccountFormState, csrf_token string) {
 			@TextInput("currency", "currency", "text", form.Currency, "", true)
 		</div>
 		<div>
-			@FormLabel("opening_balance", "Saldo Inicial")
-			@TextInput("opening_balance", "opening_balance", "text", form.OpeningBalance, "0.00", true)
-		</div>
-		<div>
-			@FormLabel("opening_date", "Data Inicial")
-			@TextInput("opening_date", "opening_date", "date", form.OpeningDate, "", false)
+			@FormLabel("current_balance", "Saldo Atual")
+			@TextInput("current_balance", "current_balance", "text", form.CurrentBalance, "0.00", true)
 		</div>
 		<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
 			@PrimaryButton("submit", accountFormSubmitLabel(form), true)
