@@ -1,0 +1,150 @@
+package templates
+
+import (
+	"finops/internal/utils"
+	"fmt"
+)
+
+templ AccountEditForm(form AccountFormState, csrfToken string) {
+	<li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4" id={ form.ContainerID() }>
+		@AccountForm(form, csrfToken)
+	</li>
+}
+
+templ AccountListItem(account AccountDTO, balance float64) {
+	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+			<p class="text-sm text-finops-700">Saldo: { fmt.Sprintf("%.2f", balance) }</p>
+		</div>
+		<div class="flex gap-2">
+			<a
+				href={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
+				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+			>Editar</a>
+			<button
+				hx-target="closest li"
+				hx-swap="outerHTML"
+				class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+			>Excluir</button>
+		</div>
+	</li>
+}
+
+templ AccountPanels(accounts []AccountDTO) {
+	<div id="accounts-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Contas</p>
+			<p class="mt-01 text-sm text-finops-700">Saldo atuais por conta</p>
+		</div>
+		if len(accounts) > 0 {
+			<ul class="mt-6 space-y-3" id="accounts-list">
+				for _, ac := range accounts {
+					@AccountItem(ac)
+				}
+			</ul>
+		} else {
+			<p class="text-sm text-finops-700">Nenhuma conta cadastrada ainda.</p>
+		}
+	</div>
+}
+
+templ AccountModalDialog(form AccountFormState, csrf_token string) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">{ accountFormTitle(form) }</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		<p class="mt-2 text-sm text-finops-700">{ accountFormDescription(form) }</p>
+		@AccountForm(form, csrf_token)
+	</div>
+}
+
+templ AccountItem(account AccountDTO) {
+	<li
+		id={ fmt.Sprintf("account-%d", account.ID) }
+		class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+	>
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+		</div>
+		<div class="flex items-center gap-3">
+			<p class="text-sm font-bold text-finops-800">{ utils.FormatMoney(account.CurrentBalance) }</p>
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
+				hx-target="#account-modal-body"
+				hx-swap="innerHTML"
+				hx-on::after-request="document.getElementById('account-modal')?.showModal()"
+				class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
+				title="Editar conta"
+			><i class="fa-solid fa-pen-to-square"></i></button>
+		</div>
+	</li>
+}
+
+templ AccountForm(form AccountFormState, csrf_token string) {
+	<form
+		method="post"
+		action={ accountFormAction(form) }
+		hx-post={ accountFormAction(form) }
+		hx-target={ accountFormTarget(form) }
+		hx-swap="outerHTML"
+		class={ accountFormClass(form.Inline) }
+	>
+		<input type="hidden" name="_csrf" value={ csrf_token }/>
+		if form.ErrorMessage != "" {
+			<div class="col-span-full rounded-lg bg-red-100 p-4 text-sm text-red-700">
+				{ form.ErrorMessage }
+			</div>
+		}
+		<div class="md:col-span-2">
+			@FormLabel("name", "Nome da Conta")
+			@TextInput("name", "name", "text", form.Name, "Conta corrente principal", true)
+		</div>
+		<div>
+			@FormLabel("type", "Tipo")
+			@SelectInput("type", "type", buildAccountTypeOptions(form.Type), true)
+		</div>
+		<div>
+			@FormLabel("currency", "Moeda")
+			@TextInput("currency", "currency", "text", form.Currency, "", true)
+		</div>
+		<div>
+			@FormLabel("current_balance", "Saldo Atual")
+			@TextInput("current_balance", "current_balance", "text", form.CurrentBalance, "0.00", true)
+		</div>
+		<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+			@PrimaryButton("submit", accountFormSubmitLabel(form), true)
+			if form.IsEdit {
+				<button
+					type="button"
+					onclick="document.getElementById('account-modal')?.close()"
+					class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+				>Cancelar</button>
+			}
+		</div>
+	</form>
+}
+
+templ Account(account AccountDTO) {
+	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
+		</div>
+		<div class="flex items-center gap-3">
+			<p class="text-sm font-bold text-finops-800">{ utils.FormatMoney(account.CurrentBalance) }</p>
+			<span
+				class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500"
+				title="Edicao em breve"
+			>
+				<i class="fa-solid fa-pen-to-square"></i>
+			</span>
+		</div>
+	</li>
+}

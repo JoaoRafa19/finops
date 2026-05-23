@@ -1,0 +1,119 @@
+package app
+
+import (
+	"log/slog"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	HTTPAddr          string
+	DbURL             string
+	RedisAddr         string
+	RedisPassword     string
+	RedisDB           int
+	SessionCookie     string
+	CookieSecure      bool
+	SessionTTL        time.Duration
+	RememberMeTTL     time.Duration
+	SlidingSessionTTL bool
+	LogLevel          slog.Level
+}
+
+func LoadConfig() Config {
+	godotenv.Load()
+	addr := os.Getenv("HTTP_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
+
+	dbURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	redisAddr := strings.TrimSpace(getEnv("REDIS_ADDR", "localhost:6379"))
+	redisPassword := strings.TrimSpace(os.Getenv("REDIS_PASSWORD"))
+	sessionCookie := strings.TrimSpace(getEnv("SESSION_COOKIE_NAME", "finops_session"))
+	cookieSecure := getEnvBool("COOKIE_SECURE", false)
+	redisDB := getEnvInt("REDIS_DB", 0)
+	sessionTTL := getEnvDuration("SESSION_TTL", 30*time.Minute)
+	rememberMeTTL := getEnvDuration("REMEMBER_ME_TTL", 7*24*time.Hour)
+	slidingSessionTTL := getEnvBool("SLIDING_SESSION_TTL", true)
+	logLevel := getEnvLogLevel("LOG_LEVEL", slog.LevelInfo)
+
+	return Config{
+		HTTPAddr:          addr,
+		DbURL:             dbURL,
+		RedisAddr:         redisAddr,
+		RedisPassword:     redisPassword,
+		RedisDB:           redisDB,
+		SessionCookie:     sessionCookie,
+		CookieSecure:      cookieSecure,
+		SessionTTL:        sessionTTL,
+		RememberMeTTL:     rememberMeTTL,
+		SlidingSessionTTL: slidingSessionTTL,
+		LogLevel:          logLevel,
+	}
+}
+
+func getEnv(key, fallback string) string {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
+func getEnvInt(key string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvLogLevel(key string, fallback slog.Level) slog.Level {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+
+	var level slog.Level
+	if err := level.UnmarshalText([]byte(value)); err != nil {
+		return fallback
+	}
+
+	return level
+}

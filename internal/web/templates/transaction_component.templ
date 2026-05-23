@@ -1,0 +1,203 @@
+package templates
+
+import (
+	"finops/internal/store"
+	"finops/internal/utils"
+	"fmt"
+	"strings"
+	"time"
+)
+
+type TransactionDTO struct {
+	ID          int
+	Description string
+	Amount      float64
+	Category    string
+	CreatedAt   time.Time
+	Account     string
+	Direction   string
+	Currency    string
+}
+
+func transactionCategoryLabel(category string) string {
+	if strings.TrimSpace(category) == "" {
+		return "Sem categoria"
+	}
+
+	return category
+}
+
+func transactionDirectionLabel(direction string) string {
+	switch strings.TrimSpace(direction) {
+	case "credit":
+		return "Entrada"
+	case "debit":
+		return "Saida"
+	default:
+		return "Movimento"
+	}
+}
+
+func transactionAmountLabel(tx TransactionDTO) string {
+	amount := tx.Amount
+	if strings.TrimSpace(tx.Direction) == "debit" {
+		amount = -amount
+	}
+
+	return utils.FormatMoney(amount)
+}
+
+func transactionAmountClass(direction string) string {
+	if strings.TrimSpace(direction) == "credit" {
+		return "text-sm font-bold text-emerald-700"
+	}
+
+	if strings.TrimSpace(direction) == "debit" {
+		return "text-sm font-bold text-rose-700"
+	}
+
+	return "text-sm font-bold text-finops-800"
+}
+
+templ TransactionPanel(transactions []TransactionDTO) {
+	<div id="transaction-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Transações Recentes</p>
+			<p class="mt-01 text-sm text-finops-700">Veja as últimas transações registradas</p>
+		</div>
+		if len(transactions) > 0 {
+			<ul class="mt-6 space-y-3" id="transactions-list">
+				for _, tx := range transactions {
+					@TransactionItem(tx)
+				}
+			</ul>
+		} else {
+			<p class="mt-6" id="empty-transaction-list">
+				Nenhuma transação registrada ainda.
+			</p>
+		}
+	</div>
+}
+
+templ TransactionItem(transaction TransactionDTO) {
+	<li
+		id={ fmt.Sprintf("transaction-%d", transaction.ID) }
+		class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+	>
+		<div>
+			<p class="font-semibold text-finops-900">{ transaction.Description }</p>
+			<p class="text-sm text-finops-700">
+				{ transaction.CreatedAt.Format("02 Jan 2006") } • { transaction.Account } • { transactionCategoryLabel(transaction.Category) } • { transactionDirectionLabel(transaction.Direction) }
+			</p>
+		</div>
+		<div class="flex items-center gap-3">
+			<p class={ transactionAmountClass(transaction.Direction) }>{ transactionAmountLabel(transaction) }</p>
+		</div>
+	</li>
+}
+
+templ TransactionModalDialog(form TransactionFormState, csrf_token string, accounts []store.Account, categories []store.Category) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		if form.ErrorMessage != "" {
+			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ form.ErrorMessage }</p>
+		}
+		<form
+			method="post"
+			action="/transactions"
+			hx-post="/transactions"
+			hx-target="#transaction-modal-body"
+			hx-swap="innerHTML"
+			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
+		>
+			<input type="hidden" name="_csrf" value={ csrf_token }/>
+			<div class="md:col-span-2">
+				@FormLabel("description", "Descricao")
+				@TextInput("description", "description", "text", form.Description, "Compra no supermercado", true)
+			</div>
+			<div>
+				@FormLabel("amount", "Valor")
+				@TextInput("amount", "amount", "text", form.Amount, "0.00", true)
+			</div>
+			<div>
+				@FormLabel("account_id", "Conta")
+				@SelectInput("account_id", "account_id", buildAccountOptions(accounts, form.AccountID), true)
+			</div>
+			<div>
+				@FormLabel("posted_on", "Data")
+				@TextInput("posted_on", "posted_on", "date", form.PostedOn, "", true)
+			</div>
+			<div>
+				@FormLabel("category_id", "Categoria")
+				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), true)
+			</div>
+			<div>
+				@FormLabel("direction", "Tipo")
+				@SelectInput("direction", "direction", buildTransactionDirectionOptions(form.Direction), true)
+			</div>
+			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+				@PrimaryButton("submit", "Adicionar Transacao", true)
+			</div>
+		</form>
+	</div>
+}
+
+templ TransferModalBlocked() {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Transferir entre contas</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		<p class="mt-4 text-sm text-finops-700">Cadastre ao menos duas contas para registrar uma transferencia.</p>
+	</div>
+}
+
+templ TransferModalDialog(form TransferFormState, csrf_token string, accounts []store.Account) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Transferir entre contas</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		if form.ErrorMessage != "" {
+			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ form.ErrorMessage }</p>
+		}
+		<form
+			method="post"
+			action="/transfers"
+			hx-post="/transfers"
+			hx-target="#transfer-modal-body"
+			hx-swap="innerHTML"
+			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
+		>
+			<input type="hidden" name="_csrf" value={ csrf_token }/>
+			<div>
+				@FormLabel("from_account_id", "Conta de origem")
+				@SelectInput("from_account_id", "from_account_id", buildAccountOptions(accounts, form.FromAccountID), true)
+			</div>
+			<div>
+				@FormLabel("to_account_id", "Conta de destino")
+				@SelectInput("to_account_id", "to_account_id", buildAccountOptions(accounts, form.ToAccountID), true)
+			</div>
+			<div>
+				@FormLabel("amount", "Valor")
+				@TextInput("amount", "amount", "text", form.Amount, "0.00", true)
+			</div>
+			<div>
+				@FormLabel("posted_on", "Data")
+				@TextInput("posted_on", "posted_on", "date", form.PostedOn, "", true)
+			</div>
+			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+				@PrimaryButton("submit", "Transferir", true)
+			</div>
+		</form>
+	</div>
+}

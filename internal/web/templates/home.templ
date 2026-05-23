@@ -1,0 +1,137 @@
+package templates
+
+import "finops/internal/store"
+
+var accountTypeOptions = []SelectOption{
+	{Value: "", Label: "Selecione", Selected: true},
+	{Value: "checking", Label: "Conta corrente"},
+	{Value: "savings", Label: "Poupanca"},
+	{Value: "cash", Label: "Dinheiro"},
+	{Value: "credit_card", Label: "Cartao"},
+	{Value: "investment", Label: "Investimento"},
+}
+
+templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		@AppHead("Finops", true)
+		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+			<main class="mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 sm:px-6">
+				<section class="w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10">
+					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Workspace</p>
+					<h1 class="mt-3 text-3xl font-extrabold sm:text-4xl">Finops online</h1>
+					<p class="mt-3 text-sm text-finops-700">
+						Voce esta autenticado como
+						<span class="font-bold text-finops-900">{ user }</span>.
+					</p>
+					<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+						<p class="text-sm font-semibold text-finops-800">Sessao ativa e protegida por CSRF.</p>
+						if len(accounts) == 0 {
+							<p class="mt-1 text-sm text-finops-700">Seu workspace ja esta pronto. O proximo passo e cadastrar sua primeira conta.</p>
+						}
+					</div>
+					<div class="mt-8 flex justify-end gap-2">
+						<form
+							method="get"
+							action="/account-modal"
+							hx-get="/account-modal"
+							hx-target="#account-modal-body"
+							hx-swap="innerHTML"
+							hx-on::after-request="document.getElementById('account-modal')?.showModal()"
+						>
+							<input type="hidden" name="_csrf" value={ csrf_token }/>
+							@SecondaryButton("submit", "Cadastrar Conta")
+						</form>
+						if len(accounts) > 0 {
+							<form
+								method="get"
+								action="/transaction-modal"
+								hx-get="/transaction-modal"
+								hx-target="#transaction-modal-body"
+								hx-on::after-request="document.getElementById('transaction-modal')?.showModal()"
+								hx-swap="innerHTML"
+							>
+								<input type="hidden" name="_csrf" value={ csrf_token }/>
+								@SecondaryButton("submit", "Registrar Transacao")
+							</form>
+						}
+						if len(accounts) > 1 {
+							<form
+								method="get"
+								action="/transfer-modal"
+								hx-get="/transfer-modal"
+								hx-target="#transfer-modal-body"
+								hx-on::after-request="document.getElementById('transfer-modal')?.showModal()"
+								hx-swap="innerHTML"
+							>
+								<input type="hidden" name="_csrf" value={ csrf_token }/>
+								@SecondaryButton("submit", "Transferir")
+							</form>
+						}
+						<form
+							method="get"
+							action="/category-modal"
+							hx-get="/category-modal"
+							hx-target="#category-modal-body"
+							hx-on::after-request="document.getElementById('category-modal')?.showModal()"
+							hx-swap="innerHTML"
+						>
+							<input type="hidden" name="_csrf" value={ csrf_token }/>
+							@SecondaryButton("submit", "Criar Categoria")
+						</form>
+						<form method="post" action="/logout">
+							<input type="hidden" name="_csrf" value={ csrf_token }/>
+							@PrimaryButton("submit", "Sair", false)
+						</form>
+					</div>
+					<div class="mt-8">
+						@AccountPanels(accounts)
+					</div>
+					<div class="mt-8">
+						@TransactionPanel(transactions_dto)
+					</div>
+					<div class="mt-8">
+						@CategoryPannels(csrf_token, categories, NewCategoryFormState())
+					</div>
+					<dialog id="account-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="account-modal-body"></div>
+					</dialog>
+					<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="transaction-modal-body"></div>
+					</dialog>
+					<dialog id="transfer-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="transfer-modal-body"></div>
+					</dialog>
+					<dialog id="category-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+						<div id="category-modal-body"></div>
+					</dialog>
+					<script>
+					 document.body.addEventListener("category-created", () => {
+						const dialog = document.getElementById("category-modal");
+						const body = document.getElementById("category-modal-body");
+						dialog?.close();
+						if (body) body.innerHTML = "";
+					});
+						document.body.addEventListener("click", (event) => {
+							["account-modal", "transaction-modal", "transfer-modal", "category-modal"].forEach((id) => {
+								const dialog = document.getElementById(id);
+								if (dialog && dialog.open) {
+									const rect = dialog.getBoundingClientRect();
+									const clickedInDialog = (
+										event.clientX >= rect.left &&
+										event.clientX <= rect.right &&
+										event.clientY >= rect.top &&
+										event.clientY <= rect.bottom
+									);
+									if (!clickedInDialog) {
+										dialog.close();
+									}
+								}
+							});
+						});
+					</script>
+				</section>
+			</main>
+		</body>
+	</html>
+}
