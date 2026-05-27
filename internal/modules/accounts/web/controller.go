@@ -190,27 +190,6 @@ func (c *Controller) renderAccountsModal(w http.ResponseWriter, r *http.Request,
 	render.Templ(w, r, http.StatusOK, templates.AccountModalDialog(templates.NewCreateAccountFormStateFromValues(form.Name, form.Type, form.Currency, form.CurrentBalance, form.ErrorMessage), csrfToken))
 }
 
-func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request, userID int64) {
-	accounts, err := c.accountService.ListSummariesByUser(r.Context(), userID)
-	if err != nil {
-		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
-		return
-	}
-
-	accountsDTO := make([]templates.AccountItemDTO, len(accounts))
-	for i, account := range accounts {
-		accountsDTO[i] = templates.AccountItemDTO{
-			ID:             account.ID,
-			Name:           account.Name,
-			Type:           account.Type,
-			Currency:       account.Currency,
-			CurrentBalance: account.CurrentBalance,
-		}
-	}
-
-	render.Templ(w, r, http.StatusOK, templates.AccountPanels(accountsDTO))
-}
-
 func (c *Controller) accountDTOFromSummary(ctx context.Context, userID, accountID int64) (templates.AccountItemDTO, error) {
 	summaries, err := c.accountService.ListSummariesByUser(ctx, userID)
 	if err != nil {

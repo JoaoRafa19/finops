@@ -121,17 +121,7 @@ type AccountFormState struct {
 	Currency       string
 	CurrentBalance string
 	ErrorMessage   string
-	Target         string
-	Inline         bool
 	IsEdit         bool
-}
-
-func (s AccountFormState) ContainerID() string {
-	if s.IsEdit {
-		return fmt.Sprintf("account-%d", s.AccountID)
-	}
-
-	return "account-create-form"
 }
 
 type CategoryFormState struct {
@@ -212,9 +202,6 @@ func accountFormAction(form AccountFormState) string {
 }
 
 func accountFormTarget(form AccountFormState) string {
-	if form.Target != "" {
-		return form.Target
-	}
 
 	if form.IsEdit {
 		return "closest li"
@@ -239,19 +226,10 @@ func accountFormDescription(form AccountFormState) string {
 	return "Salvar alteracoes"
 }
 
-func accountFormClass(inline bool) string {
-	if inline {
-		return "grid gap-4 md:grid-cols-2"
-	}
-
-	return "mt-6 grid gap-4 md:grid-cols-2"
-}
-
 func NewCreateAccountFormState() AccountFormState {
 	return AccountFormState{
 		Currency:       "BRL",
 		CurrentBalance: "0.00",
-		Target:         "#account-modal-body",
 	}
 }
 
@@ -269,7 +247,6 @@ func NewCreateAccountFormStateFromValues(name, accountType, currency, currentBal
 		Currency:       currency,
 		CurrentBalance: currentBalance,
 		ErrorMessage:   errorMessage,
-		Target:         "#account-modal-body",
 	}
 }
 
@@ -282,7 +259,6 @@ func NewEditAccountFormState(account store.Account, currentBalance float64, erro
 		CurrentBalance: fmt.Sprintf("%.2f", currentBalance),
 		ErrorMessage:   errorMessage,
 		IsEdit:         true,
-		Target:         "#account-modal-body",
 	}
 }
 
@@ -299,6 +275,5 @@ func NewEditAccountFormStateFromValues(accountID int64, name, accountType, curre
 		CurrentBalance: currentBalance,
 		ErrorMessage:   errorMessage,
 		IsEdit:         true,
-		Target:         "#account-modal-body",
 	}
 }

@@ -5,33 +5,6 @@ import (
 	"fmt"
 )
 
-templ AccountEditForm(form AccountFormState, csrfToken string) {
-	<li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4" id={ form.ContainerID() }>
-		@AccountForm(form, csrfToken)
-	</li>
-}
-
-templ AccountListItem(account AccountItemDTO, balance float64) {
-	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-		<div>
-			<p class="font-semibold text-finops-900">{ account.Name }</p>
-			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
-			<p class="text-sm text-finops-700">Saldo: { fmt.Sprintf("%.2f", balance) }</p>
-		</div>
-		<div class="flex gap-2">
-			<a
-				href={ fmt.Sprintf("/accounts/%d/edit", account.ID) }
-				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-			>Editar</a>
-			<button
-				hx-target="closest li"
-				hx-swap="outerHTML"
-				class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-			>Excluir</button>
-		</div>
-	</li>
-}
-
 templ AccountPanels(accounts []AccountItemDTO) {
 	<div id="accounts-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
 		<div class="flex items-center justify-between">
@@ -94,7 +67,7 @@ templ AccountForm(form AccountFormState, csrf_token string) {
 		hx-post={ accountFormAction(form) }
 		hx-target={ accountFormTarget(form) }
 		hx-swap="outerHTML"
-		class={ accountFormClass(form.Inline) }
+		class="mt-6 grid gap-4 md:grid-cols-2"
 	>
 		<input type="hidden" name="_csrf" value={ csrf_token }/>
 		if form.ErrorMessage != "" {
@@ -129,22 +102,4 @@ templ AccountForm(form AccountFormState, csrf_token string) {
 			}
 		</div>
 	</form>
-}
-
-templ Account(account AccountItemDTO) {
-	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-		<div>
-			<p class="font-semibold text-finops-900">{ account.Name }</p>
-			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency }</p>
-		</div>
-		<div class="flex items-center gap-3">
-			<p class="text-sm font-bold text-finops-800">{ utils.FormatMoney(account.CurrentBalance) }</p>
-			<span
-				class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500"
-				title="Edicao em breve"
-			>
-				<i class="fa-solid fa-pen-to-square"></i>
-			</span>
-		</div>
-	</li>
 }
