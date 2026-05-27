@@ -11,7 +11,7 @@ templ AccountEditForm(form AccountFormState, csrfToken string) {
 	</li>
 }
 
-templ AccountListItem(account AccountDTO, balance float64) {
+templ AccountListItem(account AccountItemDTO, balance float64) {
 	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
 		<div>
 			<p class="font-semibold text-finops-900">{ account.Name }</p>
@@ -32,7 +32,7 @@ templ AccountListItem(account AccountDTO, balance float64) {
 	</li>
 }
 
-templ AccountPanels(accounts []AccountDTO) {
+templ AccountPanels(accounts []AccountItemDTO) {
 	<div id="accounts-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
 		<div class="flex items-center justify-between">
 			<p class="text-lg font-bold text-finops-900">Contas</p>
@@ -63,7 +63,7 @@ templ AccountModalDialog(form AccountFormState, csrf_token string) {
 	</div>
 }
 
-templ AccountItem(account AccountDTO) {
+templ AccountItem(account AccountItemDTO) {
 	<li
 		id={ fmt.Sprintf("account-%d", account.ID) }
 		class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
@@ -131,7 +131,7 @@ templ AccountForm(form AccountFormState, csrf_token string) {
 	</form>
 }
 
-templ Account(account AccountDTO) {
+templ Account(account AccountItemDTO) {
 	<li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
 		<div>
 			<p class="font-semibold text-finops-900">{ account.Name }</p>

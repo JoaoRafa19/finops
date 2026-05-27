@@ -39,24 +39,23 @@ func SessionLoader(auth service.AuthService, cookieName string, cookieSecure boo
 			}
 
 			effectiveSessionID := sessionID
-			effectiveSession := session 
-
+			effectiveSession := session
 
 			if time.Until(session.ExpiresAt) < 5*time.Minute {
 				newSession, err := auth.RotateSession(r.Context(), sessionID)
 				if err == nil {
-					effectiveSessionID = newSession.ID 
+					effectiveSessionID = newSession.ID
 					effectiveSession = newSession
 
 					http.SetCookie(w, &http.Cookie{
-						Name: cookieName,
-						Value: newSession.ID,
-						Path: "/",
+						Name:     cookieName,
+						Value:    newSession.ID,
+						Path:     "/",
 						HttpOnly: true,
-						Secure: cookieSecure,
+						Secure:   cookieSecure,
 						SameSite: http.SameSiteLaxMode,
-						Expires: newSession.ExpiresAt,
-						MaxAge: int(time.Until(newSession.ExpiresAt).Seconds()),
+						Expires:  newSession.ExpiresAt,
+						MaxAge:   int(time.Until(newSession.ExpiresAt).Seconds()),
 					})
 				}
 			}

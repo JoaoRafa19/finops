@@ -63,7 +63,7 @@ func AccountEditForm(form AccountFormState, csrfToken string) templ.Component {
 	})
 }
 
-func AccountListItem(account AccountDTO, balance float64) templ.Component {
+func AccountListItem(account AccountItemDTO, balance float64) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -157,7 +157,7 @@ func AccountListItem(account AccountDTO, balance float64) templ.Component {
 	})
 }
 
-func AccountPanels(accounts []AccountDTO) templ.Component {
+func AccountPanels(accounts []AccountItemDTO) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -282,7 +282,7 @@ func AccountModalDialog(form AccountFormState, csrf_token string) templ.Componen
 	})
 }
 
-func AccountItem(account AccountDTO) templ.Component {
+func AccountItem(account AccountItemDTO) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -573,7 +573,7 @@ func AccountForm(form AccountFormState, csrf_token string) templ.Component {
 	})
 }
 
-func Account(account AccountDTO) templ.Component {
+func Account(account AccountItemDTO) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

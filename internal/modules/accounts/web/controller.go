@@ -197,10 +197,9 @@ func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	accountsDTO := make([]templates.AccountDTO, len(accounts))
-
+	accountsDTO := make([]templates.AccountItemDTO, len(accounts))
 	for i, account := range accounts {
-		accountsDTO[i] = templates.AccountDTO{
+		accountsDTO[i] = templates.AccountItemDTO{
 			ID:             account.ID,
 			Name:           account.Name,
 			Type:           account.Type,
@@ -212,15 +211,15 @@ func (c *Controller) renderAccountsPanel(w http.ResponseWriter, r *http.Request,
 	render.Templ(w, r, http.StatusOK, templates.AccountPanels(accountsDTO))
 }
 
-func (c *Controller) accountDTOFromSummary(ctx context.Context, userID, accountID int64) (templates.AccountDTO, error) {
+func (c *Controller) accountDTOFromSummary(ctx context.Context, userID, accountID int64) (templates.AccountItemDTO, error) {
 	summaries, err := c.accountService.ListSummariesByUser(ctx, userID)
 	if err != nil {
-		return templates.AccountDTO{}, err
+		return templates.AccountItemDTO{}, err
 	}
 
 	for _, summary := range summaries {
 		if summary.ID == accountID {
-			return templates.AccountDTO{
+			return templates.AccountItemDTO{
 				ID:             summary.ID,
 				Name:           summary.Name,
 				Type:           summary.Type,
@@ -230,7 +229,7 @@ func (c *Controller) accountDTOFromSummary(ctx context.Context, userID, accountI
 		}
 	}
 
-	return templates.AccountDTO{}, errors.New("account summary not found")
+	return templates.AccountItemDTO{}, errors.New("account summary not found")
 }
 
 func parseAccountPayload(r *http.Request) (accountPayload, int, error) {

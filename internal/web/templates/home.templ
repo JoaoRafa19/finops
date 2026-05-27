@@ -1,6 +1,9 @@
 package templates
 
-import "finops/internal/store"
+import (
+	"finops/internal/store"
+	"finops/internal/utils"
+)
 
 var accountTypeOptions = []SelectOption{
 	{Value: "", Label: "Selecione", Selected: true},
@@ -11,7 +14,7 @@ var accountTypeOptions = []SelectOption{
 	{Value: "investment", Label: "Investimento"},
 }
 
-templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) {
+templ HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
 		@AppHead("Finops", true)
@@ -26,7 +29,7 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 					</p>
 					<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
 						<p class="text-sm font-semibold text-finops-800">Sessao ativa e protegida por CSRF.</p>
-						if len(accounts) == 0 {
+						if len(accountDto.Accounts) == 0 {
 							<p class="mt-1 text-sm text-finops-700">Seu workspace ja esta pronto. O proximo passo e cadastrar sua primeira conta.</p>
 						}
 					</div>
@@ -42,7 +45,7 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 							<input type="hidden" name="_csrf" value={ csrf_token }/>
 							@SecondaryButton("submit", "Cadastrar Conta")
 						</form>
-						if len(accounts) > 0 {
+						if len(accountDto.Accounts) > 0 {
 							<form
 								method="get"
 								action="/transaction-modal"
@@ -55,7 +58,7 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 								@SecondaryButton("submit", "Registrar Transacao")
 							</form>
 						}
-						if len(accounts) > 1 {
+						if len(accountDto.Accounts) > 1 {
 							<form
 								method="get"
 								action="/transfer-modal"
@@ -84,8 +87,17 @@ templ HomePage(user, csrf_token string, accounts []AccountDTO, categories []stor
 							@PrimaryButton("submit", "Sair", false)
 						</form>
 					</div>
-					<div class="mt-8">
-						@AccountPanels(accounts)
+					<div class="mt-8 space-y-4">
+						<div class="rounded-2xl border border-slate-200 bg-white p-6">
+							<p class="text-sm font-semibold text-finops-700">Saldo total</p>
+							<p class="mt-2 text-3xl font-extrabold text-finops-900">
+								{ utils.FormatMoney(accountDto.TotalBalance) }
+							</p>
+							<p class="mt-1 text-sm text-finops-700">
+								Soma dos saldos atuais das contas cadastradas
+							</p>
+						</div>
+						@AccountPanels(accountDto.Accounts)
 					</div>
 					<div class="mt-8">
 						@TransactionPanel(transactions_dto)

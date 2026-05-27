@@ -12,6 +12,11 @@ type SelectOption struct {
 }
 
 type AccountDTO struct {
+	TotalBalance float64
+	Accounts     []AccountItemDTO
+}
+
+type AccountItemDTO struct {
 	ID             int64
 	Name           string
 	Type           string
