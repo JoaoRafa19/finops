@@ -49,21 +49,21 @@ func transactionAmountLabel(tx TransactionDTO) string {
 
 func transactionAmountClass(direction string) string {
 	if strings.TrimSpace(direction) == "credit" {
-		return "text-sm font-bold text-emerald-700"
+		return "text-sm font-bold text-emerald-700 tabular-nums whitespace-nowrap bg-green-200 px-2 py-1 rounded"
 	}
 
 	if strings.TrimSpace(direction) == "debit" {
-		return "text-sm font-bold text-rose-700"
+		return "text-sm font-bold text-rose-700 tabular-nums whitespace-nowrap bg-rose-200 px-2 py-1 rounded"
 	}
 
-	return "text-sm font-bold text-finops-800"
+	return "text-sm font-bold text-finops-800 tabular-nums whitespace-nowrap bg-slate-200 px-2 py-1 rounded"
 }
 
 templ TransactionPanel(transactions []TransactionDTO) {
 	<div id="transaction-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
-		<div class="flex items-center justify-between">
+		<div class="flex flex-col items-start justify-between">
 			<p class="text-lg font-bold text-finops-900">Transações Recentes</p>
-			<p class="mt-01 text-sm text-finops-700">Veja as últimas transações registradas</p>
+			<p class="mt-1 text-sm text-finops-700">Últimos lançamentos registrados no workspace</p>
 		</div>
 		if len(transactions) > 0 {
 			<ul class="mt-6 space-y-3" id="transactions-list">
@@ -74,6 +74,7 @@ templ TransactionPanel(transactions []TransactionDTO) {
 		} else {
 			<p class="mt-6" id="empty-transaction-list">
 				Nenhuma transação registrada ainda.
+				Quando você registrar uma entrada, saída ou transferência, ela aparecerá aqui.
 			</p>
 		}
 	</div>
@@ -82,12 +83,12 @@ templ TransactionPanel(transactions []TransactionDTO) {
 templ TransactionItem(transaction TransactionDTO) {
 	<li
 		id={ fmt.Sprintf("transaction-%d", transaction.ID) }
-		class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+		class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
 			<p class="font-semibold text-finops-900">{ transaction.Description }</p>
 			<p class="text-sm text-finops-700">
-				{ transaction.CreatedAt.Format("02 Jan 2006") } • { transaction.Account } • { transactionCategoryLabel(transaction.Category) } • { transactionDirectionLabel(transaction.Direction) }
+				{ transaction.CreatedAt.Format("02/01/2006") } • { transaction.Account } • { transactionCategoryLabel(transaction.Category) } • { transactionDirectionLabel(transaction.Direction) }
 			</p>
 		</div>
 		<div class="flex items-center gap-3">

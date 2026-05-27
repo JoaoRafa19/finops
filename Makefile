@@ -40,14 +40,7 @@ migrate: # Run database migrations with tern
     --migrations ./internal/store/migrations/
 
 sqlc: # Generate sqlc code
-	@if command -v sqlc >/dev/null 2>&1; then \
-		sqlc generate -f ./internal/store/sqlc.yaml; \
-	elif [ -x "$$(go env GOPATH)/bin/sqlc" ]; then \
-		"$$(go env GOPATH)/bin/sqlc" generate -f ./internal/store/sqlc.yaml; \
-	else \
-		echo "sqlc binary not found; running via go run..."; \
-		go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate -f ./internal/store/sqlc.yaml; \
-	fi
+	sqlc generate -f ./internal/store/sqlc.yaml
 
 gen: # Generate sqlc code
 	$(MAKE) sqlc && \
