@@ -49,3 +49,13 @@ gantt
 - **Transações**: registrar transação manual e ver o efeito refletido na home.
 - **Transferências**: movimentar valor entre duas contas sem distorcer o saldo consolidado.
 - **Qualidade**: `go test ./...` passando ao final de cada bloco.
+
+
+## Env Variables
+````
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=finops
+DB_USER=finops
+DB_PASSWORD=finops
+```
