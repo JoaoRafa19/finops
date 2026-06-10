@@ -6,6 +6,8 @@ import (
 	category "finops/internal/modules/category/web"
 	home "finops/internal/modules/home/web"
 	onboarding "finops/internal/modules/onboarding/web"
+	imports "finops/internal/modules/imports/web"
+	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
 	"net/http"
@@ -28,6 +30,8 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.CategoryService,
 	)
 	categoryController := category.NewCategoryController(deps.CategoryService)
+	reportsController := reports.NewReportsController(deps.ReportService)
+	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -55,6 +59,15 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
+	private.HandleFunc("GET /reports", reportsController.Page)
+	private.HandleFunc("GET /reports/spending", reportsController.Spending)
+	private.HandleFunc("GET /reports/comparison", reportsController.Comparison)
+	private.HandleFunc("GET /reports/balance", reportsController.Balance)
+	private.HandleFunc("GET /reports/transactions", reportsController.Transactions)
+	private.HandleFunc("GET /import", importController.Page)
+	private.HandleFunc("POST /import/upload", importController.Upload)
+	private.HandleFunc("POST /import/preview-csv", importController.PreviewCSV)
+	private.HandleFunc("POST /import/confirm", importController.Confirm)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)

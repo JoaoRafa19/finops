@@ -19,7 +19,8 @@ templ HomePage(user, csrf_token string, accountDto AccountDTO, categories []stor
 	<html lang="pt-BR">
 		@AppHead("Finops", true)
 		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
-			<main class="mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 sm:px-6">
+			@SideNav("/")
+			<main class="mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 pl-16 sm:px-6 sm:pl-16">
 				<section class="w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10">
 					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Workspace</p>
 					<h1 class="mt-3 text-3xl font-extrabold sm:text-4xl">Finops online</h1>

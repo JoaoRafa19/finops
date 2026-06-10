@@ -46,6 +46,9 @@ gen: # Generate sqlc code
 	$(MAKE) sqlc && \
 	templ generate ./...
 
+templ:
+	templ generate ./...
+
 setup: # Install necessary tools
 	go install github.com/a-h/templ/cmd/templ@latest
 	go install github.com/jackc/tern/v2@latest

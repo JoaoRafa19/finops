@@ -1,0 +1,345 @@
+package templates
+
+import (
+	"finops/internal/services"
+	"finops/internal/utils"
+	"fmt"
+	"time"
+)
+
+func fmtMonth(t time.Time) string {
+	months := [...]string{
+		"Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+		"Jul", "Ago", "Set", "Out", "Nov", "Dez",
+	}
+	return fmt.Sprintf("%s/%d", months[t.Month()-1], t.Year())
+}
+
+func fmtDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+func spendingBarWidth(total, max float64) string {
+	if max == 0 {
+		return "0%"
+	}
+	pct := (total / max) * 100
+	if pct > 100 {
+		pct = 100
+	}
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func maxSpending(rows []service.CategorySpend) float64 {
+	var m float64
+	for _, r := range rows {
+		if r.Total > m {
+			m = r.Total
+		}
+	}
+	return m
+}
+
+templ ReportsPage(csrf string) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		@AppHead("Relatórios · Finops", true)
+		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+			@SideNav("/reports")
+			<main class="mx-auto max-w-5xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+				<div class="mb-6">
+					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
+					<h1 class="mt-1 text-3xl font-extrabold">Relatórios</h1>
+				</div>
+				<div class="rounded-3xl border border-white/80 bg-white/85 p-6 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-8">
+					<!-- Seletor de período -->
+					<div class="flex flex-wrap items-end gap-4 border-b border-slate-200 pb-6">
+						<div>
+							@FormLabel("from", "De")
+							<input
+								id="from"
+								type="date"
+								name="from"
+								class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+							/>
+						</div>
+						<div>
+							@FormLabel("to", "Até")
+							<input
+								id="to"
+								type="date"
+								name="to"
+								class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+							/>
+						</div>
+						<button
+							type="button"
+							id="apply-period"
+							class="inline-flex items-center justify-center rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-finops-800"
+						>Aplicar</button>
+					</div>
+					<!-- Tabs -->
+					<div class="mt-6 flex flex-wrap gap-2" id="report-tabs">
+						<button
+							type="button"
+							class="report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white"
+							data-tab="spending"
+							hx-get="/reports/spending"
+							hx-target="#report-content"
+							hx-swap="innerHTML"
+							hx-trigger="click"
+						>Gastos por Categoria</button>
+						<button
+							type="button"
+							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+							data-tab="comparison"
+							hx-get="/reports/comparison"
+							hx-target="#report-content"
+							hx-swap="innerHTML"
+							hx-trigger="click"
+						>Receitas x Despesas</button>
+						<button
+							type="button"
+							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+							data-tab="balance"
+							hx-get="/reports/balance"
+							hx-target="#report-content"
+							hx-swap="innerHTML"
+							hx-trigger="click"
+						>Evolução de Saldo</button>
+						<button
+							type="button"
+							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+							data-tab="transactions"
+							hx-get="/reports/transactions"
+							hx-target="#report-content"
+							hx-swap="innerHTML"
+							hx-trigger="click"
+						>Transações</button>
+					</div>
+					<!-- Conteúdo do relatório -->
+					<div
+						id="report-content"
+						class="mt-6"
+						hx-get="/reports/spending"
+						hx-trigger="load"
+						hx-swap="innerHTML"
+					>
+						<div class="flex items-center justify-center py-12 text-sm text-finops-700">
+							<i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando...
+						</div>
+					</div>
+				</div>
+			</main>
+			<script>
+				// Mantém estado ativo do tab
+				document.addEventListener("DOMContentLoaded", () => {
+					const tabs = document.querySelectorAll(".report-tab");
+					tabs.forEach(tab => {
+						tab.addEventListener("htmx:beforeRequest", () => {
+							tabs.forEach(t => {
+								t.className = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
+							});
+							tab.className = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
+						});
+					});
+
+					// Aplica período nos tabs ativos
+					document.getElementById("apply-period").addEventListener("click", () => {
+						const from = document.getElementById("from").value;
+						const to   = document.getElementById("to").value;
+						const activeTab = document.querySelector(".report-tab.bg-finops-900");
+						if (!activeTab) return;
+						const base = activeTab.getAttribute("hx-get").split("?")[0];
+						const params = new URLSearchParams();
+						if (from) params.set("from", from);
+						if (to)   params.set("to", to);
+						activeTab.setAttribute("hx-get", base + (params.toString() ? "?" + params.toString() : ""));
+						htmx.trigger(activeTab, "click");
+					});
+				});
+			</script>
+		</body>
+	</html>
+}
+
+templ SpendingFragment(rows []service.CategorySpend, from, to time.Time) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">Gastos por Categoria</p>
+			<p class="text-sm text-finops-700">{ from.Format("02/01/2006") } – { to.Format("02/01/2006") }</p>
+		</div>
+		if len(rows) == 0 {
+			<p class="py-8 text-center text-sm text-finops-700">Nenhum gasto encontrado no período.</p>
+		} else {
+			<div class="space-y-3">
+				for _, row := range rows {
+					<div>
+						<div class="mb-1 flex items-center justify-between text-sm">
+							<span class="font-semibold text-finops-800">{ row.CategoryName }</span>
+							<span class="font-bold text-rose-700">{ utils.FormatMoney(row.Total) }</span>
+						</div>
+						<div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+							<div
+								class="h-2 rounded-full bg-rose-400"
+								style={ fmt.Sprintf("width:%s", spendingBarWidth(row.Total, maxSpending(rows))) }
+							></div>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">Receitas x Despesas</p>
+			<p class="text-sm text-finops-700">{ from.Format("02/01/2006") } – { to.Format("02/01/2006") }</p>
+		</div>
+		if len(rows) == 0 {
+			<p class="py-8 text-center text-sm text-finops-700">Nenhum dado encontrado no período.</p>
+		} else {
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="pb-3 pr-6">Mês</th>
+							<th class="pb-3 pr-6 text-right">Receitas</th>
+							<th class="pb-3 pr-6 text-right">Despesas</th>
+							<th class="pb-3 text-right">Saldo</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range rows {
+							<tr class="py-2">
+								<td class="py-3 pr-6 font-semibold text-finops-900">{ fmtMonth(row.Month) }</td>
+								<td class="py-3 pr-6 text-right font-bold text-emerald-700">{ utils.FormatMoney(row.Income) }</td>
+								<td class="py-3 pr-6 text-right font-bold text-rose-700">{ utils.FormatMoney(row.Expenses) }</td>
+								<td class={ comparisonBalanceClass(row.Income - row.Expenses) }>{ utils.FormatMoney(row.Income - row.Expenses) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+func comparisonBalanceClass(diff float64) string {
+	base := "py-3 text-right font-bold tabular-nums "
+	if diff >= 0 {
+		return base + "text-emerald-700"
+	}
+	return base + "text-rose-700"
+}
+
+templ BalanceFragment(points []service.BalancedHistory, from, to time.Time) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">Evolução de Saldo</p>
+			<p class="text-sm text-finops-700">{ from.Format("02/01/2006") } – { to.Format("02/01/2006") }</p>
+		</div>
+		if len(points) == 0 {
+			<p class="py-8 text-center text-sm text-finops-700">Nenhum dado encontrado no período.</p>
+		} else {
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="pb-3 pr-6">Mês</th>
+							<th class="pb-3 text-right">Saldo Acumulado</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, p := range points {
+							<tr>
+								<td class="py-3 pr-6 font-semibold text-finops-900">{ fmtMonth(p.Month) }</td>
+								<td class={ balanceClass(p.Balance) }>{ utils.FormatMoney(p.Balance) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+func balanceClass(balance float64) string {
+	base := "py-3 text-right font-bold tabular-nums "
+	if balance >= 0 {
+		return base + "text-finops-900"
+	}
+	return base + "text-rose-700"
+}
+
+templ TransactionsFragment(items []service.TransactionListItem, page, pageSize int, from, to time.Time) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">Transações</p>
+			<p class="text-sm text-finops-700">{ from.Format("02/01/2006") } – { to.Format("02/01/2006") }</p>
+		</div>
+		if len(items) == 0 {
+			<p class="py-8 text-center text-sm text-finops-700">Nenhuma transação encontrada no período.</p>
+		} else {
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="pb-3 pr-4">Data</th>
+							<th class="pb-3 pr-4">Descrição</th>
+							<th class="pb-3 pr-4">Conta</th>
+							<th class="pb-3 pr-4">Categoria</th>
+							<th class="pb-3 text-right">Valor</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, tx := range items {
+							<tr>
+								<td class="py-3 pr-4 text-finops-700">{ tx.PostedOn.Format("02/01/06") }</td>
+								<td class="py-3 pr-4 font-semibold text-finops-900">{ tx.Description }</td>
+								<td class="py-3 pr-4 text-finops-700">{ tx.AccountName }</td>
+								<td class="py-3 pr-4 text-finops-700">{ transactionCategoryLabel(tx.Category) }</td>
+								<td class={ transactionAmountClass(tx.Direction) }>{ utils.FormatMoney(signedAmount(tx)) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<!-- Paginação -->
+			<div class="mt-4 flex items-center justify-between">
+				if page > 1 {
+					<button
+						type="button"
+						class="inline-flex items-center gap-1 text-sm font-semibold text-finops-700 hover:text-finops-900"
+						hx-get={ fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page-1) }
+						hx-target="#report-content"
+						hx-swap="innerHTML"
+					><i class="fa-solid fa-chevron-left"></i> Anterior</button>
+				} else {
+					<span></span>
+				}
+				<span class="text-sm text-finops-700">Página { fmt.Sprintf("%d", page) }</span>
+				if len(items) == pageSize {
+					<button
+						type="button"
+						class="inline-flex items-center gap-1 text-sm font-semibold text-finops-700 hover:text-finops-900"
+						hx-get={ fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page+1) }
+						hx-target="#report-content"
+						hx-swap="innerHTML"
+					>Próxima <i class="fa-solid fa-chevron-right"></i></button>
+				} else {
+					<span></span>
+				}
+			</div>
+		}
+	</div>
+}
+
+func signedAmount(tx service.TransactionListItem) float64 {
+	if tx.Direction == "debit" {
+		return -tx.Amount
+	}
+	return tx.Amount
+}

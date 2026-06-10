@@ -6,8 +6,8 @@ Você está propondo um **monólito web server-rendered** (SSR) com **interativi
 
 Para o deploy inicial em produção, a combinação mais “reta” com o que você pediu é:
 
-- **App Go (monólito) como Render Web Service** (stateless) e o **MySQL como Private Service com Persistent Disk** (stateful). O próprio Render indica que é possível usar **persistent disk** para **bancar um datastore customizado como MySQL**, mas também deixa claro que eles **não oferecem MySQL gerenciado** (você mantém). citeturn3search10turn3search19turn18view1  
-- Render Persistent Disks têm **criptografia em repouso** e **snapshots diários**, mas o Render recomenda **não restaurar snapshot de disco para recuperar banco customizado** (risco de corrupção) e sim fazer **backups lógicos (mysqldump)** com rotina própria. citeturn18view1  
+- **App Go (monólito) como Render Web Service** (stateless) e o **postgresql como Private Service com Persistent Disk** (stateful). O próprio Render indica que é possível usar **persistent disk** para **bancar um datastore customizado como postgresql**, mas também deixa claro que eles **não oferecem postgresql gerenciado** (você mantém). citeturn3search10turn3search19turn18view1  
+- Render Persistent Disks têm **criptografia em repouso** e **snapshots diários**, mas o Render recomenda **não restaurar snapshot de disco para recuperar banco customizado** (risco de corrupção) e sim fazer **backups lógicos (postgresqldump)** com rotina própria. citeturn18view1  
 - Custos: na página de pricing, Render explicita compute por instância e também SSD por GB/mês; para serviços (web/private/worker) há planos como **Standard $25/mês** e armazenamento SSD por **$0,25/GB/mês**. Isso permite estimar o total com transparência. citeturn21view0  
 
 Sobre IA/LLM: a forma mais segura e “engenheirável” para finanças pessoais é tratar o LLM como **componente assistivo**, com trilhas de auditoria e confirmação humana — e oferecer **dois modos**:  
@@ -27,7 +27,7 @@ A arquitetura recomendada é um monólito “modular por pacote” (não microse
 - **Camada web (HTTP)**: roteamento, middleware, handlers htmx/HTML, CSRF, sessões.
 - **Camada de aplicação (use-cases)**: regras de negócio (lançar transação, conciliar, gerar orçamento do mês).
 - **Camada de domínio**: tipos e invariantes (Money, Transaction, Budget).
-- **Infra**: MySQL, migrações, providers LLM, logs/telemetria.
+- **Infra**: Postgresql, migrações, providers LLM, logs/telemetria.
 
 Isso é bem alinhado ao guia do Go sobre organização de módulo e uso de `internal/` como divisão de pacotes auxiliares e não exportados. citeturn5search0turn5search12
 

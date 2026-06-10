@@ -1,5 +1,35 @@
 package templates
 
+// SideNav renders the collapsible left sidebar. Pass the current path to highlight the active link.
+templ SideNav(currentPath string) {
+	<nav
+		id="side-nav"
+		class="group fixed left-0 top-0 z-50 flex h-full w-12 flex-col gap-1 overflow-hidden bg-white/95 py-6 shadow-lg shadow-finops-900/10 backdrop-blur-sm transition-[width] duration-200 hover:w-44"
+	>
+		<div class="mb-4 flex h-8 items-center px-3">
+			<i class="fa-solid fa-coins w-6 shrink-0 text-center text-finops-500"></i>
+			<span class="ml-3 whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-finops-500 opacity-0 transition-opacity duration-150 group-hover:opacity-100">Finops</span>
+		</div>
+		@sideNavLink("/", "fa-house", "Home", currentPath == "/")
+		@sideNavLink("/reports", "fa-chart-bar", "Relatórios", currentPath == "/reports")
+		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
+	</nav>
+}
+
+templ sideNavLink(href, icon, label string, active bool) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={
+			"flex items-center gap-3 rounded-xl mx-1 px-2 py-2 text-sm font-semibold transition hover:bg-slate-100",
+			templ.KV("bg-finops-900 text-white hover:bg-finops-800", active),
+			templ.KV("text-finops-800", !active),
+		}
+	>
+		<i class={ "fa-solid " + icon + " w-6 shrink-0 text-center" }></i>
+		<span class="whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100">{ label }</span>
+	</a>
+}
+
 templ AppHead(title string, includeHTMX bool) {
 	<head>
 		<meta charset="utf-8"/>

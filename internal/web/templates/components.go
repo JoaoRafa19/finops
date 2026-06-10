@@ -201,15 +201,6 @@ func accountFormAction(form AccountFormState) string {
 	return fmt.Sprintf("/accounts/%d", form.AccountID)
 }
 
-func accountFormTarget(form AccountFormState) string {
-
-	if form.IsEdit {
-		return "closest li"
-	}
-
-	return "#accounts-panel"
-}
-
 func accountFormTitle(form AccountFormState) string {
 	if !form.IsEdit {
 		return "Cadastrar nova conta"

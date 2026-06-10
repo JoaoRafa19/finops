@@ -27,7 +27,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "missing required flag: -password")
 		os.Exit(1)
 	}
-	if len(*password) < 6 {
+	if len(*password) < 8 {
 		fmt.Fprintln(os.Stderr, "password must have at least 8 characters")
 		os.Exit(1)
 	}

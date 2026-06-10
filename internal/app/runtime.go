@@ -16,6 +16,8 @@ type Services struct {
 	Workspace   service.WorkspaceService
 	Transaction service.TransactionService
 	Category    service.CategoryService
+	Report      service.ReportsService
+	Import      service.ImportService
 }
 
 type Runtime struct {
@@ -55,6 +57,8 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		Workspace:   service.NewPGWorkspaceService(queries),
 		Transaction: service.NewPGTransactionService(db, queries),
 		Category:    service.NewPGCategoryService(queries),
+		Report:      service.NewPGReportService(queries),
+		Import:      service.NewPGImportService(db, queries),
 	}
 
 	return &Runtime{

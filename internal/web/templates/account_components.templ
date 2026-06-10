@@ -61,12 +61,13 @@ templ AccountItem(account AccountItemDTO) {
 }
 
 templ AccountForm(form AccountFormState, csrf_token string) {
+
 	<form
 		method="post"
 		action={ accountFormAction(form) }
 		hx-post={ accountFormAction(form) }
-		hx-target={ accountFormTarget(form) }
-		hx-swap="outerHTML"
+		hx-target="#account-modal-body"
+		hx-swap="innerHTML"
 		class="mt-6 grid gap-4 md:grid-cols-2"
 	>
 		<input type="hidden" name="_csrf" value={ csrf_token }/>
