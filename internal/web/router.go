@@ -16,8 +16,9 @@ type RouterDeps struct {
 	WorkspaceService   service.WorkspaceService
 	CategoryService    service.CategoryService
 	TransactionService service.TransactionService
-	ReportService      service.ReportsService
-	ImportService      service.ImportService
+	ReportService          service.ReportsService
+	ImportService          service.ImportService
+	ClassificationService  service.ClassificationService
 	DB                 *sql.DB
 	RedisClient        *redis.Client
 	SessionCookie      string

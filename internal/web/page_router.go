@@ -6,6 +6,7 @@ import (
 	category "finops/internal/modules/category/web"
 	home "finops/internal/modules/home/web"
 	onboarding "finops/internal/modules/onboarding/web"
+	classification "finops/internal/modules/classification/web"
 	imports "finops/internal/modules/imports/web"
 	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
@@ -32,6 +33,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	categoryController := category.NewCategoryController(deps.CategoryService)
 	reportsController := reports.NewReportsController(deps.ReportService)
 	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
+	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -68,6 +70,13 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /import/upload", importController.Upload)
 	private.HandleFunc("POST /import/preview-csv", importController.PreviewCSV)
 	private.HandleFunc("POST /import/confirm", importController.Confirm)
+	private.HandleFunc("GET /classify", classificationController.Page)
+	private.HandleFunc("GET /classify/{id}/modal", classificationController.SuggestModal)
+	private.HandleFunc("POST /classify", classificationController.Classify)
+	private.HandleFunc("GET /classify/search", classificationController.SearchCategories)
+	private.HandleFunc("POST /classify/create-and-classify", classificationController.CreateAndClassify)
+	private.HandleFunc("POST /classify/auto", classificationController.AutoClassify)
+	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)
