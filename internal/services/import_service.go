@@ -49,6 +49,7 @@ type ImportService interface {
 	ParseCSVRows(r io.Reader, mapping CSVColumnMap) ([]ImportRow, error)
 	StorePreview(rows []ImportRow) string
 	LoadPreview(uuid string) ([]ImportRow, bool)
+	LastImport(ctx context.Context, ws int64) (time.Time, error)
 	ImportRows(ctx context.Context, userID, accountID int64, rows []ImportRow) (ImportResult, error)
 }
 
@@ -116,6 +117,16 @@ type PGImportService struct {
 	sqlDB    *sql.DB
 	db       *store.Queries
 	tmpStore *importTempStore
+}
+
+// LastImport implements [ImportService].
+func (s *PGImportService) LastImport(ctx context.Context, uid int64) (time.Time, error) {
+	ws ,err := s.db.GetWorkSpaceByOwnerUserID(ctx, uid)
+	if err != nil {
+		return time.Time{}, err
+	}
+	last, err := s.db.LastImportDate(ctx, ws.ID)
+	return last, err
 }
 
 func NewPGImportService(sqlDB *sql.DB, q *store.Queries) ImportService {
@@ -400,6 +411,11 @@ func (s *PGImportService) ImportRows(ctx context.Context, userID, accountID int6
 			continue
 		}
 		result.Inserted++
+	}
+
+	err = s.db.InsertImportDate(ctx, ws.ID)
+	if err != nil {
+		return ImportResult{}, err
 	}
 
 	return result, nil

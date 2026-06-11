@@ -22,7 +22,7 @@ var accountTypeOptions = []SelectOption{
 	{Value: "investment", Label: "Investimento"},
 }
 
-func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) templ.Component {
+func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO, pending int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

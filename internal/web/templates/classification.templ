@@ -118,7 +118,7 @@ templ UnclassifiedItem(tx service.UnclassifiedTransaction, csrf string) {
 	</li>
 }
 
-templ ClassificationModal(txID int64, description, amount, direction, suggestion string, cats []store.Category, csrf string) {
+templ ClassificationModal(txID int64, description, amount, direction, suggestion string, suggestedCatID int64, cats []store.Category, csrf string) {
 	<div class="p-6">
 		<div class="flex items-center justify-between">
 			<p class="text-lg font-bold text-finops-900">Classificar Transação</p>
@@ -147,7 +147,14 @@ templ ClassificationModal(txID int64, description, amount, direction, suggestion
 			<input type="hidden" name="_csrf" value={ csrf }/>
 			<input type="hidden" name="tx_id" value={ fmt.Sprintf("%d", txID) }/>
 			<input type="hidden" name="description" value={ description }/>
-			<input type="hidden" name="category_id" id="selected-category-id" value=""/>
+			<input
+				type="hidden"
+				name="category_id"
+				id="selected-category-id"
+				if suggestedCatID > 0 {
+					value={ fmt.Sprintf("%d", suggestedCatID) }
+				}
+			/>
 			<div>
 				@FormLabel("category_search", "Categoria")
 				<input
@@ -168,9 +175,19 @@ templ ClassificationModal(txID int64, description, amount, direction, suggestion
 				/>
 				<div id="category-results" class="relative mt-1"></div>
 			</div>
-			<div id="selected-category-display" class="hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm">
+			<div
+				id="selected-category-display"
+				class={
+					"rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm",
+					templ.KV("hidden", suggestedCatID == 0),
+				}
+			>
 				<span class="font-semibold text-emerald-800">Selecionada: </span>
-				<span id="selected-category-name" class="text-emerald-700"></span>
+				<span id="selected-category-name" class="text-emerald-700">
+					if suggestedCatID > 0 {
+						{ suggestion }
+					}
+				</span>
 				<button type="button" onclick="clearCategory()" class="ml-2 text-xs text-emerald-600 underline">limpar</button>
 			</div>
 			@PrimaryButton("submit", "Confirmar classificação", true)
@@ -327,13 +344,10 @@ templ BulkClassificationFragment(suggestions []service.BulkSuggestion, cats []st
 				}
 				<div class="flex gap-3 pt-2">
 					@PrimaryButton("submit", fmt.Sprintf("Confirmar %d classificações", len(suggestions)), false)
-					<button
-						type="button"
-						hx-get="/classify"
-						hx-target="#classify-content"
-						hx-swap="innerHTML"
+					<a
+						href="/classify"
 						class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-					>Cancelar</button>
+					>Cancelar</a>
 				</div>
 			</form>
 		</div>

@@ -4,10 +4,10 @@ import (
 	accounts "finops/internal/modules/accounts/web"
 	auth "finops/internal/modules/auth/web"
 	category "finops/internal/modules/category/web"
-	home "finops/internal/modules/home/web"
-	onboarding "finops/internal/modules/onboarding/web"
 	classification "finops/internal/modules/classification/web"
+	home "finops/internal/modules/home/web"
 	imports "finops/internal/modules/imports/web"
+	onboarding "finops/internal/modules/onboarding/web"
 	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
@@ -22,6 +22,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.CategoryService,
 		deps.WorkspaceService,
 		deps.TransactionService,
+		deps.ImportService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
@@ -75,6 +76,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /classify", classificationController.Classify)
 	private.HandleFunc("GET /classify/search", classificationController.SearchCategories)
 	private.HandleFunc("POST /classify/create-and-classify", classificationController.CreateAndClassify)
+	private.HandleFunc("GET /notifications/count", classificationController.NotificationsCount)
 	private.HandleFunc("POST /classify/auto", classificationController.AutoClassify)
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 

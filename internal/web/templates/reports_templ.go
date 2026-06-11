@@ -101,7 +101,7 @@ func ReportsPage(csrf string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<input id=\"to\" type=\"date\" name=\"to\" class=\"rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20\"></div><button type=\"button\" id=\"apply-period\" class=\"inline-flex items-center justify-center rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-finops-800\">Aplicar</button></div><!-- Tabs --><div class=\"mt-6 flex flex-wrap gap-2\" id=\"report-tabs\"><button type=\"button\" class=\"report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white\" data-tab=\"spending\" hx-get=\"/reports/spending\" hx-target=\"#report-content\" hx-swap=\"innerHTML\" hx-trigger=\"click\">Gastos por Categoria</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-tab=\"comparison\" hx-get=\"/reports/comparison\" hx-target=\"#report-content\" hx-swap=\"innerHTML\" hx-trigger=\"click\">Receitas x Despesas</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-tab=\"balance\" hx-get=\"/reports/balance\" hx-target=\"#report-content\" hx-swap=\"innerHTML\" hx-trigger=\"click\">Evolução de Saldo</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-tab=\"transactions\" hx-get=\"/reports/transactions\" hx-target=\"#report-content\" hx-swap=\"innerHTML\" hx-trigger=\"click\">Transações</button></div><!-- Conteúdo do relatório --><div id=\"report-content\" class=\"mt-6\" hx-get=\"/reports/spending\" hx-trigger=\"load\" hx-swap=\"innerHTML\"><div class=\"flex items-center justify-center py-12 text-sm text-finops-700\"><i class=\"fa-solid fa-spinner fa-spin mr-2\"></i> Carregando...</div></div></div></main><script>\n\t\t\t\t// Mantém estado ativo do tab\n\t\t\t\tdocument.addEventListener(\"DOMContentLoaded\", () => {\n\t\t\t\t\tconst tabs = document.querySelectorAll(\".report-tab\");\n\t\t\t\t\ttabs.forEach(tab => {\n\t\t\t\t\t\ttab.addEventListener(\"htmx:beforeRequest\", () => {\n\t\t\t\t\t\t\ttabs.forEach(t => {\n\t\t\t\t\t\t\t\tt.className = \"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\";\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\ttab.className = \"report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white\";\n\t\t\t\t\t\t});\n\t\t\t\t\t});\n\n\t\t\t\t\t// Aplica período nos tabs ativos\n\t\t\t\t\tdocument.getElementById(\"apply-period\").addEventListener(\"click\", () => {\n\t\t\t\t\t\tconst from = document.getElementById(\"from\").value;\n\t\t\t\t\t\tconst to   = document.getElementById(\"to\").value;\n\t\t\t\t\t\tconst activeTab = document.querySelector(\".report-tab.bg-finops-900\");\n\t\t\t\t\t\tif (!activeTab) return;\n\t\t\t\t\t\tconst base = activeTab.getAttribute(\"hx-get\").split(\"?\")[0];\n\t\t\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\t\t\tif (from) params.set(\"from\", from);\n\t\t\t\t\t\tif (to)   params.set(\"to\", to);\n\t\t\t\t\t\tactiveTab.setAttribute(\"hx-get\", base + (params.toString() ? \"?\" + params.toString() : \"\"));\n\t\t\t\t\t\thtmx.trigger(activeTab, \"click\");\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t</script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<input id=\"to\" type=\"date\" name=\"to\" class=\"rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20\"></div><button type=\"button\" id=\"apply-period\" class=\"inline-flex items-center justify-center rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-finops-800\">Aplicar</button></div><!-- Tabs --><div class=\"mt-6 flex flex-wrap gap-2\" id=\"report-tabs\"><button type=\"button\" class=\"report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white\" data-url=\"/reports/spending\">Gastos por Categoria</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-url=\"/reports/comparison\">Receitas x Despesas</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-url=\"/reports/balance\">Evolução de Saldo</button> <button type=\"button\" class=\"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\" data-url=\"/reports/transactions\">Transações</button></div><!-- Conteúdo do relatório --><div id=\"report-content\" class=\"mt-6\"><div class=\"flex items-center justify-center py-12 text-sm text-finops-700\"><i class=\"fa-solid fa-spinner fa-spin mr-2\"></i> Carregando...</div></div></div></main><script>\n\t\t\t\t(function() {\n\t\t\t\t\tconst TAB_ACTIVE   = \"report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white\";\n\t\t\t\t\tconst TAB_INACTIVE = \"report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\";\n\n\t\t\t\t\tlet period = { from: \"\", to: \"\" };\n\n\t\t\t\t\tfunction buildUrl(base) {\n\t\t\t\t\t\tconst p = new URLSearchParams();\n\t\t\t\t\t\tif (period.from) p.set(\"from\", period.from);\n\t\t\t\t\t\tif (period.to)   p.set(\"to\",   period.to);\n\t\t\t\t\t\treturn p.toString() ? base + \"?\" + p.toString() : base;\n\t\t\t\t\t}\n\n\t\t\t\t\tfunction loadTab(tab) {\n\t\t\t\t\t\tdocument.querySelectorAll(\".report-tab\").forEach(t => t.className = TAB_INACTIVE);\n\t\t\t\t\t\ttab.className = TAB_ACTIVE;\n\t\t\t\t\t\thtmx.ajax(\"GET\", buildUrl(tab.dataset.url), { target: \"#report-content\", swap: \"innerHTML\" });\n\t\t\t\t\t}\n\n\t\t\t\t\tdocument.addEventListener(\"DOMContentLoaded\", () => {\n\t\t\t\t\t\tconst tabs = document.querySelectorAll(\".report-tab\");\n\n\t\t\t\t\t\ttabs.forEach(tab => tab.addEventListener(\"click\", () => loadTab(tab)));\n\n\t\t\t\t\t\tdocument.getElementById(\"apply-period\").addEventListener(\"click\", () => {\n\t\t\t\t\t\t\tperiod.from = document.getElementById(\"from\").value;\n\t\t\t\t\t\t\tperiod.to   = document.getElementById(\"to\").value;\n\t\t\t\t\t\t\tconst active = document.querySelector(\".report-tab.\" + TAB_ACTIVE.split(\" \")[2]);\n\t\t\t\t\t\t\tif (active) loadTab(active);\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\t// Carrega o primeiro tab ao abrir a página\n\t\t\t\t\t\tif (tabs.length > 0) loadTab(tabs[0]);\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -137,7 +137,7 @@ func SpendingFragment(rows []service.CategorySpend, from, to time.Time) templ.Co
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(from.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 170, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 141, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -150,7 +150,7 @@ func SpendingFragment(rows []service.CategorySpend, from, to time.Time) templ.Co
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(to.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 170, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 141, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -178,7 +178,7 @@ func SpendingFragment(rows []service.CategorySpend, from, to time.Time) templ.Co
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(row.CategoryName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 179, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 150, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -191,7 +191,7 @@ func SpendingFragment(rows []service.CategorySpend, from, to time.Time) templ.Co
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(row.Total))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 180, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 151, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -204,7 +204,7 @@ func SpendingFragment(rows []service.CategorySpend, from, to time.Time) templ.Co
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width:%s", spendingBarWidth(row.Total, maxSpending(rows))))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 185, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 156, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -256,7 +256,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(from.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 199, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 170, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -269,7 +269,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(to.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 199, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 170, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -297,7 +297,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmtMonth(row.Month))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 217, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 188, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -310,7 +310,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(row.Income))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 218, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 189, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -323,7 +323,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(row.Expenses))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 219, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 190, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func ComparisonFragment(rows []service.MonthlyRow, from, to time.Time) templ.Com
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(row.Income - row.Expenses))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 220, Col: 118}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 191, Col: 118}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -418,7 +418,7 @@ func BalanceFragment(points []service.BalancedHistory, from, to time.Time) templ
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(from.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 242, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 213, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -431,7 +431,7 @@ func BalanceFragment(points []service.BalancedHistory, from, to time.Time) templ
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(to.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 242, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 213, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -459,7 +459,7 @@ func BalanceFragment(points []service.BalancedHistory, from, to time.Time) templ
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmtMonth(p.Month))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 258, Col: 79}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 229, Col: 79}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -494,7 +494,7 @@ func BalanceFragment(points []service.BalancedHistory, from, to time.Time) templ
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(p.Balance))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 259, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 230, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -554,7 +554,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(from.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 281, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 252, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -567,7 +567,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(to.Format("02/01/2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 281, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 252, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -595,7 +595,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(tx.PostedOn.Format("02/01/06"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 300, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 271, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -608,7 +608,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(tx.Description)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 301, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 272, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -621,7 +621,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(tx.AccountName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 302, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 273, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -634,7 +634,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(transactionCategoryLabel(tx.Category))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 303, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 274, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -669,7 +669,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(signedAmount(tx)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 304, Col: 96}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 275, Col: 96}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -692,7 +692,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page-1))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 316, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 287, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 				if templ_7745c5c3_Err != nil {
@@ -715,7 +715,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", page))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 323, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 294, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -733,7 +733,7 @@ func TransactionsFragment(items []service.TransactionListItem, page, pageSize in
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page+1))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 328, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/reports.templ`, Line: 299, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 				if templ_7745c5c3_Err != nil {

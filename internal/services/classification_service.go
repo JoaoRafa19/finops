@@ -243,8 +243,29 @@ func (s *PGClassificationService) BulkSuggest(ctx context.Context, userID int64,
 		}
 	}
 
-	// Carrega exemplos históricos uma única vez antes do loop
 	examples := s.loadExamples(ctx, ws.ID)
+
+	// Monta a lista de inputs para a chamada bulk
+	bulkInputs := make([]BulkClassifyInput, 0, len(txRows))
+	txByID := make(map[int64]store.ListUnclassifiedTransactionsRow, len(txRows))
+	for _, row := range txRows {
+		bulkInputs = append(bulkInputs, BulkClassifyInput{
+			ID:          row.ID,
+			Description: row.Description,
+			Direction:   row.Direction,
+		})
+		txByID[row.ID] = row
+	}
+
+	// Uma única chamada à IA para todas as transações
+	aiResults := map[int64]string{}
+	if len(catNames) > 0 {
+		var err error
+		aiResults, err = s.aiSvc.SuggestCategoryBulk(ctx, bulkInputs, catNames, examples)
+		if err != nil {
+			logger.Warn("bulk_suggest_ai_failed", "error", err)
+		}
+	}
 
 	suggestions := make([]BulkSuggestion, 0, len(txRows))
 	for _, row := range txRows {
@@ -260,19 +281,12 @@ func (s *PGClassificationService) BulkSuggest(ctx context.Context, userID int64,
 		}
 
 		suggestion := BulkSuggestion{Transaction: tx}
-
-		if len(catNames) > 0 {
-			name, err := s.aiSvc.SuggestCategory(ctx, row.Description, row.Direction, catNames, examples)
-			if err != nil {
-				logger.Warn("bulk_suggest_ai_failed", "tx_id", row.ID, "error", err)
-			} else {
-				suggestion.SuggestedCatName = name
-				if cat, ok := catByName[strings.ToLower(strings.TrimSpace(name))]; ok {
-					suggestion.SuggestedCatID = cat.ID
-				}
+		if name, ok := aiResults[row.ID]; ok && name != "" && name != "Sem categoria" {
+			suggestion.SuggestedCatName = name
+			if cat, ok := catByName[strings.ToLower(strings.TrimSpace(name))]; ok {
+				suggestion.SuggestedCatID = cat.ID
 			}
 		}
-
 		suggestions = append(suggestions, suggestion)
 	}
 

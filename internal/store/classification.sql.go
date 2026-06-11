@@ -105,6 +105,26 @@ func (q *Queries) GetTransactionDescriptionCategory(ctx context.Context, workspa
 	return items, nil
 }
 
+const insertImportDate = `-- name: InsertImportDate :exec
+INSERT INTO imports (workspace_id) VALUES ($1)
+`
+
+func (q *Queries) InsertImportDate(ctx context.Context, workspaceID int64) error {
+	_, err := q.db.ExecContext(ctx, insertImportDate, workspaceID)
+	return err
+}
+
+const lastImportDate = `-- name: LastImportDate :one
+SELECT imported_at FROM imports WHERE workspace_id = $1 ORDER BY imported_at DESC LIMIT 1
+`
+
+func (q *Queries) LastImportDate(ctx context.Context, workspaceID int64) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, lastImportDate, workspaceID)
+	var imported_at time.Time
+	err := row.Scan(&imported_at)
+	return imported_at, err
+}
+
 const listClassificationRules = `-- name: ListClassificationRules :many
 SELECT id, workspace_id, keyword, category_id, created_at
 FROM classification_rules

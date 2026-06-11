@@ -14,7 +14,7 @@ var accountTypeOptions = []SelectOption{
 	{Value: "investment", Label: "Investimento"},
 }
 
-templ HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO) {
+templ HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO, pending int) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
 		@AppHead("Finops", true)

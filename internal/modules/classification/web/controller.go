@@ -8,6 +8,7 @@ import (
 	"finops/internal/web/templates"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ClassificationController struct {
@@ -64,11 +65,22 @@ func (c *ClassificationController) SuggestModal(w http.ResponseWriter, r *http.R
 		logger.Error("classification_modal_cats_failed", "user_id", session.UserID, "error", err)
 	}
 
+	// Resolve o ID da categoria sugerida para pré-popular o hidden field
+	var suggestedCatID int64
+	if suggestion != "" && suggestion != "Sem categoria" {
+		for _, cat := range cats {
+			if strings.EqualFold(cat.Name, suggestion) {
+				suggestedCatID = cat.ID
+				break
+			}
+		}
+	}
+
 	description := r.URL.Query().Get("description")
 	amount := r.URL.Query().Get("amount")
 	direction := r.URL.Query().Get("direction")
 
-	render.Templ(w, r, http.StatusOK, templates.ClassificationModal(txID, description, amount, direction, suggestion, cats, session.CSRFToken))
+	render.Templ(w, r, http.StatusOK, templates.ClassificationModal(txID, description, amount, direction, suggestion, suggestedCatID, cats, session.CSRFToken))
 }
 
 func (c *ClassificationController) Classify(w http.ResponseWriter, r *http.Request) {
@@ -183,6 +195,16 @@ func (c *ClassificationController) BulkConfirm(w http.ResponseWriter, r *http.Re
 	logger.Info("bulk_confirm_succeeded", "user_id", session.UserID, "confirmed", confirmed)
 	w.Header().Set("HX-Redirect", "/classify")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (c *ClassificationController) NotificationsCount(w http.ResponseWriter, r *http.Request) {
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		render.Templ(w, r, http.StatusOK, templates.PendingBadge(0))
+		return
+	}
+	count, _ := c.classifySvc.CountUnclassified(r.Context(), session.UserID)
+	render.Templ(w, r, http.StatusOK, templates.PendingBadge(count))
 }
 
 func (c *ClassificationController) CreateAndClassify(w http.ResponseWriter, r *http.Request) {

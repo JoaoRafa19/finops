@@ -70,3 +70,10 @@ SELECT DISTINCT ON (lower(t.description)) t.id, t.description, c.name AS categor
 INNER JOIN categories c ON c.id = t.category_id
 WHERE c.workspace_id = $1 AND c.archived = FALSE AND c.kind <> 'transfer' 
 ORDER BY lower(t.description), t.created_at DESC  LIMIT 300 ;
+
+
+-- name: InsertImportDate :exec
+INSERT INTO imports (workspace_id) VALUES ($1);
+
+-- name: LastImportDate :one 
+SELECT imported_at FROM imports WHERE workspace_id = $1 ORDER BY imported_at DESC LIMIT 1;

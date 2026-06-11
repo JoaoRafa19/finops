@@ -80,51 +80,13 @@ templ ReportsPage(csrf string) {
 					</div>
 					<!-- Tabs -->
 					<div class="mt-6 flex flex-wrap gap-2" id="report-tabs">
-						<button
-							type="button"
-							class="report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white"
-							data-tab="spending"
-							hx-get="/reports/spending"
-							hx-target="#report-content"
-							hx-swap="innerHTML"
-							hx-trigger="click"
-						>Gastos por Categoria</button>
-						<button
-							type="button"
-							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-							data-tab="comparison"
-							hx-get="/reports/comparison"
-							hx-target="#report-content"
-							hx-swap="innerHTML"
-							hx-trigger="click"
-						>Receitas x Despesas</button>
-						<button
-							type="button"
-							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-							data-tab="balance"
-							hx-get="/reports/balance"
-							hx-target="#report-content"
-							hx-swap="innerHTML"
-							hx-trigger="click"
-						>Evolução de Saldo</button>
-						<button
-							type="button"
-							class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-							data-tab="transactions"
-							hx-get="/reports/transactions"
-							hx-target="#report-content"
-							hx-swap="innerHTML"
-							hx-trigger="click"
-						>Transações</button>
+						<button type="button" class="report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white" data-url="/reports/spending">Gastos por Categoria</button>
+						<button type="button" class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100" data-url="/reports/comparison">Receitas x Despesas</button>
+						<button type="button" class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100" data-url="/reports/balance">Evolução de Saldo</button>
+						<button type="button" class="report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100" data-url="/reports/transactions">Transações</button>
 					</div>
 					<!-- Conteúdo do relatório -->
-					<div
-						id="report-content"
-						class="mt-6"
-						hx-get="/reports/spending"
-						hx-trigger="load"
-						hx-swap="innerHTML"
-					>
+					<div id="report-content" class="mt-6">
 						<div class="flex items-center justify-center py-12 text-sm text-finops-700">
 							<i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando...
 						</div>
@@ -132,32 +94,41 @@ templ ReportsPage(csrf string) {
 				</div>
 			</main>
 			<script>
-				// Mantém estado ativo do tab
-				document.addEventListener("DOMContentLoaded", () => {
-					const tabs = document.querySelectorAll(".report-tab");
-					tabs.forEach(tab => {
-						tab.addEventListener("htmx:beforeRequest", () => {
-							tabs.forEach(t => {
-								t.className = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
-							});
-							tab.className = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
-						});
-					});
+				(function() {
+					const TAB_ACTIVE   = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
+					const TAB_INACTIVE = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
 
-					// Aplica período nos tabs ativos
-					document.getElementById("apply-period").addEventListener("click", () => {
-						const from = document.getElementById("from").value;
-						const to   = document.getElementById("to").value;
-						const activeTab = document.querySelector(".report-tab.bg-finops-900");
-						if (!activeTab) return;
-						const base = activeTab.getAttribute("hx-get").split("?")[0];
-						const params = new URLSearchParams();
-						if (from) params.set("from", from);
-						if (to)   params.set("to", to);
-						activeTab.setAttribute("hx-get", base + (params.toString() ? "?" + params.toString() : ""));
-						htmx.trigger(activeTab, "click");
+					let period = { from: "", to: "" };
+
+					function buildUrl(base) {
+						const p = new URLSearchParams();
+						if (period.from) p.set("from", period.from);
+						if (period.to)   p.set("to",   period.to);
+						return p.toString() ? base + "?" + p.toString() : base;
+					}
+
+					function loadTab(tab) {
+						document.querySelectorAll(".report-tab").forEach(t => t.className = TAB_INACTIVE);
+						tab.className = TAB_ACTIVE;
+						htmx.ajax("GET", buildUrl(tab.dataset.url), { target: "#report-content", swap: "innerHTML" });
+					}
+
+					document.addEventListener("DOMContentLoaded", () => {
+						const tabs = document.querySelectorAll(".report-tab");
+
+						tabs.forEach(tab => tab.addEventListener("click", () => loadTab(tab)));
+
+						document.getElementById("apply-period").addEventListener("click", () => {
+							period.from = document.getElementById("from").value;
+							period.to   = document.getElementById("to").value;
+							const active = document.querySelector(".report-tab." + TAB_ACTIVE.split(" ")[2]);
+							if (active) loadTab(active);
+						});
+
+						// Carrega o primeiro tab ao abrir a página
+						if (tabs.length > 0) loadTab(tabs[0]);
 					});
-				});
+				})();
 			</script>
 		</body>
 	</html>

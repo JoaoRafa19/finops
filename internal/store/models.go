@@ -35,6 +35,12 @@ type ClassificationRule struct {
 	CreatedAt   time.Time
 }
 
+type Import struct {
+	ID          int64
+	WorkspaceID int64
+	ImportedAt  time.Time
+}
+
 type Transaction struct {
 	ID              int64
 	WorkspaceID     int64

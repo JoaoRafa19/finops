@@ -29,10 +29,18 @@ type CategoryService interface {
 	GetCategories(ctx context.Context, userid int64) ([]store.Category, error)
 	CreateCategory(ctx context.Context, dto CreateCategoryDTO) (*store.Category, error)
 	DeleteCategory(ctx context.Context, userID, categoryID int64) error
+	GetUncategorized(ctx context.Context, userID int64) (int32, error)
 }
 
 type PGCategoryService struct {
 	db *store.Queries
+}
+
+// GetUncategorized implements [CategoryService].
+func (p *PGCategoryService) GetUncategorized(ctx context.Context, userID int64) (int32, error) {
+	uncat, err := p.db.CountUnclassifiedTransactions(ctx, userID)
+	return uncat, err
+
 }
 
 // DeleteCategory implements [CategoryService].
