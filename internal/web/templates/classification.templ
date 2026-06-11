@@ -264,10 +264,11 @@ templ ClassificationModalError(msg string) {
 	</div>
 }
 
-templ ClassificationSuccess(autoClassified int64) {
+templ ClassificationSuccess(txID, autoClassified int64) {
 	<div
 		class="p-6 text-center"
-		hx-on::load="htmx.trigger(document.body, 'classify-done', {txId: null})"
+		data-tx-id={ fmt.Sprintf("%d", txID) }
+		hx-on::load="htmx.trigger(document.body, 'classify-done', {txId: parseInt(this.dataset.txId)})"
 	>
 		<i class="fa-solid fa-circle-check mb-3 text-3xl text-emerald-500"></i>
 		<p class="text-lg font-bold text-finops-900">Classificado!</p>
@@ -278,9 +279,9 @@ templ ClassificationSuccess(autoClassified int64) {
 		}
 		<button
 			type="button"
-			onclick="document.getElementById('classify-modal')?.close(); htmx.ajax('GET', '/classify/list', {target: '#unclassified-list', swap: 'innerHTML'})"
+			onclick="document.getElementById('classify-modal')?.close()"
 			class="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
-		>Próxima</button>
+		>Fechar</button>
 	</div>
 }
 

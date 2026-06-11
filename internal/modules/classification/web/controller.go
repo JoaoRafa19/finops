@@ -118,7 +118,7 @@ func (c *ClassificationController) Classify(w http.ResponseWriter, r *http.Reque
 	}
 
 	logger.Info("classification_classify_succeeded", "user_id", session.UserID, "tx_id", txID, "category_id", categoryID, "auto_classified", affected)
-	render.Templ(w, r, http.StatusOK, templates.ClassificationSuccess(affected))
+	render.Templ(w, r, http.StatusOK, templates.ClassificationSuccess(txID, affected))
 }
 
 func (c *ClassificationController) SearchCategories(w http.ResponseWriter, r *http.Request) {
@@ -254,5 +254,5 @@ func (c *ClassificationController) CreateAndClassify(w http.ResponseWriter, r *h
 	}
 
 	logger.Info("classification_create_and_classify_succeeded", "user_id", session.UserID, "cat_id", cat.ID, "auto_classified", affected)
-	render.Templ(w, r, http.StatusOK, templates.ClassificationSuccess(affected))
+	render.Templ(w, r, http.StatusOK, templates.ClassificationSuccess(txID, affected))
 }
