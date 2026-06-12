@@ -56,6 +56,9 @@ func main() {
 		RememberMeTTL:      runtime.Config.RememberMeTTL,
 		AccountService:     runtime.Services.Account,
 		WorkspaceService:   runtime.Services.Workspace,
+		ReportService:         runtime.Services.Report,
+		ImportService:         runtime.Services.Import,
+		ClassificationService: runtime.Services.Classification,
 		DB:                 runtime.DB,
 		RedisClient:        runtime.RedisClient,
 	})

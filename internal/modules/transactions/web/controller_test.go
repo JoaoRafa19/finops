@@ -89,6 +89,12 @@ type categoryServiceStub struct {
 	deleteCategoryFn func(ctx context.Context, userID, categoryID int64) error
 }
 
+func (s categoryServiceStub) GetUncategorized(ctx context.Context, userID int64) (int32, error) {
+	return 0, nil
+}
+
+var _ service.CategoryService = categoryServiceStub{}
+
 // DeleteCategory implements [service.CategoryService].
 func (s categoryServiceStub) DeleteCategory(ctx context.Context, userID int64, categoryID int64) error {
 	if s.deleteCategoryFn != nil {

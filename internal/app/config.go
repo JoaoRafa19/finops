@@ -22,6 +22,8 @@ type Config struct {
 	RememberMeTTL     time.Duration
 	SlidingSessionTTL bool
 	LogLevel          slog.Level
+	OllamaBaseURL     string
+	OllamaModel       string
 }
 
 func LoadConfig() Config {
@@ -54,6 +56,8 @@ func LoadConfig() Config {
 		RememberMeTTL:     rememberMeTTL,
 		SlidingSessionTTL: slidingSessionTTL,
 		LogLevel:          logLevel,
+		OllamaBaseURL:     getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
+		OllamaModel:       getEnv("OLLAMA_MODEL", "qwen2.5:3b"),
 	}
 }
 

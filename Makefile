@@ -4,7 +4,7 @@ DB_USER=$DB_USER
 include .env
 export 
 
-.PHONY: run build test fmt tidy start_db startf migrate gen sqlc create_user
+.PHONY: run build test fmt tidy start_db startf migrate gen sqlc create_user ollama ollama-pull
 
 start: gen run 
 	echo "Application started at http://localhost:8080"
@@ -40,17 +40,13 @@ migrate: # Run database migrations with tern
     --migrations ./internal/store/migrations/
 
 sqlc: # Generate sqlc code
-	@if command -v sqlc >/dev/null 2>&1; then \
-		sqlc generate -f ./internal/store/sqlc.yaml; \
-	elif [ -x "$$(go env GOPATH)/bin/sqlc" ]; then \
-		"$$(go env GOPATH)/bin/sqlc" generate -f ./internal/store/sqlc.yaml; \
-	else \
-		echo "sqlc binary not found; running via go run..."; \
-		go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate -f ./internal/store/sqlc.yaml; \
-	fi
+	sqlc generate -f ./internal/store/sqlc.yaml
 
 gen: # Generate sqlc code
 	$(MAKE) sqlc && \
+	templ generate ./...
+
+templ:
 	templ generate ./...
 
 setup: # Install necessary tools
@@ -65,6 +61,12 @@ front: # Build and run the frontend with templ
 list: # List all available targets
 	@echo "Available targets:"
 	@awk '/^[A-Za-z0-9_.-]+:.*# / { i = index($$0, ":"); cmd = substr($$0, 1, i - 1); desc = substr($$0, i + 4); printf "%c[36m%-20s%c[0m %s\n", 27, cmd, 27, desc; }' $(MAKEFILE_LIST) | sort
+
+ollama: # Start Ollama server
+	ollama serve
+
+ollama-pull: # Download the recommended model for transaction classification
+	ollama pull qwen2.5:3b
 
 create_user: # Create user in DB. Usage: make create_user EMAIL=user@x.com PASSWORD=secret123 ADMIN=false
 	@if [ -z "$(EMAIL)" ] || [ -z "$(PASSWORD)" ]; then \

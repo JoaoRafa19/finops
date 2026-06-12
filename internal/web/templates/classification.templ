@@ -1,0 +1,388 @@
+package templates
+
+import (
+	"finops/internal/services"
+	"finops/internal/store"
+	"finops/internal/utils"
+	"fmt"
+	"net/url"
+	"strings"
+)
+
+templ ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf string) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		@AppHead("Classificar · Finops", true)
+		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+			@SideNav("/classify")
+			<main class="mx-auto max-w-4xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+				<div class="mb-6 flex items-center justify-between">
+					<div>
+						<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
+						<h1 class="mt-1 text-3xl font-extrabold">Classificar Transações</h1>
+						if total > 0 {
+							<p class="mt-2 text-sm text-finops-700">
+								<span class="font-bold text-finops-900">{ fmt.Sprintf("%d", total) }</span> transações aguardando classificação
+							</p>
+						}
+					</div>
+					if total > 0 {
+						<form hx-post="/classify/auto" hx-target="#classify-content" hx-swap="innerHTML">
+							<input type="hidden" name="_csrf" value={ csrf }/>
+							<button
+								type="submit"
+								class="inline-flex items-center gap-2 rounded-xl bg-finops-500 px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+								hx-indicator="this"
+							>
+								<i class="fa-solid fa-robot htmx-indicator-hide"></i>
+								<i class="fa-solid fa-spinner fa-spin htmx-indicator-show" style="display:none"></i>
+								Classificar automaticamente
+							</button>
+						</form>
+					}
+				</div>
+				<div class="rounded-3xl border border-white/80 bg-white/85 p-6 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-8">
+					<div id="classify-content">
+					if len(txs) == 0 {
+						<div class="flex flex-col items-center py-16 text-center">
+							<i class="fa-solid fa-circle-check mb-4 text-4xl text-emerald-500"></i>
+							<p class="text-lg font-bold text-finops-900">Tudo classificado!</p>
+							<p class="mt-2 text-sm text-finops-700">Nenhuma transação pendente de classificação.</p>
+						</div>
+					} else {
+						<ul class="space-y-3" id="unclassified-list">
+							for _, tx := range txs {
+								@UnclassifiedItem(tx, csrf)
+							}
+						</ul>
+					}
+					</div>
+				</div>
+			</main>
+			<!-- Modal de classificação -->
+			<dialog id="classify-modal" class="w-full max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+				<div id="classify-modal-body"></div>
+			</dialog>
+			<script>
+				document.body.addEventListener("classify-done", (e) => {
+					const modal = document.getElementById("classify-modal");
+					modal?.close();
+					// Remove o item da lista
+					const txId = e.detail?.txId;
+					if (txId) {
+						document.getElementById("tx-" + txId)?.remove();
+					}
+				});
+				document.body.addEventListener("click", (e) => {
+					const modal = document.getElementById("classify-modal");
+					if (modal?.open) {
+						const rect = modal.getBoundingClientRect();
+						const inside = e.clientX >= rect.left && e.clientX <= rect.right &&
+						               e.clientY >= rect.top  && e.clientY <= rect.bottom;
+						if (!inside) modal.close();
+					}
+				});
+			</script>
+		</body>
+	</html>
+}
+
+templ UnclassifiedItem(tx service.UnclassifiedTransaction, csrf string) {
+	<li
+		id={ fmt.Sprintf("tx-%d", tx.ID) }
+		class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+	>
+		<div>
+			<p class="font-semibold text-finops-900">{ tx.Description }</p>
+			<p class="text-sm text-finops-700">
+				{ tx.PostedOn.Format("02/01/2006") } • { tx.AccountName } • { transactionDirectionLabel(tx.Direction) }
+			</p>
+		</div>
+		<div class="flex shrink-0 items-center gap-3">
+			<p class={ transactionAmountClass(tx.Direction) }>{ utils.FormatMoney(classifySignedAmount(tx)) }</p>
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/classify/%d/modal?description=%s&amount=%.2f&direction=%s",
+					tx.ID,
+					url.QueryEscape(tx.Description),
+					tx.Amount,
+					tx.Direction) }
+				hx-target="#classify-modal-body"
+				hx-swap="innerHTML"
+				hx-on::after-request="document.getElementById('classify-modal')?.showModal()"
+				class="inline-flex items-center gap-2 rounded-xl bg-finops-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-finops-800"
+			>
+				<i class="fa-solid fa-tag"></i> Classificar
+			</button>
+		</div>
+	</li>
+}
+
+templ ClassificationModal(txID int64, description, amount, direction, suggestion string, suggestedCatID int64, cats []store.Category, csrf string) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Classificar Transação</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		<div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+			<p class="font-semibold text-finops-900">{ description }</p>
+			<p class="mt-1 text-sm text-finops-700">{ amount } • { transactionDirectionLabel(direction) }</p>
+		</div>
+		if suggestion != "" && suggestion != "Sem categoria" {
+			<div class="mt-3 flex items-center gap-2 rounded-xl border border-finops-400/30 bg-finops-400/10 px-4 py-2 text-sm">
+				<i class="fa-solid fa-robot text-finops-500"></i>
+				<span class="text-finops-800">Sugestão da IA: <strong>{ suggestion }</strong></span>
+			</div>
+		}
+		<!-- Formulário de classificação -->
+		<form
+			id="classify-form"
+			hx-post="/classify"
+			hx-target="#classify-modal-body"
+			hx-swap="innerHTML"
+			class="mt-5 space-y-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="tx_id" value={ fmt.Sprintf("%d", txID) }/>
+			<input type="hidden" name="description" value={ description }/>
+			<input
+				type="hidden"
+				name="category_id"
+				id="selected-category-id"
+				if suggestedCatID > 0 {
+					value={ fmt.Sprintf("%d", suggestedCatID) }
+				}
+			/>
+			<div>
+				@FormLabel("category_search", "Categoria")
+				<input
+					id="category_search"
+					type="text"
+					placeholder="Digite para buscar..."
+					autocomplete="off"
+					if suggestion != "" && suggestion != "Sem categoria" {
+						value={ suggestion }
+					}
+					hx-get="/classify/search"
+					hx-trigger="input changed delay:200ms, focus"
+					hx-target="#category-results"
+					hx-swap="innerHTML"
+					hx-include="[name='category_search']"
+					name="category_search"
+					class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
+				/>
+				<div id="category-results" class="relative mt-1"></div>
+			</div>
+			<div
+				id="selected-category-display"
+				class={
+					"rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm",
+					templ.KV("hidden", suggestedCatID == 0),
+				}
+			>
+				<span class="font-semibold text-emerald-800">Selecionada: </span>
+				<span id="selected-category-name" class="text-emerald-700">
+					if suggestedCatID > 0 {
+						{ suggestion }
+					}
+				</span>
+				<button type="button" onclick="clearCategory()" class="ml-2 text-xs text-emerald-600 underline">limpar</button>
+			</div>
+			@PrimaryButton("submit", "Confirmar classificação", true)
+		</form>
+		<!-- Criar nova categoria -->
+		<div class="mt-4 border-t border-slate-200 pt-4">
+			<details class="group">
+				<summary class="cursor-pointer text-sm font-semibold text-finops-700 hover:text-finops-900">
+					<i class="fa-solid fa-plus mr-1"></i> Criar nova categoria
+				</summary>
+				<form
+					hx-post="/classify/create-and-classify"
+					hx-target="#classify-modal-body"
+					hx-swap="innerHTML"
+					class="mt-3 grid grid-cols-2 gap-3"
+				>
+					<input type="hidden" name="_csrf" value={ csrf }/>
+					<input type="hidden" name="tx_id" value={ fmt.Sprintf("%d", txID) }/>
+					<input type="hidden" name="description" value={ description }/>
+					<div class="col-span-2">
+						@FormLabel("new_category_name", "Nome")
+						@TextInput("new_category_name", "new_category_name", "text", "", "Ex: Alimentação", true)
+					</div>
+					<div class="col-span-2">
+						@FormLabel("new_category_kind", "Tipo")
+						@SelectInput("new_category_kind", "new_category_kind", []SelectOption{
+							{Value: "expense", Label: "Despesa"},
+							{Value: "income", Label: "Receita"},
+						}, true)
+					</div>
+					@PrimaryButton("submit", "Criar e classificar", true)
+				</form>
+			</details>
+		</div>
+	</div>
+	<script>
+		function selectCategory(id, name) {
+			document.getElementById("selected-category-id").value = id;
+			document.getElementById("selected-category-name").textContent = name;
+			document.getElementById("selected-category-display").classList.remove("hidden");
+			document.getElementById("category-results").innerHTML = "";
+			document.getElementById("category_search").value = name;
+		}
+		function clearCategory() {
+			document.getElementById("selected-category-id").value = "";
+			document.getElementById("selected-category-display").classList.add("hidden");
+			document.getElementById("category_search").value = "";
+		}
+	</script>
+}
+
+templ CategorySearchResults(results []service.CategoryResult) {
+	if len(results) > 0 {
+		<ul class="absolute z-10 w-full rounded-xl border border-slate-200 bg-white shadow-lg">
+			for _, cat := range results {
+				<li>
+					<button
+						type="button"
+						onclick={ templ.ComponentScript{Call: fmt.Sprintf("selectCategory('%d', '%s')", cat.ID, escapeSingleQuote(cat.Name))} }
+						class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-slate-50"
+					>
+						<span class={ "rounded px-2 py-0.5 text-xs font-bold " + catKindBadgeClass(cat.Kind) }>{ catKindLabel(cat.Kind) }</span>
+						<span class="text-finops-900">{ cat.Name }</span>
+					</button>
+				</li>
+			}
+		</ul>
+	}
+}
+
+templ ClassificationModalError(msg string) {
+	<div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 m-6">
+		<i class="fa-solid fa-circle-exclamation mr-2"></i>{ msg }
+	</div>
+}
+
+templ ClassificationSuccess(autoClassified int64) {
+	<div
+		class="p-6 text-center"
+		hx-on::load="htmx.trigger(document.body, 'classify-done', {txId: null})"
+	>
+		<i class="fa-solid fa-circle-check mb-3 text-3xl text-emerald-500"></i>
+		<p class="text-lg font-bold text-finops-900">Classificado!</p>
+		if autoClassified > 0 {
+			<p class="mt-2 text-sm text-finops-700">
+				{ fmt.Sprintf("%d", autoClassified) } transação(ões) similar(es) classificada(s) automaticamente.
+			</p>
+		}
+		<button
+			type="button"
+			onclick="document.getElementById('classify-modal')?.close(); htmx.ajax('GET', '/classify/list', {target: '#unclassified-list', swap: 'innerHTML'})"
+			class="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+		>Próxima</button>
+	</div>
+}
+
+templ BulkClassificationFragment(suggestions []service.BulkSuggestion, cats []store.Category, csrf string) {
+	if len(suggestions) == 0 {
+		<div class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
+			<i class="fa-solid fa-circle-check mb-3 text-3xl text-emerald-500"></i>
+			<p class="font-bold text-finops-900">Nenhuma transação pendente!</p>
+		</div>
+	} else {
+		<div>
+			<div class="mb-4 flex items-center justify-between">
+				<p class="font-bold text-finops-900">
+					{ fmt.Sprintf("%d transações classificadas pela IA", len(suggestions)) }
+				</p>
+				<p class="text-sm text-finops-700">Revise e confirme</p>
+			</div>
+			<form
+				hx-post="/classify/bulk-confirm"
+				hx-target="#classify-content"
+				hx-swap="innerHTML"
+				class="space-y-2"
+			>
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				for _, s := range suggestions {
+					<input type="hidden" name="tx_ids" value={ fmt.Sprintf("%d", s.Transaction.ID) }/>
+					<div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center">
+						<div class="flex-1 min-w-0">
+							<p class="truncate font-semibold text-finops-900">{ s.Transaction.Description }</p>
+							<p class="text-xs text-finops-700">
+								{ s.Transaction.PostedOn.Format("02/01/06") } • { s.Transaction.AccountName }
+							</p>
+						</div>
+						<div class="flex shrink-0 items-center gap-3">
+							<p class={ "text-sm font-bold tabular-nums " + transactionAmountClass(s.Transaction.Direction) }>
+								{ utils.FormatMoney(classifySignedAmount(s.Transaction)) }
+							</p>
+							<select
+								name={ fmt.Sprintf("cat_%d", s.Transaction.ID) }
+								class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+							>
+								<option value="0">— sem categoria —</option>
+								for _, cat := range cats {
+									if cat.Kind != "transfer" {
+										<option
+											value={ fmt.Sprintf("%d", cat.ID) }
+											if cat.ID == s.SuggestedCatID {
+												selected
+											}
+										>{ cat.Name }</option>
+									}
+								}
+							</select>
+							if s.SuggestedCatID > 0 {
+								<span class="hidden sm:inline-flex items-center gap-1 rounded-full bg-finops-400/20 px-2 py-0.5 text-xs font-bold text-finops-700">
+									<i class="fa-solid fa-robot"></i> IA
+								</span>
+							}
+						</div>
+					</div>
+				}
+				<div class="flex gap-3 pt-2">
+					@PrimaryButton("submit", fmt.Sprintf("Confirmar %d classificações", len(suggestions)), false)
+					<a
+						href="/classify"
+						class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+					>Cancelar</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+func classifySignedAmount(tx service.UnclassifiedTransaction) float64 {
+	if tx.Direction == "debit" {
+		return -tx.Amount
+	}
+	return tx.Amount
+}
+
+func catKindBadgeClass(kind string) string {
+	switch kind {
+	case "expense":
+		return "bg-rose-100 text-rose-700"
+	case "income":
+		return "bg-emerald-100 text-emerald-700"
+	default:
+		return "bg-slate-100 text-slate-700"
+	}
+}
+
+func catKindLabel(kind string) string {
+	switch kind {
+	case "expense":
+		return "Despesa"
+	case "income":
+		return "Receita"
+	default:
+		return kind
+	}
+}
+
+func escapeSingleQuote(s string) string {
+	return strings.ReplaceAll(s, "'", "\\'")
+}

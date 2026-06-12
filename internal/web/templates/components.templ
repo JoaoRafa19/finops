@@ -1,5 +1,70 @@
 package templates
 
+import "fmt"
+
+// SideNav renders the collapsible left sidebar. Pass the current path to highlight the active link.
+templ SideNav(currentPath string) {
+	<nav
+		id="side-nav"
+		class="group fixed left-0 top-0 z-50 flex h-full w-12 flex-col gap-1 overflow-hidden bg-white/95 py-6 shadow-lg shadow-finops-900/10 backdrop-blur-sm transition-[width] duration-200 hover:w-44"
+	>
+		<div class="mb-2 flex h-8 items-center px-3">
+			<i class="fa-solid fa-coins w-6 shrink-0 text-center text-finops-500"></i>
+			<span class="ml-3 whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-finops-500 opacity-0 transition-opacity duration-150 group-hover:opacity-100">Finops</span>
+		</div>
+		<!-- Bell de notificações com badge de pendentes -->
+		<a
+			href="/classify"
+			class="relative mx-1 mb-3 flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+			title="Transações pendentes de classificação"
+		>
+			<span class="relative w-6 shrink-0 text-center">
+				<i class="fa-solid fa-bell text-finops-500"></i>
+				<span
+					id="pending-badge"
+					hx-get="/notifications/count"
+					hx-trigger="load"
+					hx-swap="outerHTML"
+					class="hidden"
+				></span>
+			</span>
+			<span class="whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+				Pendentes
+				<span id="pending-badge-text" class="ml-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white opacity-0"></span>
+			</span>
+		</a>
+		@sideNavLink("/", "fa-house", "Home", currentPath == "/")
+		@sideNavLink("/reports", "fa-chart-bar", "Relatórios", currentPath == "/reports")
+		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
+		@sideNavLink("/classify", "fa-tags", "Classificar", currentPath == "/classify")
+	</nav>
+}
+
+templ PendingBadge(count int) {
+	if count > 0 {
+		<span
+			id="pending-badge"
+			class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white"
+		>{ fmt.Sprintf("%d", count) }</span>
+	} else {
+		<span id="pending-badge" class="hidden"></span>
+	}
+}
+
+templ sideNavLink(href, icon, label string, active bool) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={
+			"flex items-center gap-3 rounded-xl mx-1 px-2 py-2 text-sm font-semibold transition hover:bg-slate-100",
+			templ.KV("bg-finops-900 text-white hover:bg-finops-800", active),
+			templ.KV("text-finops-800", !active),
+		}
+	>
+		<i class={ "fa-solid " + icon + " w-6 shrink-0 text-center" }></i>
+		<span class="whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100">{ label }</span>
+	</a>
+}
+
 templ AppHead(title string, includeHTMX bool) {
 	<head>
 		<meta charset="utf-8"/>
@@ -107,9 +172,4 @@ templ DefaultCloseModalButton() {
 		class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
 		title="Fechar modal"
 	><i class="fa-solid fa-xmark"></i></button>
-}
-
-templ LabledInput(id, name, label, inputType, value, placeholder string, required bool) {
-	@FormLabel("description", "Descricao")
-	@TextInput("description", "description", "text", "", "Compra no supermercado", true)
 }

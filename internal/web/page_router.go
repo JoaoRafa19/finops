@@ -4,8 +4,11 @@ import (
 	accounts "finops/internal/modules/accounts/web"
 	auth "finops/internal/modules/auth/web"
 	category "finops/internal/modules/category/web"
+	classification "finops/internal/modules/classification/web"
 	home "finops/internal/modules/home/web"
+	imports "finops/internal/modules/imports/web"
 	onboarding "finops/internal/modules/onboarding/web"
+	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
 	"net/http"
@@ -19,6 +22,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.CategoryService,
 		deps.WorkspaceService,
 		deps.TransactionService,
+		deps.ImportService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
@@ -28,6 +32,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.CategoryService,
 	)
 	categoryController := category.NewCategoryController(deps.CategoryService)
+	reportsController := reports.NewReportsController(deps.ReportService)
+	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
+	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -55,6 +62,23 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
+	private.HandleFunc("GET /reports", reportsController.Page)
+	private.HandleFunc("GET /reports/spending", reportsController.Spending)
+	private.HandleFunc("GET /reports/comparison", reportsController.Comparison)
+	private.HandleFunc("GET /reports/balance", reportsController.Balance)
+	private.HandleFunc("GET /reports/transactions", reportsController.Transactions)
+	private.HandleFunc("GET /import", importController.Page)
+	private.HandleFunc("POST /import/upload", importController.Upload)
+	private.HandleFunc("POST /import/preview-csv", importController.PreviewCSV)
+	private.HandleFunc("POST /import/confirm", importController.Confirm)
+	private.HandleFunc("GET /classify", classificationController.Page)
+	private.HandleFunc("GET /classify/{id}/modal", classificationController.SuggestModal)
+	private.HandleFunc("POST /classify", classificationController.Classify)
+	private.HandleFunc("GET /classify/search", classificationController.SearchCategories)
+	private.HandleFunc("POST /classify/create-and-classify", classificationController.CreateAndClassify)
+	private.HandleFunc("GET /notifications/count", classificationController.NotificationsCount)
+	private.HandleFunc("POST /classify/auto", classificationController.AutoClassify)
+	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)

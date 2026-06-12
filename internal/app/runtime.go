@@ -11,11 +11,14 @@ import (
 )
 
 type Services struct {
-	Auth        service.AuthService
-	Account     service.AccountService
-	Workspace   service.WorkspaceService
-	Transaction service.TransactionService
-	Category    service.CategoryService
+	Auth           service.AuthService
+	Account        service.AccountService
+	Workspace      service.WorkspaceService
+	Transaction    service.TransactionService
+	Category       service.CategoryService
+	Report         service.ReportsService
+	Import         service.ImportService
+	Classification service.ClassificationService
 }
 
 type Runtime struct {
@@ -55,6 +58,9 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		Workspace:   service.NewPGWorkspaceService(queries),
 		Transaction: service.NewPGTransactionService(db, queries),
 		Category:    service.NewPGCategoryService(queries),
+		Report:      service.NewPGReportService(queries),
+		Import:      service.NewPGImportService(db, queries),
+		Classification: service.NewPGClassificationService(queries, service.NewOllamaAIService(cfg.OllamaBaseURL, cfg.OllamaModel)),
 	}
 
 	return &Runtime{

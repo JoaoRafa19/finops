@@ -25,7 +25,11 @@ func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 
 			token := r.Header.Get("X-CSRF-Token")
 			if token == "" {
-				_ = r.ParseForm()
+				if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
+					_ = r.ParseMultipartForm(32 << 20)
+				} else {
+					_ = r.ParseForm()
+				}
 				token = r.FormValue("_csrf")
 			}
 

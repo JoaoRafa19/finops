@@ -53,6 +53,10 @@ MVP entregue. Todo o core financeiro está concluído e o foco atual é o bloco 
 
 ## Critérios de aceitação do bloco atual
 
+- **Contas**: criar e editar conta pela home, com retorno consistente via modal e saldo atual correto.
+- **Transações**: registrar transação manual e ver o efeito refletido na home.
+- **Transferências**: movimentar valor entre duas contas sem distorcer o saldo consolidado.
+- **Qualidade**: `go test ./...` passando ao final de cada bloco.
 - **Gastos por categoria**: total agrupado por categoria em qualquer período, excluindo transferências.
 - **Comparativo mensal**: receitas × despesas mês a mês.
 - **Evolução de saldo**: curva de saldo acumulado com âncora correta no início do período.

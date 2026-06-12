@@ -27,6 +27,20 @@ type Category struct {
 	Archived    bool
 }
 
+type ClassificationRule struct {
+	ID          int64
+	WorkspaceID int64
+	Keyword     string
+	CategoryID  int64
+	CreatedAt   time.Time
+}
+
+type Import struct {
+	ID          int64
+	WorkspaceID int64
+	ImportedAt  time.Time
+}
+
 type Transaction struct {
 	ID              int64
 	WorkspaceID     int64

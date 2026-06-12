@@ -1,0 +1,292 @@
+package templates
+
+import (
+	"finops/internal/services"
+	"finops/internal/store"
+	"finops/internal/utils"
+	"fmt"
+	"strconv"
+)
+
+templ ImportPage(accounts []store.Account, csrf string) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		@AppHead("Importar · Finops", true)
+		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+			@SideNav("/import")
+			<main class="mx-auto max-w-3xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+				<div class="mb-6">
+					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
+					<h1 class="mt-1 text-3xl font-extrabold">Importar Transações</h1>
+					<p class="mt-2 text-sm text-finops-700">Importe extratos nos formatos OFX (bancos BR) ou CSV.</p>
+				</div>
+				<div class="rounded-3xl border border-white/80 bg-white/85 p-6 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-8">
+					<form
+						id="upload-form"
+						hx-post="/import/upload"
+						hx-target="#import-result"
+						hx-swap="innerHTML"
+						hx-encoding="multipart/form-data"
+						class="space-y-5"
+					>
+						<input type="hidden" name="_csrf" value={ csrf }/>
+						<div>
+							@FormLabel("account_id", "Conta de destino")
+							<select
+								id="account_id"
+								name="account_id"
+								required
+								class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-finops-900 shadow-sm outline-none transition focus:border-finops-500 focus:ring-4 focus:ring-finops-400/20"
+							>
+								<option value="">Selecione uma conta</option>
+								for _, acc := range accounts {
+									<option value={ strconv.FormatInt(acc.ID, 10) }>{ acc.Name } ({ acc.Currency })</option>
+								}
+							</select>
+						</div>
+						<div>
+							@FormLabel("file", "Arquivo (.ofx, .qfx, .csv)")
+							<input
+								id="file"
+								type="file"
+								name="file"
+								accept=".ofx,.qfx,.csv"
+								required
+								class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-finops-900 shadow-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-finops-900 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white"
+							/>
+						</div>
+						<div>
+							@PrimaryButton("submit", "Carregar arquivo", true)
+						</div>
+					</form>
+					<!-- Área de resultado dinâmico -->
+					<div id="import-result" class="mt-6"></div>
+				</div>
+			</main>
+		</body>
+	</html>
+}
+
+templ ImportErrorFragment(msg string) {
+	<div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+		<i class="fa-solid fa-circle-exclamation mr-2"></i>{ msg }
+	</div>
+}
+
+templ OFXPreviewFragment(rows []service.ImportRow, uuid, csrf, accountID string) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">{ fmt.Sprintf("%d transações encontradas", len(rows)) }</p>
+			<p class="text-sm text-finops-700">Revise antes de confirmar</p>
+		</div>
+		<div class="max-h-72 overflow-y-auto rounded-xl border border-slate-200">
+			<table class="w-full text-sm">
+				<thead class="sticky top-0 bg-slate-50">
+					<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+						<th class="px-4 py-2">Data</th>
+						<th class="px-4 py-2">Descrição</th>
+						<th class="px-4 py-2 text-right">Valor</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, row := range rows {
+						<tr>
+							<td class="px-4 py-2 text-finops-700">{ row.PostedOn.Format("02/01/2006") }</td>
+							<td class="px-4 py-2 text-finops-900">{ row.Description }</td>
+							<td class={ "px-4 py-2 text-right font-bold tabular-nums " + importAmountClass(row.Direction) }>
+								{ importAmountLabel(row) }
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<form
+			hx-post="/import/confirm"
+			hx-target="#import-result"
+			hx-swap="innerHTML"
+			class="mt-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="uuid" value={ uuid }/>
+			<input type="hidden" name="account_id" value={ accountID }/>
+			@PrimaryButton("submit", fmt.Sprintf("Confirmar importação de %d transações", len(rows)), true)
+		</form>
+	</div>
+}
+
+templ CSVMappingFragment(headers []string, sample [][]string, csrf, accountID string) {
+	<div>
+		<p class="mb-4 font-bold text-finops-900">Mapeie as colunas do CSV</p>
+		if len(sample) > 0 {
+			<div class="mb-4 overflow-x-auto rounded-xl border border-slate-200">
+				<table class="w-full text-xs">
+					<thead class="bg-slate-50">
+						<tr class="border-b border-slate-200">
+							for _, h := range headers {
+								<th class="px-3 py-2 text-left font-bold text-finops-500">{ h }</th>
+							}
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range sample {
+							<tr>
+								for _, cell := range row {
+									<td class="px-3 py-2 text-finops-700">{ cell }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		<form
+			hx-post="/import/preview-csv"
+			hx-target="#import-result"
+			hx-swap="innerHTML"
+			hx-encoding="multipart/form-data"
+			class="grid grid-cols-2 gap-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="account_id" value={ accountID }/>
+			<div>
+				@FormLabel("date_col", "Coluna de data")
+				@SelectInput("date_col", "date_col", buildColOptions(headers, -1), true)
+			</div>
+			<div>
+				@FormLabel("date_format", "Formato da data")
+				<select name="date_format" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500">
+					<option value="02/01/2006">DD/MM/AAAA</option>
+					<option value="2006-01-02">AAAA-MM-DD</option>
+					<option value="01/02/2006">MM/DD/AAAA</option>
+				</select>
+			</div>
+			<div class="col-span-2">
+				@FormLabel("desc_col", "Coluna de descrição")
+				@SelectInput("desc_col", "desc_col", buildColOptions(headers, -1), true)
+			</div>
+			<div class="col-span-2">
+				@FormLabel("signed_amount", "Tipo de valor")
+				<select name="signed_amount" id="signed_amount" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500">
+					<option value="true">Coluna única (negativo = débito)</option>
+					<option value="false">Colunas separadas (débito / crédito)</option>
+				</select>
+			</div>
+			<div class="col-span-2">
+				@FormLabel("amount_col", "Coluna de valor")
+				@SelectInput("amount_col", "amount_col", buildColOptions(headers, -1), false)
+			</div>
+			<div>
+				@FormLabel("debit_col", "Coluna débito")
+				@SelectInput("debit_col", "debit_col", buildColOptions(headers, -1), false)
+			</div>
+			<div>
+				@FormLabel("credit_col", "Coluna crédito")
+				@SelectInput("credit_col", "credit_col", buildColOptions(headers, -1), false)
+			</div>
+			<!-- Re-upload do arquivo é necessário para o preview-csv -->
+			<div class="col-span-2">
+				@FormLabel("file", "Arquivo CSV (reenvie para aplicar mapeamento)")
+				<input type="file" name="file" accept=".csv" required
+					class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-finops-900 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white"/>
+			</div>
+			<div class="col-span-2">
+				@PrimaryButton("submit", "Visualizar prévia", true)
+			</div>
+		</form>
+	</div>
+}
+
+templ CSVPreviewFragment(rows []service.ImportRow, uuid, csrf, accountID string) {
+	<div>
+		<div class="mb-4 flex items-center justify-between">
+			<p class="font-bold text-finops-900">{ fmt.Sprintf("%d transações encontradas", len(rows)) }</p>
+			<p class="text-sm text-finops-700">Revise antes de confirmar</p>
+		</div>
+		<div class="max-h-72 overflow-y-auto rounded-xl border border-slate-200">
+			<table class="w-full text-sm">
+				<thead class="sticky top-0 bg-slate-50">
+					<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+						<th class="px-4 py-2">Data</th>
+						<th class="px-4 py-2">Descrição</th>
+						<th class="px-4 py-2 text-right">Valor</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, row := range rows {
+						<tr>
+							<td class="px-4 py-2 text-finops-700">{ row.PostedOn.Format("02/01/2006") }</td>
+							<td class="px-4 py-2 text-finops-900">{ row.Description }</td>
+							<td class={ "px-4 py-2 text-right font-bold tabular-nums " + importAmountClass(row.Direction) }>
+								{ importAmountLabel(row) }
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<form
+			hx-post="/import/confirm"
+			hx-target="#import-result"
+			hx-swap="innerHTML"
+			class="mt-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="uuid" value={ uuid }/>
+			<input type="hidden" name="account_id" value={ accountID }/>
+			@PrimaryButton("submit", fmt.Sprintf("Confirmar importação de %d transações", len(rows)), true)
+		</form>
+	</div>
+}
+
+templ ImportResultFragment(result service.ImportResult) {
+	<div class="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+		<i class="fa-solid fa-circle-check mb-3 text-3xl text-emerald-500"></i>
+		<p class="text-lg font-bold text-finops-900">Importação concluída</p>
+		<div class="mt-4 flex justify-center gap-8 text-sm">
+			<div>
+				<p class="text-2xl font-extrabold text-emerald-700">{ fmt.Sprintf("%d", result.Inserted) }</p>
+				<p class="text-finops-700">inseridas</p>
+			</div>
+			<div>
+				<p class="text-2xl font-extrabold text-slate-500">{ fmt.Sprintf("%d", result.Duplicates) }</p>
+				<p class="text-finops-700">duplicadas</p>
+			</div>
+			if result.Errors > 0 {
+				<div>
+					<p class="text-2xl font-extrabold text-rose-600">{ fmt.Sprintf("%d", result.Errors) }</p>
+					<p class="text-finops-700">erros</p>
+				</div>
+			}
+		</div>
+		<a href="/" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-finops-700 underline decoration-finops-400/70 underline-offset-4 hover:text-finops-900">
+			Ver transações na home
+		</a>
+	</div>
+}
+
+func importAmountClass(direction string) string {
+	if direction == "credit" {
+		return "text-emerald-700"
+	}
+	return "text-rose-700"
+}
+
+func importAmountLabel(row service.ImportRow) string {
+	if row.Direction == "debit" {
+		return utils.FormatMoney(-row.Amount)
+	}
+	return utils.FormatMoney(row.Amount)
+}
+
+func buildColOptions(headers []string, selected int) []SelectOption {
+	opts := []SelectOption{{Value: "-1", Label: "— não usar —", Selected: selected == -1}}
+	for i, h := range headers {
+		opts = append(opts, SelectOption{
+			Value:    fmt.Sprintf("%d", i),
+			Label:    fmt.Sprintf("[%d] %s", i, h),
+			Selected: i == selected,
+		})
+	}
+	return opts
+}
