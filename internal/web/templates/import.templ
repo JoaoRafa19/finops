@@ -13,7 +13,7 @@ templ ImportPage(accounts []store.Account, csrf string) {
 	<html lang="pt-BR">
 		@AppHead("Importar · Finops", true)
 		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
-			@SideNav("/import")
+			@SideNav("/import", csrf)
 			<main class="mx-auto max-w-3xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
 				<div class="mb-6">
 					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>

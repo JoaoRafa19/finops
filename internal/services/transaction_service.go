@@ -253,11 +253,13 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 				WorkspaceID: workspace.ID,
 				ID:          row.CategoryID.Int64,
 			})
-			if err != nil {
+			if err != nil && err != sql.ErrNoRows {
 				logger.Error("transaction_list_recent_category_lookup_failed", "user_id", userID, "transaction_id", row.ID, "category_id", row.CategoryID.Int64, "error", err)
 				return nil, err
 			}
-			category = categoryRow.Name
+			if err == nil {
+				category = categoryRow.Name
+			}
 		}
 
 		items = append(items, TransactionListItem{

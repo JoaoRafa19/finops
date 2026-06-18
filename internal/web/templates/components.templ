@@ -3,7 +3,8 @@ package templates
 import "fmt"
 
 // SideNav renders the collapsible left sidebar. Pass the current path to highlight the active link.
-templ SideNav(currentPath string) {
+templ SideNav(currentPath, csrf string) {
+	@ChatWidget(csrf)
 	<nav
 		id="side-nav"
 		class="group fixed left-0 top-0 z-50 flex h-full w-12 flex-col gap-1 overflow-hidden bg-white/95 py-6 shadow-lg shadow-finops-900/10 backdrop-blur-sm transition-[width] duration-200 hover:w-44"

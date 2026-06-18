@@ -59,8 +59,9 @@ func main() {
 		ReportService:         runtime.Services.Report,
 		ImportService:         runtime.Services.Import,
 		ClassificationService: runtime.Services.Classification,
-		DB:                 runtime.DB,
-		RedisClient:        runtime.RedisClient,
+		ChatService:           runtime.Services.Chat,
+		DB:                    runtime.DB,
+		RedisClient:           runtime.RedisClient,
 	})
 
 	s := http.Server{
