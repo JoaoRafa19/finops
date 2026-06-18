@@ -68,6 +68,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 			redisClient,
 			service.NewPGAccountService(db, queries),
 			service.NewPGReportService(queries),
+			service.NewPGCategoryService(queries),
 		),
 	}
 

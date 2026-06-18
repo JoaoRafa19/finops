@@ -7,29 +7,51 @@ import (
 	"strings"
 	"time"
 
+	openai "github.com/sashabaranov/go-openai"
+
 	"finops/internal/utils"
 )
 
 type financialTool struct {
-	schema  ollamaTool
+	schema  openai.Tool
 	handler func(ctx context.Context, args json.RawMessage) (string, error)
 }
 
-type ollamaTool struct {
-	Type     string       `json:"type"`
-	Function ollamaToolFn `json:"function"`
+// params é um helper para construir JSON Schema de parâmetros de tools.
+func params(properties map[string]any, required ...string) json.RawMessage {
+	schema := map[string]any{
+		"type":       "object",
+		"properties": properties,
+	}
+	if len(required) > 0 {
+		schema["required"] = required
+	}
+	raw, _ := json.Marshal(schema)
+	return raw
 }
 
-type ollamaToolFn struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Parameters  json.RawMessage `json:"parameters"`
+func prop(typ, description string) map[string]string {
+	return map[string]string{"type": typ, "description": description}
 }
 
-func FinancialTools(reportSvc ReportsService, accountSvc AccountService, userID int64) []financialTool {
+func tool(name, description string, parameters json.RawMessage) openai.Tool {
+	return openai.Tool{
+		Type: openai.ToolTypeFunction,
+		Function: &openai.FunctionDefinition{
+			Name:        name,
+			Description: description,
+			Parameters:  parameters,
+		},
+	}
+}
+
+func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categorySvc CategoryService, userID int64) []financialTool {
 	return []financialTool{
 		accountBalancesTool(accountSvc, userID),
+		categoriesTool(categorySvc, userID),
 		spendingByCategoryTool(reportSvc, userID),
+		spendingTrendTool(reportSvc, userID),
+		topExpensesTool(reportSvc, userID),
 		monthlyComparisonTool(reportSvc, userID),
 		balanceHistoryTool(reportSvc, userID),
 		listTransactionsTool(reportSvc, userID),
@@ -38,14 +60,7 @@ func FinancialTools(reportSvc ReportsService, accountSvc AccountService, userID 
 
 func accountBalancesTool(accountSvc AccountService, userID int64) financialTool {
 	return financialTool{
-		schema: ollamaTool{
-			Type: "function",
-			Function: ollamaToolFn{
-				Name:        "get_account_balances",
-				Description: "Retorna o saldo atual de todas as contas do usuário.",
-				Parameters:  json.RawMessage(`{"type":"object","properties":{}}`),
-			},
-		},
+		schema: tool("get_account_balances", "Retorna o saldo atual de todas as contas do usuário.", params(nil)),
 		handler: func(ctx context.Context, _ json.RawMessage) (string, error) {
 			accounts, err := accountSvc.ListSummariesByUser(ctx, userID)
 			if err != nil {
@@ -61,6 +76,30 @@ func accountBalancesTool(accountSvc AccountService, userID int64) financialTool 
 				fmt.Fprintf(&sb, "- %s (%s): %s\n", acc.Name, acc.Type, utils.FormatMoney(acc.CurrentBalance))
 			}
 			fmt.Fprintf(&sb, "Saldo total: %s", utils.FormatMoney(total))
+			return sb.String(), nil
+		},
+	}
+}
+
+func categoriesTool(categorySvc CategoryService, userID int64) financialTool {
+	return financialTool{
+		schema: tool("get_categories",
+			"Retorna todas as categorias cadastradas com seu tipo (expense=despesa, income=receita). Use antes de classificar gastos como essenciais ou supérfluos.",
+			params(nil),
+		),
+		handler: func(ctx context.Context, _ json.RawMessage) (string, error) {
+			cats, err := categorySvc.GetCategories(ctx, userID)
+			if err != nil {
+				return "", err
+			}
+			if len(cats) == 0 {
+				return "Nenhuma categoria cadastrada.", nil
+			}
+			var sb strings.Builder
+			sb.WriteString("Categorias cadastradas:\n")
+			for _, c := range cats {
+				fmt.Fprintf(&sb, "- %s (%s)\n", c.Name, c.Kind)
+			}
 			return sb.String(), nil
 		},
 	}
@@ -87,23 +126,17 @@ func parsePeriod(args json.RawMessage) (time.Time, time.Time, error) {
 	return from, to, nil
 }
 
+var periodParams = params(map[string]any{
+	"from": prop("string", "Data inicial no formato YYYY-MM-DD"),
+	"to":   prop("string", "Data final no formato YYYY-MM-DD"),
+}, "from", "to")
+
 func spendingByCategoryTool(reportSvc ReportsService, userID int64) financialTool {
 	return financialTool{
-		schema: ollamaTool{
-			Type: "function",
-			Function: ollamaToolFn{
-				Name:        "get_spending_by_category",
-				Description: "Retorna os gastos (despesas) agrupados por categoria em um período.",
-				Parameters: json.RawMessage(`{
-					"type":"object",
-					"properties":{
-						"from":{"type":"string","description":"Data inicial no formato YYYY-MM-DD"},
-						"to":{"type":"string","description":"Data final no formato YYYY-MM-DD"}
-					},
-					"required":["from","to"]
-				}`),
-			},
-		},
+		schema: tool("get_spending_by_category",
+			"Retorna os gastos (despesas) agrupados por categoria em um período.",
+			periodParams,
+		),
 		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
 			from, to, err := parsePeriod(args)
 			if err != nil {
@@ -126,23 +159,88 @@ func spendingByCategoryTool(reportSvc ReportsService, userID int64) financialToo
 	}
 }
 
+func spendingTrendTool(reportSvc ReportsService, userID int64) financialTool {
+	return financialTool{
+		schema: tool("get_spending_trend",
+			"Retorna gastos por categoria mês a mês em um período. Use para calcular médias mensais por categoria e identificar tendências de gasto ao longo de 3-6 meses.",
+			periodParams,
+		),
+		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
+			from, to, err := parsePeriod(args)
+			if err != nil {
+				return "", err
+			}
+			rows, err := reportSvc.SpendingTrend(ctx, userID, from, to)
+			if err != nil {
+				return "", err
+			}
+			if len(rows) == 0 {
+				return "Nenhum dado encontrado no período.", nil
+			}
+			months := [...]string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "Gastos por categoria e mês (%s a %s):\n", from.Format("02/01/2006"), to.Format("02/01/2006"))
+			for _, r := range rows {
+				month := fmt.Sprintf("%s/%d", months[r.Month.Month()-1], r.Month.Year())
+				fmt.Fprintf(&sb, "- %s | %s: %s\n", month, r.CategoryName, utils.FormatMoney(r.Total))
+			}
+			return sb.String(), nil
+		},
+	}
+}
+
+func topExpensesTool(reportSvc ReportsService, userID int64) financialTool {
+	return financialTool{
+		schema: tool("get_top_expenses",
+			"Retorna as maiores despesas individuais ordenadas por valor. Use para identificar gastos pontuais de alto valor.",
+			params(map[string]any{
+				"from":  prop("string", "Data inicial YYYY-MM-DD"),
+				"to":    prop("string", "Data final YYYY-MM-DD"),
+				"limit": prop("integer", "Número de resultados (padrão 10, máximo 20)"),
+			}, "from", "to"),
+		),
+		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
+			var p struct {
+				Limit int32 `json:"limit"`
+			}
+			_ = json.Unmarshal(args, &p)
+			from, to, err := parsePeriod(args)
+			if err != nil {
+				return "", err
+			}
+			limit := int32(10)
+			if p.Limit > 0 && p.Limit <= 20 {
+				limit = p.Limit
+			}
+			items, err := reportSvc.TopExpenses(ctx, userID, from, to, limit)
+			if err != nil {
+				return "", err
+			}
+			if len(items) == 0 {
+				return "Nenhuma despesa encontrada no período.", nil
+			}
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "Maiores despesas (%s a %s):\n", from.Format("02/01/2006"), to.Format("02/01/2006"))
+			for i, item := range items {
+				fmt.Fprintf(&sb, "%d. %s | %s | %s | %s\n",
+					i+1,
+					item.PostedOn.Format("02/01/2006"),
+					item.Description,
+					utils.FormatMoney(item.Amount),
+					item.CategoryName,
+				)
+			}
+			return sb.String(), nil
+		},
+	}
+}
+
 func monthlyComparisonTool(reportSvc ReportsService, userID int64) financialTool {
 	return financialTool{
-		schema: ollamaTool{
-			Type: "function",
-			Function: ollamaToolFn{
-				Name:        "get_monthly_comparison",
-				Description: "Retorna comparativo mensal de receitas e despesas em um período.",
-				Parameters: json.RawMessage(`{
-					"type":"object",
-					"properties":{
-						"from":{"type":"string","description":"Data inicial no formato YYYY-MM-DD"},
-						"to":{"type":"string","description":"Data final no formato YYYY-MM-DD"}
-					},
-					"required":["from","to"]
-				}`),
-			},
-		},
+		schema: tool("get_monthly_comparison",
+			"Retorna comparativo mensal de receitas e despesas em um período.",
+			periodParams,
+		),
 		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
 			from, to, err := parsePeriod(args)
 			if err != nil {
@@ -155,8 +253,8 @@ func monthlyComparisonTool(reportSvc ReportsService, userID int64) financialTool
 			if len(rows) == 0 {
 				return "Nenhum dado encontrado no período.", nil
 			}
-			var sb strings.Builder
 			months := [...]string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
+			var sb strings.Builder
 			fmt.Fprintf(&sb, "Comparativo mensal (%s a %s):\n", from.Format("02/01/2006"), to.Format("02/01/2006"))
 			for _, r := range rows {
 				month := fmt.Sprintf("%s/%d", months[r.Month.Month()-1], r.Month.Year())
@@ -171,21 +269,10 @@ func monthlyComparisonTool(reportSvc ReportsService, userID int64) financialTool
 
 func balanceHistoryTool(reportSvc ReportsService, userID int64) financialTool {
 	return financialTool{
-		schema: ollamaTool{
-			Type: "function",
-			Function: ollamaToolFn{
-				Name:        "get_balance_history",
-				Description: "Retorna a evolução do saldo patrimonial mês a mês em um período.",
-				Parameters: json.RawMessage(`{
-					"type":"object",
-					"properties":{
-						"from":{"type":"string","description":"Data inicial no formato YYYY-MM-DD"},
-						"to":{"type":"string","description":"Data final no formato YYYY-MM-DD"}
-					},
-					"required":["from","to"]
-				}`),
-			},
-		},
+		schema: tool("get_balance_history",
+			"Retorna a evolução do saldo patrimonial mês a mês em um período.",
+			periodParams,
+		),
 		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
 			from, to, err := parsePeriod(args)
 			if err != nil {
@@ -198,8 +285,8 @@ func balanceHistoryTool(reportSvc ReportsService, userID int64) financialTool {
 			if len(points) == 0 {
 				return "Nenhum dado encontrado no período.", nil
 			}
-			var sb strings.Builder
 			months := [...]string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
+			var sb strings.Builder
 			fmt.Fprintf(&sb, "Evolução do saldo (%s a %s):\n", from.Format("02/01/2006"), to.Format("02/01/2006"))
 			for _, p := range points {
 				month := fmt.Sprintf("%s/%d", months[p.Month.Month()-1], p.Month.Year())
@@ -212,22 +299,15 @@ func balanceHistoryTool(reportSvc ReportsService, userID int64) financialTool {
 
 func listTransactionsTool(reportSvc ReportsService, userID int64) financialTool {
 	return financialTool{
-		schema: ollamaTool{
-			Type: "function",
-			Function: ollamaToolFn{
-				Name:        "list_transactions",
-				Description: "Lista transações com filtros opcionais de período, tipo (debit/credit) e limite.",
-				Parameters: json.RawMessage(`{
-					"type":"object",
-					"properties":{
-						"from":{"type":"string","description":"Data inicial YYYY-MM-DD (opcional)"},
-						"to":{"type":"string","description":"Data final YYYY-MM-DD (opcional)"},
-						"direction":{"type":"string","enum":["debit","credit"],"description":"debit=despesa, credit=receita (opcional)"},
-						"limit":{"type":"integer","description":"Número de resultados (padrão 10, máximo 50)"}
-					}
-				}`),
-			},
-		},
+		schema: tool("list_transactions",
+			"Lista transações com filtros opcionais de período, tipo (debit/credit) e limite.",
+			params(map[string]any{
+				"from":      prop("string", "Data inicial YYYY-MM-DD (opcional)"),
+				"to":        prop("string", "Data final YYYY-MM-DD (opcional)"),
+				"direction": map[string]any{"type": "string", "enum": []string{"debit", "credit"}, "description": "debit=despesa, credit=receita (opcional)"},
+				"limit":     prop("integer", "Número de resultados (padrão 10, máximo 50)"),
+			}),
+		),
 		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
 			var p struct {
 				From      string `json:"from"`

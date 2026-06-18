@@ -119,6 +119,56 @@ func (q *Queries) GetMonthlyComparison(ctx context.Context, arg GetMonthlyCompar
 	return items, nil
 }
 
+const getSpendingByCategoryByMonth = `-- name: GetSpendingByCategoryByMonth :many
+SELECT date_trunc('month', t.posted_on)::date AS month,
+       COALESCE(c.name, 'Sem categoria') AS category_name,
+       SUM(t.amount::numeric)::float8 AS total
+FROM transactions t
+LEFT JOIN categories c ON c.id = t.category_id
+WHERE t.workspace_id = $1
+  AND t.direction = 'debit'
+  AND t.source <> 'adjustment'
+  AND t.transfer_group_id IS NULL
+  AND t.posted_on >= $2 AND t.posted_on <= $3
+GROUP BY month, c.name
+ORDER BY month ASC, total DESC
+`
+
+type GetSpendingByCategoryByMonthParams struct {
+	WorkspaceID int64
+	PostedOn    time.Time
+	PostedOn_2  time.Time
+}
+
+type GetSpendingByCategoryByMonthRow struct {
+	Month        time.Time
+	CategoryName string
+	Total        float64
+}
+
+func (q *Queries) GetSpendingByCategoryByMonth(ctx context.Context, arg GetSpendingByCategoryByMonthParams) ([]GetSpendingByCategoryByMonthRow, error) {
+	rows, err := q.db.QueryContext(ctx, getSpendingByCategoryByMonth, arg.WorkspaceID, arg.PostedOn, arg.PostedOn_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetSpendingByCategoryByMonthRow
+	for rows.Next() {
+		var i GetSpendingByCategoryByMonthRow
+		if err := rows.Scan(&i.Month, &i.CategoryName, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSpendingByCategoryForPeriod = `-- name: GetSpendingByCategoryForPeriod :many
 SELECT COALESCE(c.name, 'Sem categoria') AS category_name,
        SUM(t.amount::numeric)::float8 AS total
@@ -166,6 +216,74 @@ func (q *Queries) GetSpendingByCategoryForPeriod(ctx context.Context, arg GetSpe
 	return items, nil
 }
 
+const getTopExpenses = `-- name: GetTopExpenses :many
+SELECT t.id, a.name AS account_name,
+       COALESCE(c.name, 'Sem categoria') AS category_name,
+       t.posted_on, t.description,
+       t.amount::float8 AS amount
+FROM transactions t
+JOIN accounts a ON a.id = t.account_id
+LEFT JOIN categories c ON c.id = t.category_id
+WHERE t.workspace_id = $1
+  AND t.direction = 'debit'
+  AND t.source <> 'adjustment'
+  AND t.transfer_group_id IS NULL
+  AND t.posted_on >= $2 AND t.posted_on <= $3
+ORDER BY t.amount::numeric DESC
+LIMIT $4
+`
+
+type GetTopExpensesParams struct {
+	WorkspaceID int64
+	PostedOn    time.Time
+	PostedOn_2  time.Time
+	Limit       int32
+}
+
+type GetTopExpensesRow struct {
+	ID           int64
+	AccountName  string
+	CategoryName string
+	PostedOn     time.Time
+	Description  string
+	Amount       float64
+}
+
+func (q *Queries) GetTopExpenses(ctx context.Context, arg GetTopExpensesParams) ([]GetTopExpensesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getTopExpenses,
+		arg.WorkspaceID,
+		arg.PostedOn,
+		arg.PostedOn_2,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTopExpensesRow
+	for rows.Next() {
+		var i GetTopExpensesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountName,
+			&i.CategoryName,
+			&i.PostedOn,
+			&i.Description,
+			&i.Amount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactionsFiltered = `-- name: ListTransactionsFiltered :many
 SELECT t.id, t.workspace_id, t.account_id, a.name AS account_name,
        t.category_id, COALESCE(c.name,'') AS category_name,
@@ -176,6 +294,7 @@ JOIN accounts a ON a.id = t.account_id
 LEFT JOIN categories c ON c.id = t.category_id
 WHERE t.workspace_id = $1
   AND t.source <> 'adjustment'
+  AND t.transfer_group_id IS NULL
   AND ($4::bigint  IS NULL OR t.account_id  = $4)
   AND ($5::bigint IS NULL OR t.category_id = $5)
   AND ($6::text     IS NULL OR t.direction   = $6)
