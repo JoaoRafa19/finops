@@ -20,6 +20,7 @@ type RouterDeps struct {
 	ImportService         service.ImportService
 	ClassificationService service.ClassificationService
 	ChatService           service.ChatService
+	TourService           service.TourService
 	DB                    *sql.DB
 	RedisClient           *redis.Client
 	SessionCookie         string

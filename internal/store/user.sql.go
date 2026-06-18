@@ -7,46 +7,133 @@ package store
 
 import (
 	"context"
+	"time"
 )
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-  SELECT id, email, password_hash, password_algo, is_admin,      
-  created_at                                                     
-  FROM users                                                     
-  WHERE email = $1
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (email, password_hash, password_algo, is_admin)
+VALUES ($1, $2, $3, FALSE)
+RETURNING id
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type CreateUserParams struct {
+	Email        string
+	PasswordHash string
+	PasswordAlgo string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.PasswordHash, arg.PasswordAlgo)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const deleteWorkspaceAccounts = `-- name: DeleteWorkspaceAccounts :exec
+DELETE FROM accounts WHERE workspace_id = $1
+`
+
+func (q *Queries) DeleteWorkspaceAccounts(ctx context.Context, workspaceID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceAccounts, workspaceID)
+	return err
+}
+
+const deleteWorkspaceCategories = `-- name: DeleteWorkspaceCategories :exec
+DELETE FROM categories WHERE workspace_id = $1
+`
+
+func (q *Queries) DeleteWorkspaceCategories(ctx context.Context, workspaceID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceCategories, workspaceID)
+	return err
+}
+
+const deleteWorkspaceData = `-- name: DeleteWorkspaceData :exec
+DELETE FROM transactions WHERE workspace_id = $1
+`
+
+func (q *Queries) DeleteWorkspaceData(ctx context.Context, workspaceID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteWorkspaceData, workspaceID)
+	return err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, password_hash, password_algo, is_admin, has_done_tour, created_at
+FROM users
+WHERE email = $1
+`
+
+type GetUserByEmailRow struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	PasswordAlgo string
+	IsAdmin      bool
+	HasDoneTour  bool
+	CreatedAt    time.Time
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
 		&i.PasswordAlgo,
 		&i.IsAdmin,
+		&i.HasDoneTour,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-  SELECT id, email, password_hash, password_algo, is_admin,      
-  created_at                                                     
-  FROM users                                                     
-  WHERE id = $1
+SELECT id, email, password_hash, password_algo, is_admin, has_done_tour, created_at
+FROM users
+WHERE id = $1
 `
 
-func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
+type GetUserByIdRow struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	PasswordAlgo string
+	IsAdmin      bool
+	HasDoneTour  bool
+	CreatedAt    time.Time
+}
+
+func (q *Queries) GetUserById(ctx context.Context, id int64) (GetUserByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserById, id)
-	var i User
+	var i GetUserByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
 		&i.PasswordAlgo,
 		&i.IsAdmin,
+		&i.HasDoneTour,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getUserTourStatus = `-- name: GetUserTourStatus :one
+SELECT has_done_tour FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserTourStatus(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, getUserTourStatus, id)
+	var has_done_tour bool
+	err := row.Scan(&has_done_tour)
+	return has_done_tour, err
+}
+
+const setTourDone = `-- name: SetTourDone :exec
+UPDATE users SET has_done_tour = TRUE WHERE id = $1
+`
+
+func (q *Queries) SetTourDone(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, setTourDone, id)
+	return err
 }

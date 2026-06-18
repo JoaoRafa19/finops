@@ -82,7 +82,7 @@ func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"mt-8 flex justify-end gap-2\"><form method=\"get\" action=\"/account-modal\" hx-get=\"/account-modal\" hx-target=\"#account-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('account-modal')?.showModal()\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div id=\"action-buttons\" class=\"mt-8 flex justify-end gap-2\"><form method=\"get\" action=\"/account-modal\" hx-get=\"/account-modal\" hx-target=\"#account-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('account-modal')?.showModal()\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -216,7 +216,7 @@ func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</p><p class=\"mt-1 text-sm text-finops-700\">Soma dos saldos atuais das contas cadastradas</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</p><p class=\"mt-1 text-sm text-finops-700\">Soma dos saldos atuais das contas cadastradas</p></div><div id=\"account-panels\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -224,7 +224,7 @@ func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div><div class=\"mt-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><div id=\"transaction-panel\" class=\"mt-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

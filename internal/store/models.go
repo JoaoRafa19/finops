@@ -64,6 +64,7 @@ type User struct {
 	PasswordAlgo string
 	IsAdmin      bool
 	CreatedAt    time.Time
+	HasDoneTour  bool
 }
 
 type Workspace struct {

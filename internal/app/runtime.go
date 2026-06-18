@@ -20,6 +20,7 @@ type Services struct {
 	Import         service.ImportService
 	Classification service.ClassificationService
 	Chat           service.ChatService
+	Tour           service.TourService
 }
 
 type Runtime struct {
@@ -62,6 +63,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		Report:      service.NewPGReportService(queries),
 		Import:      service.NewPGImportService(db, queries),
 		Classification: service.NewPGClassificationService(queries, service.NewOllamaAIService(cfg.OllamaBaseURL, cfg.OllamaModel)),
+		Tour:           service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
 		Chat: service.NewOllamaAgentChatService(
 			cfg.OllamaBaseURL,
 			cfg.OllamaModel,

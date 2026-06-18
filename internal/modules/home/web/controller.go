@@ -16,15 +16,17 @@ type Controller struct {
 	workspaceService   service.WorkspaceService
 	transactionService service.TransactionService
 	importService      service.ImportService
+	tourService        service.TourService
 }
 
-func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService, transactionService service.TransactionService, importService service.ImportService) *Controller {
+func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService, transactionService service.TransactionService, importService service.ImportService, tourService service.TourService) *Controller {
 	return &Controller{
 		accountService:     accountService,
 		categoryService:    categoryService,
 		workspaceService:   workspaceService,
 		transactionService: transactionService,
 		importService:      importService,
+		tourService:        tourService,
 	}
 }
 
@@ -48,6 +50,16 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("home_redirect_onboarding", "user_id", session.UserID)
 		http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
 		return
+	}
+
+	// Redireciona para o tour se o usuário ainda não o fez (e não está no meio do tour)
+	if r.URL.Query().Get("tour") == "" {
+		done, err := c.tourService.HasDoneTour(r.Context(), session.UserID)
+		if err == nil && !done {
+			logger.Debug("home_redirect_tour", "user_id", session.UserID)
+			http.Redirect(w, r, "/tour", http.StatusSeeOther)
+			return
+		}
 	}
 
 	accounts, err := c.accountService.ListSummariesByUser(r.Context(), session.UserID)

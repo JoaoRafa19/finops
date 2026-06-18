@@ -5,6 +5,7 @@ import (
 	auth "finops/internal/modules/auth/web"
 	category "finops/internal/modules/category/web"
 	chat "finops/internal/modules/chat/web"
+	tour "finops/internal/modules/tour/web"
 	classification "finops/internal/modules/classification/web"
 	home "finops/internal/modules/home/web"
 	imports "finops/internal/modules/imports/web"
@@ -24,6 +25,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.WorkspaceService,
 		deps.TransactionService,
 		deps.ImportService,
+		deps.TourService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
@@ -37,6 +39,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
 	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	chatController := chat.NewChatController(deps.ChatService)
+	tourController := tour.NewTourController(deps.TourService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -46,6 +49,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 
 	mux.HandleFunc("GET /login", authController.LoginPage)
 	mux.HandleFunc("POST /login", authController.Login)
+	mux.HandleFunc("POST /signup", authController.Signup)
 
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
@@ -83,6 +87,10 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 	private.HandleFunc("POST /chat", chatController.Message)
 	private.HandleFunc("GET /chat/history", chatController.GetHistory)
+	private.HandleFunc("GET /tour", tourController.Page)
+	private.HandleFunc("GET /tour/start", tourController.Start)
+	private.HandleFunc("GET /tour/complete", tourController.Complete)
+	private.HandleFunc("GET /tour/skip", tourController.Skip)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)

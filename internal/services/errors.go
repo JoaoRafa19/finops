@@ -5,4 +5,5 @@ import "errors"
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrSessionNotFound    = errors.New("session not found")
+	ErrEmailTaken         = errors.New("email already registered")
 )
