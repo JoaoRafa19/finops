@@ -30,6 +30,7 @@ templ ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf 
 						<form hx-post="/classify/auto" hx-target="#classify-content" hx-swap="innerHTML">
 							<input type="hidden" name="_csrf" value={ csrf }/>
 							<button
+								id="auto-classify-btn"
 								type="submit"
 								class="inline-flex items-center gap-2 rounded-xl bg-finops-500 px-4 py-2 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
 								hx-indicator="this"

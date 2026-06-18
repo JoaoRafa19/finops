@@ -10,6 +10,7 @@ import (
 	"finops/internal/web/templates"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -87,6 +88,53 @@ func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (c *Controller) Signup(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	if err := r.ParseForm(); err != nil {
+		render.Templ(w, r, http.StatusBadRequest, templates.SignupForm("Erro ao processar formulário."))
+		return
+	}
+
+	email := strings.TrimSpace(r.FormValue("email"))
+	password := r.FormValue("password")
+	confirm := r.FormValue("confirm_password")
+
+	if email == "" || password == "" {
+		render.Templ(w, r, http.StatusOK, templates.SignupForm("Email e senha são obrigatórios."))
+		return
+	}
+	if len(password) < 8 {
+		render.Templ(w, r, http.StatusOK, templates.SignupForm("A senha deve ter ao menos 8 caracteres."))
+		return
+	}
+	if password != confirm {
+		render.Templ(w, r, http.StatusOK, templates.SignupForm("As senhas não coincidem."))
+		return
+	}
+
+	session, err := c.auth.Register(r.Context(), email, password)
+	if err != nil {
+		if errors.Is(err, service.ErrEmailTaken) {
+			logger.Warn("signup_email_taken", "email", email)
+			render.Templ(w, r, http.StatusOK, templates.SignupForm("Este email já está cadastrado."))
+			return
+		}
+		logger.Error("signup_failed", "error", err)
+		render.Templ(w, r, http.StatusOK, templates.SignupForm("Erro ao criar conta. Tente novamente."))
+		return
+	}
+
+	c.setSessionCookie(w, session)
+	logger.Info("signup_succeeded", "user_id", session.UserID)
+
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Redirect", "/")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 

@@ -37,7 +37,15 @@ func LoginPage(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section class=\"grid w-full overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-2xl shadow-finops-900/15 backdrop-blur-sm lg:grid-cols-2\"><div class=\"relative hidden bg-finops-900 p-10 text-slate-100 lg:block\"><div class=\"absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,1)_0%,rgba(15,23,42,0.9)_45%,rgba(13,148,136,0.8)_100%)]\"></div><div class=\"relative z-10 flex h-full flex-col justify-between\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 class=\"mt-4 text-4xl font-extrabold leading-tight\">Seu controle financeiro, sem planilha.</h1></div><p class=\"max-w-sm text-sm text-slate-200/90\">Centralize contas, acompanhe movimentações e construa consistência financeira no seu ritmo.</p></div></div><div class=\"p-7 sm:p-10\"><div class=\"mb-7\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Acesso seguro</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Entrar na sua conta</h2><p class=\"mt-2 text-sm text-finops-700\">Use seu email e senha para continuar.</p></div><div id=\"login-box\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900\"><main class=\"mx-auto flex min-h-screen max-w-6xl items-center px-4 py-12 sm:px-6\"><section id=\"auth-page\" data-mode=\"login\" class=\"relative w-full overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-2xl shadow-finops-900/15 backdrop-blur-sm\"><!-- Grid com os dois formulários empilhados (desktop: lado a lado) --><div class=\"relative min-h-[520px] lg:grid lg:grid-cols-2\"><!-- Slot esquerdo: formulário de signup (fica estático) --><div id=\"signup-area\" class=\"p-7 sm:p-10\"><div class=\"mb-7\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Novo por aqui</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Criar sua conta</h2><p class=\"mt-2 text-sm text-finops-700\">Preencha os dados para começar.</p></div><div id=\"signup-box\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SignupForm("").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"mt-6 text-center\"><p class=\"text-sm text-finops-700\">Já tem uma conta? <button onclick=\"authGoLogin()\" class=\"ml-1 font-bold text-finops-500 underline underline-offset-4 transition hover:text-finops-900\">Entrar</button></p></div></div><!-- Slot direito: formulário de login (fica estático) --><div id=\"login-area\" class=\"p-7 sm:p-10\"><div class=\"mb-7\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Acesso seguro</p><h2 class=\"mt-3 text-3xl font-extrabold text-finops-900\">Entrar na sua conta</h2><p class=\"mt-2 text-sm text-finops-700\">Use seu email e senha para continuar.</p></div><div id=\"login-box\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,15 +53,99 @@ func LoginPage(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"mt-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"mt-6 text-center\"><p class=\"text-sm text-finops-700\">Não tem conta? <button onclick=\"authGoSignup()\" class=\"ml-1 font-bold text-finops-500 underline underline-offset-4 transition hover:text-finops-900\">Criar conta</button></p></div></div><!-- Painel azul: overlay absoluto que desliza sobre os formulários --><!-- Começa cobrindo o slot esquerdo (signup), desliza para direita ao clicar em \"Criar conta\" --><div id=\"auth-panel\" class=\"absolute inset-y-0 left-0 hidden w-1/2 bg-finops-900 lg:block\" style=\"transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);\"><div class=\"absolute inset-0 bg-[linear-gradient(145deg,rgba(15,23,42,1)_0%,rgba(15,23,42,0.9)_45%,rgba(13,148,136,0.8)_100%)]\"></div><div id=\"auth-panel-content\" class=\"relative z-10 flex h-full flex-col justify-between p-10 text-slate-100\"><div><p class=\"text-xs uppercase tracking-[0.2em] text-finops-400\">Finops</p><h1 id=\"auth-panel-title\" class=\"mt-4 text-4xl font-extrabold leading-tight\">Seu controle financeiro, sem planilha.</h1></div><p id=\"auth-panel-sub\" class=\"max-w-sm text-sm text-slate-200/90\">Centralize contas, acompanhe movimentações e construa consistência financeira no seu ritmo.</p></div></div></div></section></main><style>\n\t\t\t\t/* Mobile: mostra só o formulário ativo */\n\t\t\t\t@media (max-width: 1023px) {\n\t\t\t\t\t[data-mode=\"login\"] #signup-area  { display: none; }\n\t\t\t\t\t[data-mode=\"signup\"] #login-area  { display: none; }\n\t\t\t\t}\n\t\t\t\t/* Desktop: ambos os formulários sempre renderizados (painel cobre o inativo) */\n\t\t\t\t@media (min-width: 1024px) {\n\t\t\t\t\t#signup-area, #login-area { display: block !important; }\n\t\t\t\t}\n\t\t\t</style><script>\n\t\t\t\tconst PANEL_TEXTS = {\n\t\t\t\t\tlogin:  { title: \"Seu controle financeiro, sem planilha.\",      sub: \"Centralize contas, acompanhe movimentações e construa consistência financeira no seu ritmo.\" },\n\t\t\t\t\tsignup: { title: \"Já tem uma conta?\",                           sub: \"Entre com seu email e senha para continuar de onde parou.\" },\n\t\t\t\t};\n\n\t\t\t\tfunction authGoSignup() {\n\t\t\t\t\t// Painel desliza para a direita (cobre o formulário de login)\n\t\t\t\t\tdocument.getElementById(\"auth-panel\").style.transform = \"translateX(100%)\";\n\t\t\t\t\tdocument.getElementById(\"auth-page\").setAttribute(\"data-mode\", \"signup\");\n\t\t\t\t\t_updatePanelText(\"signup\");\n\t\t\t\t}\n\n\t\t\t\tfunction authGoLogin() {\n\t\t\t\t\t// Painel volta para a esquerda (cobre o formulário de signup)\n\t\t\t\t\tdocument.getElementById(\"auth-panel\").style.transform = \"translateX(0)\";\n\t\t\t\t\tdocument.getElementById(\"auth-page\").setAttribute(\"data-mode\", \"login\");\n\t\t\t\t\t_updatePanelText(\"login\");\n\t\t\t\t}\n\n\t\t\t\tfunction _updatePanelText(mode) {\n\t\t\t\t\tconst t = PANEL_TEXTS[mode];\n\t\t\t\t\tif (!t) return;\n\t\t\t\t\tdocument.getElementById(\"auth-panel-title\").textContent = t.title;\n\t\t\t\t\tdocument.getElementById(\"auth-panel-sub\").textContent   = t.sub;\n\t\t\t\t}\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SecondaryLink("/", "Voltar para o inicio").Render(ctx, templ_7745c5c3_Buffer)
+		return nil
+	})
+}
+
+func SignupForm(errorMessage string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if errorMessage != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/auth.templ`, Line: 118, Col: 17}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<form method=\"post\" action=\"/signup\" hx-post=\"/signup\" hx-target=\"#signup-box\" hx-swap=\"innerHTML\" class=\"space-y-5\"><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></section></main><noscript><p class=\"mx-auto mt-4 max-w-xl rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900\">Para melhor experiência, habilite JavaScript no navegador.</p></noscript></body></html>")
+		templ_7745c5c3_Err = FormLabel("signup-email", "Email").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("signup-email", "email", "email", "", "voce@exemplo.com", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("signup-password", "Senha").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("signup-password", "password", "password", "", "Mínimo 8 caracteres", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("signup-confirm", "Confirmar senha").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TextInput("signup-confirm", "confirm_password", "password", "", "Repita a senha", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = PrimaryButton("submit", "Criar conta", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

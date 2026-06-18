@@ -39,6 +39,7 @@ templ SideNav(currentPath, csrf string) {
 		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
 		@sideNavLink("/classify", "fa-tags", "Classificar", currentPath == "/classify")
 	</nav>
+	@tourScript(currentPath)
 }
 
 templ PendingBadge(count int) {
@@ -66,6 +67,119 @@ templ sideNavLink(href, icon, label string, active bool) {
 	</a>
 }
 
+templ tourScript(currentPath string) {
+	<script>
+	(function() {
+		const TOUR_KEY = "finops_tour_step";
+		const params = new URLSearchParams(window.location.search);
+		const isTourStart = params.get("tour") === "1";
+		const savedStep  = parseInt(localStorage.getItem(TOUR_KEY) || "-1", 10);
+
+		if (!isTourStart && savedStep < 0) return; // sem tour ativo
+
+		const currentPath = window.location.pathname;
+
+		// Definição completa dos passos
+		const steps = [
+			// Passo 0 — Home: Saldo total
+			{ path: "/", element: "section", popover: { title: "💰 Saldo Total", description: "Aqui você vê o saldo consolidado de todas as suas contas.", side: "bottom" } },
+			// Passo 1 — Home: Painel de contas
+			{ path: "/", element: "#account-panels", popover: { title: "🏦 Suas Contas", description: "Cada conta aparece com seu saldo atual. Clique para ver detalhes e transações.", side: "top" } },
+			// Passo 2 — Home: Transações recentes
+			{ path: "/", element: "#transaction-panel", popover: { title: "📋 Transações Recentes", description: "As últimas movimentações ficam aqui — débitos e créditos de todas as contas.", side: "top" } },
+			// Passo 3 — Home: Botões de ação
+			{ path: "/", element: "#action-buttons", popover: { title: "⚡ Ações Rápidas", description: "Cadastre contas, registre transações e crie categorias com um clique.", side: "bottom" } },
+			// Passo 4 — Home: Nav
+			{ path: "/", element: "#side-nav", popover: { title: "🗂️ Navegação", description: "Acesse Relatórios, Importação e Classificação pelo menu lateral.", side: "right" } },
+			// Passo 5 — Reports
+			{ path: "/reports", element: "main", popover: { title: "📊 Relatórios", description: "Visualize seus gastos por categoria, compare receitas e despesas mês a mês e acompanhe a evolução do seu patrimônio.", side: "bottom" } },
+			// Passo 6 — Reports: tabs
+			{ path: "/reports", element: "#report-tabs", popover: { title: "📑 Abas de Relatório", description: "Alterne entre Gastos por Categoria, Receitas x Despesas, Evolução de Saldo e lista de Transações.", side: "bottom" } },
+			// Passo 7 — Import
+			{ path: "/import", element: "main", popover: { title: "📥 Importar Extratos", description: "Importe arquivos OFX do seu banco ou planilhas CSV. O sistema detecta duplicatas automaticamente.", side: "bottom" } },
+			// Passo 8 — Classify
+			{ path: "/classify", element: "main", popover: { title: "🏷️ Classificar Transações", description: "Transações sem categoria aparecem aqui. Classifique manualmente ou deixe a IA sugerir.", side: "bottom" } },
+			// Passo 9 — Classify: AI button
+			{ path: "/classify", element: "#auto-classify-btn", popover: { title: "🤖 Classificação por IA", description: "Clique aqui para deixar a IA classificar automaticamente todas as transações com base no seu histórico.", side: "bottom" } },
+			// Passo 10 — Home: Chat
+			{ path: "/", element: "#chat-open-btn", popover: { title: "💬 Assistente Financeiro", description: "Clique aqui para conversar com a IA. Pergunte coisas como: \"Quanto gastei este mês?\" ou \"Onde posso economizar?\"", side: "top" } },
+		];
+
+		// Filtra passos da página atual
+		function stepsForPath(path) {
+			return steps.map((s, i) => ({ ...s, originalIndex: i })).filter(s => s.path === path);
+		}
+
+		function navigateTo(path, nextOriginalIndex) {
+			localStorage.setItem(TOUR_KEY, nextOriginalIndex.toString());
+			window.location.href = path + "?tour=1";
+		}
+
+		function completeTour() {
+			localStorage.removeItem(TOUR_KEY);
+			window.location.href = "/tour/complete";
+		}
+
+		const pageSteps = stepsForPath(currentPath);
+		if (pageSteps.length === 0) return;
+
+		// Determina qual passo da página começar
+		let startLocal = 0;
+		if (!isTourStart && savedStep >= 0) {
+			// Retomando — encontra o passo local que corresponde ao savedStep
+			const found = pageSteps.findIndex(s => s.originalIndex >= savedStep);
+			startLocal = found >= 0 ? found : 0;
+		}
+
+		// Monta a configuração do driver.js para essa página
+		const driverSteps = pageSteps.map((s, localIdx) => {
+			const isLastOnPage = localIdx === pageSteps.length - 1;
+			const isVeryLast   = s.originalIndex === steps.length - 1;
+
+			return {
+				element:  s.element,
+				popover:  {
+					...s.popover,
+					nextBtnText: isLastOnPage && !isVeryLast ? "Próxima tela →" : isVeryLast ? "Concluir tour 🎉" : "Próximo →",
+					prevBtnText: "← Voltar",
+				},
+				onNextClick: isLastOnPage ? (isVeryLast
+					? () => completeTour()
+					: () => {
+						// Próxima tela: acha o primeiro passo da próxima página
+						const nextOrigIdx = pageSteps[pageSteps.length - 1].originalIndex + 1;
+						if (nextOrigIdx < steps.length) {
+							navigateTo(steps[nextOrigIdx].path, nextOrigIdx);
+						}
+					}
+				) : undefined,
+			};
+		});
+
+		// Aguarda DOM pronto e inicia
+		document.addEventListener("DOMContentLoaded", function() {
+			const d = window.driver.js.driver({
+				animate:           true,
+				overlayColor:      "#0f172a",
+				overlayOpacity:    0.7,
+				stagePadding:      8,
+				allowClose:        false,
+				disableActiveInteraction: false,
+				steps: driverSteps,
+				onDestroyStarted: () => {
+					// Usuário fechou o tour manualmente — marca como concluído
+					if (confirm("Sair do tour? Você pode reiniciá-lo pelo menu depois.")) {
+						completeTour();
+					}
+				},
+			});
+
+			d.drive(startLocal);
+		});
+	})();
+	</script>
+}
+
 templ AppHead(title string, includeHTMX bool) {
 	<head>
 		<meta charset="utf-8"/>
@@ -74,10 +188,12 @@ templ AppHead(title string, includeHTMX bool) {
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
 		<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet"/>
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.css"/>
 		<script src="https://cdn.tailwindcss.com"></script>
 		if includeHTMX {
 			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
 		}
+		<script src="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.js.iife.js"></script>
 		<script>
 			tailwind.config = {
 				theme: {

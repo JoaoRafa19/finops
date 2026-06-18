@@ -28,7 +28,7 @@ templ ChatWidget(csrf string) {
 				hx-get="/chat/history"
 				hx-trigger="click from:#chat-open-btn once"
 				hx-swap="innerHTML"
-				hx-on::after-settle="this.scrollTop = this.scrollHeight;"
+				hx-on::after-settle="this.scrollTop = this.scrollHeight; chatRenderMarkdown();"
 			>
 				<div class="flex flex-col items-center justify-center gap-2 py-8 text-center">
 					<i class="fa-solid fa-comments text-2xl text-finops-400"></i>
@@ -49,7 +49,7 @@ templ ChatWidget(csrf string) {
 					hx-target="#chat-messages"
 					hx-swap="beforeend"
 					hx-indicator="#chat-loading"
-					hx-on::after-request="document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight; document.getElementById('chat-input').value = ''; document.getElementById('chat-input').focus();"
+					hx-on::after-request="const m=document.getElementById('chat-messages'); m.scrollTop=m.scrollHeight; chatRenderMarkdown(); document.getElementById('chat-input').value=''; document.getElementById('chat-input').focus();"
 				>
 					<input type="hidden" name="_csrf" value={ csrf }/>
 					<div class="flex gap-2">
@@ -81,6 +81,18 @@ templ ChatWidget(csrf string) {
 			<i class="fa-solid fa-comments"></i>
 		</button>
 	</div>
+	<style>
+		.chat-md p { margin: 0.25rem 0; }
+		.chat-md ul, .chat-md ol { margin: 0.25rem 0 0.25rem 1rem; }
+		.chat-md li { margin: 0.1rem 0; }
+		.chat-md strong { font-weight: 700; }
+		.chat-md em { font-style: italic; }
+		.chat-md code { background: #e2e8f0; border-radius: 3px; padding: 0 3px; font-size: 0.8em; }
+		.chat-md pre { background: #e2e8f0; border-radius: 6px; padding: 6px 8px; overflow-x: auto; margin: 0.25rem 0; }
+		.chat-md pre code { background: none; padding: 0; }
+		.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4 { font-weight: 700; margin: 0.4rem 0 0.1rem; }
+	</style>
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<script>
 		function chatToggle() {
 			const p = document.getElementById("chat-panel");
@@ -91,6 +103,13 @@ templ ChatWidget(csrf string) {
 				p.classList.remove("flex");
 				p.classList.add("hidden");
 			}
+		}
+
+		function chatRenderMarkdown() {
+			document.querySelectorAll(".chat-md:not([data-rendered])").forEach(el => {
+				el.innerHTML = marked.parse(el.textContent || "");
+				el.dataset.rendered = "1";
+			});
 		}
 	</script>
 }
@@ -131,7 +150,7 @@ templ chatUserBubble(content string) {
 
 templ chatAssistantBubble(content string) {
 	<div class="flex justify-start">
-		<div class="max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm text-finops-900">
+		<div class="chat-md prose prose-sm max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm text-finops-900">
 			{ content }
 		</div>
 	</div>

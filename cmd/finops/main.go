@@ -60,6 +60,7 @@ func main() {
 		ImportService:         runtime.Services.Import,
 		ClassificationService: runtime.Services.Classification,
 		ChatService:           runtime.Services.Chat,
+		TourService:           runtime.Services.Tour,
 		DB:                    runtime.DB,
 		RedisClient:           runtime.RedisClient,
 	})

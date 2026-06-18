@@ -7,6 +7,7 @@ import (
 
 type AuthService interface {
 	Login(ctx context.Context, email, password string, rememberMe bool) (models.Session, error)
+	Register(ctx context.Context, email, password string) (models.Session, error)
 	Logout(ctx context.Context, sessionID string) error
 	ValidateSession(ctx context.Context, sessionID string) (models.Session, error)
 	RotateSession(ctx context.Context, sessionID string) (models.Session, error)

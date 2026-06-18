@@ -41,6 +41,10 @@ func (a authServiceStub) ValidateCSRFToken(context.Context, string, string) (boo
 	return false, nil
 }
 
+func (a authServiceStub) Register(context.Context, string, string) (models.Session, error) {
+	return models.Session{}, nil
+}
+
 func TestAuthControllerLoginRedirectsAfterSuccess(t *testing.T) {
 	t.Parallel()
 

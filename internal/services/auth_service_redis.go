@@ -11,6 +11,7 @@ import (
 	"finops/internal/observability"
 	"finops/internal/store"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -181,6 +182,54 @@ func (s *RedisAuthService) Logout(ctx context.Context, sessionID string) error {
 
 	logger.Info("auth_logout_succeeded")
 	return nil
+}
+
+// Register cria um novo usuário e retorna uma sessão autenticada imediatamente.
+func (s *RedisAuthService) Register(ctx context.Context, email, password string) (models.Session, error) {
+	logger := observability.Logger(ctx)
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Error("auth_register_hash_failed", "error", err)
+		return models.Session{}, err
+	}
+
+	userID, err := s.queries.CreateUser(ctx, store.CreateUserParams{
+		Email:        normalizedEmail,
+		PasswordHash: string(hash),
+		PasswordAlgo: "bcrypt",
+	})
+	if err != nil {
+		if isDuplicateKey(err) {
+			logger.Warn("auth_register_email_taken", "email", normalizedEmail)
+			return models.Session{}, ErrEmailTaken
+		}
+		logger.Error("auth_register_create_failed", "error", err)
+		return models.Session{}, err
+	}
+
+	session, ttl, err := s.newSession(userID, normalizedEmail, false)
+	if err != nil {
+		logger.Error("auth_register_session_failed", "user_id", userID, "error", err)
+		return models.Session{}, err
+	}
+
+	if err := s.saveSession(ctx, session, ttl); err != nil {
+		logger.Error("auth_register_save_session_failed", "user_id", userID, "error", err)
+		return models.Session{}, err
+	}
+
+	logger.Info("auth_register_succeeded", "user_id", userID)
+	return session, nil
+}
+
+func isDuplicateKey(err error) bool {
+	var sqlErr interface{ SQLState() string }
+	if errors.As(err, &sqlErr) {
+		return sqlErr.SQLState() == "23505"
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "duplicate key")
 }
 
 // Login valida credenciais do usuário e cria uma nova sessão autenticada.
