@@ -24,6 +24,20 @@ type BalancedHistory struct {
 	Balance float64
 }
 
+type CategoryMonthSpend struct {
+	Month        time.Time
+	CategoryName string
+	Total        float64
+}
+
+type TopExpenseItem struct {
+	AccountName  string
+	CategoryName string
+	PostedOn     time.Time
+	Description  string
+	Amount       float64
+}
+
 type TransactionFilter struct {
 	AccountID  *int64
 	CategoryID *int64
@@ -39,6 +53,8 @@ type ReportsService interface {
 	MonthlyComparison(ctx context.Context, userID int64, from, to time.Time) ([]MonthlyRow, error)
 	BalancedHistory(ctx context.Context, userID int64, from, to time.Time) ([]BalancedHistory, error)
 	ListFiltered(ctx context.Context, userID int64, filter TransactionFilter) ([]TransactionListItem, error)
+	SpendingTrend(ctx context.Context, userID int64, from, to time.Time) ([]CategoryMonthSpend, error)
+	TopExpenses(ctx context.Context, userID int64, from, to time.Time, limit int32) ([]TopExpenseItem, error)
 }
 
 type PGReportService struct {
@@ -237,6 +253,55 @@ func (p *PGReportService) SpendingByCategory(ctx context.Context, userID int64, 
 
 	return history, nil
 
+}
+
+// SpendingTrend implements [ReportsService].
+func (p *PGReportService) SpendingTrend(ctx context.Context, userID int64, from, to time.Time) ([]CategoryMonthSpend, error) {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := p.db.GetSpendingByCategoryByMonth(ctx, store.GetSpendingByCategoryByMonthParams{
+		WorkspaceID: ws.ID,
+		PostedOn:    from,
+		PostedOn_2:  to,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CategoryMonthSpend, len(rows))
+	for i, r := range rows {
+		out[i] = CategoryMonthSpend{Month: r.Month, CategoryName: r.CategoryName, Total: r.Total}
+	}
+	return out, nil
+}
+
+// TopExpenses implements [ReportsService].
+func (p *PGReportService) TopExpenses(ctx context.Context, userID int64, from, to time.Time, limit int32) ([]TopExpenseItem, error) {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := p.db.GetTopExpenses(ctx, store.GetTopExpensesParams{
+		WorkspaceID: ws.ID,
+		PostedOn:    from,
+		PostedOn_2:  to,
+		Limit:       limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]TopExpenseItem, len(rows))
+	for i, r := range rows {
+		out[i] = TopExpenseItem{
+			AccountName:  r.AccountName,
+			CategoryName: r.CategoryName,
+			PostedOn:     r.PostedOn,
+			Description:  r.Description,
+			Amount:       r.Amount,
+		}
+	}
+	return out, nil
 }
 
 func NewPGReportService(q *store.Queries) ReportsService {
