@@ -4,6 +4,7 @@ import (
 	accounts "finops/internal/modules/accounts/web"
 	auth "finops/internal/modules/auth/web"
 	category "finops/internal/modules/category/web"
+	chat "finops/internal/modules/chat/web"
 	classification "finops/internal/modules/classification/web"
 	home "finops/internal/modules/home/web"
 	imports "finops/internal/modules/imports/web"
@@ -35,6 +36,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	reportsController := reports.NewReportsController(deps.ReportService)
 	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
 	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
+	chatController := chat.NewChatController(deps.ChatService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -79,6 +81,8 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /notifications/count", classificationController.NotificationsCount)
 	private.HandleFunc("POST /classify/auto", classificationController.AutoClassify)
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
+	private.HandleFunc("POST /chat", chatController.Message)
+	private.HandleFunc("GET /chat/history", chatController.GetHistory)
 
 	privateChain := middleware.AuthRequired(private)
 	mux.Handle("/", privateChain)

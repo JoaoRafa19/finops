@@ -37,8 +37,13 @@ type PGCategoryService struct {
 }
 
 // GetUncategorized implements [CategoryService].
-func (p *PGCategoryService) GetUncategorized(ctx context.Context, userID int64) (int32, error) {
-	uncat, err := p.db.CountUnclassifiedTransactions(ctx, userID)
+func (p *PGCategoryService) GetUncategorized(ctx context.Context, UserId int64) (int32, error) {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, UserId)
+	if err != nil {
+		return -1, err
+	}
+
+	uncat, err := p.db.CountUnclassifiedTransactions(ctx, ws.ID)
 	return uncat, err
 
 }

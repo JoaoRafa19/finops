@@ -50,7 +50,7 @@ func ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf s
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SideNav("/classify").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SideNav("/classify", csrf).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

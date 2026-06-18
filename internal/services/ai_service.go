@@ -26,6 +26,7 @@ type BulkClassifyInput struct {
 type AIService interface {
 	SuggestCategory(ctx context.Context, description, direction string, categories []string, examples []ClassificationExample) (string, error)
 	SuggestCategoryBulk(ctx context.Context, txs []BulkClassifyInput, categories []string, examples []ClassificationExample) (map[int64]string, error)
+	Generate(ctx context.Context, prompt string) (string, error)
 }
 
 type OllamaAIService struct {
@@ -181,6 +182,10 @@ func parseBulkResponse(raw string) map[int64]string {
 	return result
 }
 
+func (s *OllamaAIService) Generate(ctx context.Context, prompt string) (string, error) {
+	return s.callOllama(ctx, prompt)
+}
+
 // NoopAIService retorna "Sem categoria" quando Ollama não está configurado.
 type NoopAIService struct{}
 
@@ -194,4 +199,8 @@ func (n *NoopAIService) SuggestCategoryBulk(_ context.Context, txs []BulkClassif
 		result[tx.ID] = "Sem categoria"
 	}
 	return result, nil
+}
+
+func (n *NoopAIService) Generate(_ context.Context, _ string) (string, error) {
+	return "Serviço de IA não configurado.", nil
 }

@@ -14,7 +14,7 @@ templ ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf 
 	<html lang="pt-BR">
 		@AppHead("Classificar · Finops", true)
 		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
-			@SideNav("/classify")
+			@SideNav("/classify", csrf)
 			<main class="mx-auto max-w-4xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
 				<div class="mb-6 flex items-center justify-between">
 					<div>

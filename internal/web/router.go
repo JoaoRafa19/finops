@@ -11,19 +11,20 @@ import (
 )
 
 type RouterDeps struct {
-	AuthService        service.AuthService
-	AccountService     service.AccountService
-	WorkspaceService   service.WorkspaceService
-	CategoryService    service.CategoryService
-	TransactionService service.TransactionService
-	ReportService          service.ReportsService
-	ImportService          service.ImportService
-	ClassificationService  service.ClassificationService
-	DB                 *sql.DB
-	RedisClient        *redis.Client
-	SessionCookie      string
-	CookieSecure       bool
-	RememberMeTTL      time.Duration
+	AuthService           service.AuthService
+	AccountService        service.AccountService
+	WorkspaceService      service.WorkspaceService
+	CategoryService       service.CategoryService
+	TransactionService    service.TransactionService
+	ReportService         service.ReportsService
+	ImportService         service.ImportService
+	ClassificationService service.ClassificationService
+	ChatService           service.ChatService
+	DB                    *sql.DB
+	RedisClient           *redis.Client
+	SessionCookie         string
+	CookieSecure          bool
+	RememberMeTTL         time.Duration
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
