@@ -1,15 +1,14 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type ClassificationExample struct {
@@ -29,61 +28,47 @@ type AIService interface {
 	Generate(ctx context.Context, prompt string) (string, error)
 }
 
-type OllamaAIService struct {
-	baseURL string
-	model   string
-	client  *http.Client
+// OpenAICompatibleAIService usa qualquer API com formato OpenAI (Groq, OpenAI, Ollama /v1, etc.)
+type OpenAICompatibleAIService struct {
+	client *openai.Client
+	model  string
 }
 
-func NewOllamaAIService(baseURL, model string) AIService {
-	return &OllamaAIService{
-		baseURL: strings.TrimRight(baseURL, "/"),
-		model:   model,
-		client:  &http.Client{Timeout: 120 * time.Second},
+func NewAIService(baseURL, apiKey, model string) AIService {
+	cfg := openai.DefaultConfig(apiKey)
+	cfg.BaseURL = strings.TrimRight(baseURL, "/") + "/v1"
+	return &OpenAICompatibleAIService{
+		client: openai.NewClientWithConfig(cfg),
+		model:  model,
 	}
 }
 
-type ollamaRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	Stream bool   `json:"stream"`
-}
+func (s *OpenAICompatibleAIService) chat(ctx context.Context, systemPrompt, userMsg string, maxTokens int) (string, error) {
+	ctx2, cancel := context.WithTimeout(ctx, 120*time.Second)
+	defer cancel()
 
-type ollamaResponse struct {
-	Response string `json:"response"`
-	Done     bool   `json:"done"`
-}
-
-func (s *OllamaAIService) callOllama(ctx context.Context, prompt string) (string, error) {
-	body, err := json.Marshal(ollamaRequest{Model: s.model, Prompt: prompt, Stream: false})
+	resp, err := s.client.CreateChatCompletion(ctx2, openai.ChatCompletionRequest{
+		Model: s.model,
+		Messages: []openai.ChatCompletionMessage{
+			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
+			{Role: openai.ChatMessageRoleUser, Content: userMsg},
+		},
+		MaxTokens: maxTokens,
+	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("LLM indisponível: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/api/generate", bytes.NewReader(body))
-	if err != nil {
-		return "", err
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("LLM retornou resposta vazia")
 	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("ollama indisponível: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("ollama status %d: %s", resp.StatusCode, string(b))
-	}
-
-	var out ollamaResponse
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(out.Response), nil
+	return strings.TrimSpace(resp.Choices[0].Message.Content), nil
 }
 
-func (s *OllamaAIService) SuggestCategory(ctx context.Context, description, direction string, categories []string, examples []ClassificationExample) (string, error) {
+func (s *OpenAICompatibleAIService) Generate(ctx context.Context, prompt string) (string, error) {
+	return s.chat(ctx, "", prompt, 1024)
+}
+
+func (s *OpenAICompatibleAIService) SuggestCategory(ctx context.Context, description, direction string, categories []string, examples []ClassificationExample) (string, error) {
 	dirLabel := "despesa"
 	if direction == "credit" {
 		dirLabel = "receita"
@@ -94,64 +79,57 @@ func (s *OllamaAIService) SuggestCategory(ctx context.Context, description, dire
 		var sb strings.Builder
 		sb.WriteString("Histórico de classificações deste usuário:\n")
 		for _, ex := range examples {
-			sb.WriteString(fmt.Sprintf("- \"%s\" → %s\n", ex.Description, ex.Category))
+			fmt.Fprintf(&sb, "- \"%s\" → %s\n", ex.Description, ex.Category)
 		}
 		examplesBlock = sb.String() + "\n"
 	}
 
-	prompt := fmt.Sprintf(`Você é um assistente financeiro pessoal que aprende com o histórico do usuário.
-
-%sNova transação a classificar:
+	system := "Você é um assistente financeiro que classifica transações em categorias. Responda APENAS com o nome exato de uma das categorias, sem explicações."
+	user := fmt.Sprintf(`%sClassifique a transação abaixo:
 Descrição: %s
 Tipo: %s
 Categorias disponíveis: %s
 
-Responda APENAS com o nome exato de uma das categorias disponíveis, sem explicações.
-Se nenhuma for adequada, responda com: Sem categoria`, examplesBlock, description, dirLabel, strings.Join(categories, ", "))
+Se nenhuma categoria for adequada, responda: Sem categoria`, examplesBlock, description, dirLabel, strings.Join(categories, ", "))
 
-	raw, err := s.callOllama(ctx, prompt)
+	raw, err := s.chat(ctx, system, user, 50)
 	if err != nil {
 		return "", err
 	}
 	return strings.Trim(raw, `"'`), nil
 }
 
-func (s *OllamaAIService) SuggestCategoryBulk(ctx context.Context, txs []BulkClassifyInput, categories []string, examples []ClassificationExample) (map[int64]string, error) {
+func (s *OpenAICompatibleAIService) SuggestCategoryBulk(ctx context.Context, txs []BulkClassifyInput, categories []string, examples []ClassificationExample) (map[int64]string, error) {
 	if len(txs) == 0 {
 		return map[int64]string{}, nil
 	}
 
 	var sb strings.Builder
-
-	sb.WriteString("Você é um assistente financeiro pessoal.\n\n")
-
 	if len(examples) > 0 {
 		sb.WriteString("Histórico de classificações deste usuário:\n")
 		for _, ex := range examples {
-			sb.WriteString(fmt.Sprintf("- \"%s\" → %s\n", ex.Description, ex.Category))
+			fmt.Fprintf(&sb, "- \"%s\" → %s\n", ex.Description, ex.Category)
 		}
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString("Classifique as transações abaixo. Use apenas as categorias listadas.\n\n")
-	sb.WriteString("Transações:\n")
+	sb.WriteString("Classifique as transações abaixo. Use apenas as categorias listadas.\n\nTransações:\n")
 	for _, tx := range txs {
 		dirLabel := "despesa"
 		if tx.Direction == "credit" {
 			dirLabel = "receita"
 		}
-		sb.WriteString(fmt.Sprintf("- ID:%d | %s | %s\n", tx.ID, tx.Description, dirLabel))
+		fmt.Fprintf(&sb, "- ID:%d | %s | %s\n", tx.ID, tx.Description, dirLabel)
 	}
-
-	sb.WriteString(fmt.Sprintf("\nCategorias disponíveis: %s\n\n", strings.Join(categories, ", ")))
+	fmt.Fprintf(&sb, "\nCategorias disponíveis: %s\n\n", strings.Join(categories, ", "))
 	sb.WriteString("Responda APENAS com um array JSON, sem texto adicional. Formato exato:\n")
 	sb.WriteString(`[{"id": 123, "category": "NomeDaCategoria"}, ...]`)
 
-	raw, err := s.callOllama(ctx, sb.String())
+	system := "Você é um assistente de classificação financeira. Responda apenas com JSON válido."
+	raw, err := s.chat(ctx, system, sb.String(), 1024)
 	if err != nil {
 		return nil, err
 	}
-
 	return parseBulkResponse(raw), nil
 }
 
@@ -159,13 +137,10 @@ var jsonArrayRe = regexp.MustCompile(`(?s)\[.*?\]`)
 
 func parseBulkResponse(raw string) map[int64]string {
 	result := make(map[int64]string)
-
-	// Tenta extrair o array JSON mesmo que o modelo adicione texto em volta
 	jsonStr := raw
 	if match := jsonArrayRe.FindString(raw); match != "" {
 		jsonStr = match
 	}
-
 	var items []struct {
 		ID       int64  `json:"id"`
 		Category string `json:"category"`
@@ -173,7 +148,6 @@ func parseBulkResponse(raw string) map[int64]string {
 	if err := json.Unmarshal([]byte(jsonStr), &items); err != nil {
 		return result
 	}
-
 	for _, item := range items {
 		if item.ID > 0 && item.Category != "" {
 			result[item.ID] = strings.TrimSpace(item.Category)
@@ -182,11 +156,7 @@ func parseBulkResponse(raw string) map[int64]string {
 	return result
 }
 
-func (s *OllamaAIService) Generate(ctx context.Context, prompt string) (string, error) {
-	return s.callOllama(ctx, prompt)
-}
-
-// NoopAIService retorna "Sem categoria" quando Ollama não está configurado.
+// NoopAIService retorna "Sem categoria" quando IA não está configurada.
 type NoopAIService struct{}
 
 func (n *NoopAIService) SuggestCategory(_ context.Context, _, _ string, _ []string, _ []ClassificationExample) (string, error) {
