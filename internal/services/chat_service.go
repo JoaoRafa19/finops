@@ -39,13 +39,13 @@ type OllamaAgentChatService struct {
 }
 
 func NewOllamaAgentChatService(
-	baseURL, model string,
+	baseURL, apiKey, model string,
 	rdb *redis.Client,
 	accountSvc AccountService,
 	reportSvc ReportsService,
 	categorySvc CategoryService,
 ) ChatService {
-	cfg := openai.DefaultConfig("ollama")
+	cfg := openai.DefaultConfig(apiKey)
 	cfg.BaseURL = strings.TrimRight(baseURL, "/") + "/v1"
 	return &OllamaAgentChatService{
 		client:      openai.NewClientWithConfig(cfg),

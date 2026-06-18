@@ -1,0 +1,54 @@
+databases:
+  - name: finops-db
+    plan: free
+    databaseName: finops
+    user: finops
+    region: oregon
+
+services:
+  - type: redis
+    name: finops-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: finops
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finops-db
+          property: connectionString
+
+      - key: REDIS_URL
+        fromService:
+          name: finops-redis
+          type: redis
+          property: connectionString
+
+      # LLM — Groq
+      - key: LLM_BASE_URL
+        value: https://api.groq.com/openai
+      - key: LLM_MODEL
+        value: llama-3.3-70b-versatile
+      - key: LLM_API_KEY
+        sync: false  # preencher manualmente no dashboard do Render
+
+      # App
+      - key: HTTP_ADDR
+        value: ":8080"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: SESSION_TTL
+        value: "30m"
+      - key: REMEMBER_ME_TTL
+        value: "168h"
+      - key: SLIDING_SESSION_TTL
+        value: "true"
+      - key: LOG_LEVEL
+        value: "info"

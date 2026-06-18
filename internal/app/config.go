@@ -13,6 +13,7 @@ import (
 type Config struct {
 	HTTPAddr          string
 	DbURL             string
+	RedisURL          string
 	RedisAddr         string
 	RedisPassword     string
 	RedisDB           int
@@ -22,8 +23,9 @@ type Config struct {
 	RememberMeTTL     time.Duration
 	SlidingSessionTTL bool
 	LogLevel          slog.Level
-	OllamaBaseURL     string
-	OllamaModel       string
+	LLMBaseURL  string
+	LLMAPIKey   string
+	LLMModel    string
 }
 
 func LoadConfig() Config {
@@ -47,6 +49,7 @@ func LoadConfig() Config {
 	return Config{
 		HTTPAddr:          addr,
 		DbURL:             dbURL,
+		RedisURL:          strings.TrimSpace(os.Getenv("REDIS_URL")),
 		RedisAddr:         redisAddr,
 		RedisPassword:     redisPassword,
 		RedisDB:           redisDB,
@@ -56,8 +59,9 @@ func LoadConfig() Config {
 		RememberMeTTL:     rememberMeTTL,
 		SlidingSessionTTL: slidingSessionTTL,
 		LogLevel:          logLevel,
-		OllamaBaseURL:     getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
-		OllamaModel:       getEnv("OLLAMA_MODEL", "qwen2.5:3b"),
+		LLMBaseURL: getEnv("LLM_BASE_URL", getEnv("OLLAMA_BASE_URL", "http://localhost:11434")),
+		LLMAPIKey:  getEnv("LLM_API_KEY", "ollama"),
+		LLMModel:   getEnv("LLM_MODEL", getEnv("OLLAMA_MODEL", "qwen2.5:3b")),
 	}
 }
 
