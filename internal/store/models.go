@@ -27,6 +27,15 @@ type Category struct {
 	Archived    bool
 }
 
+type ClassificationEmbedding struct {
+	ID          int64
+	WorkspaceID int64
+	Description string
+	Category    string
+	Embedding   []float64
+	CreatedAt   time.Time
+}
+
 type ClassificationRule struct {
 	ID          int64
 	WorkspaceID int64
