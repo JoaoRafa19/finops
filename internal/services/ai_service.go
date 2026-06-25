@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"strings"
+"strings"
 	"time"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -133,13 +132,13 @@ func (s *OpenAICompatibleAIService) SuggestCategoryBulk(ctx context.Context, txs
 	return parseBulkResponse(raw), nil
 }
 
-var jsonArrayRe = regexp.MustCompile(`(?s)\[.*?\]`)
-
 func parseBulkResponse(raw string) map[int64]string {
 	result := make(map[int64]string)
 	jsonStr := raw
-	if match := jsonArrayRe.FindString(raw); match != "" {
-		jsonStr = match
+	if start := strings.Index(raw, "["); start != -1 {
+		if end := strings.LastIndex(raw, "]"); end > start {
+			jsonStr = raw[start : end+1]
+		}
 	}
 	var items []struct {
 		ID       int64  `json:"id"`

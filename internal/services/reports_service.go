@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"finops/internal/store"
 	"strconv"
 	"time"
@@ -72,9 +73,11 @@ func (p *PGReportService) BalancedHistory(ctx context.Context, userID int64, fro
 		WorkspaceID: ws.ID,
 		PostedOn:    from,
 	})
-
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+		anchor = 0
 	}
 
 	running := anchor

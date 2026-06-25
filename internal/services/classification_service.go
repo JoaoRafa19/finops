@@ -175,14 +175,14 @@ func (s *PGClassificationService) Classify(ctx context.Context, userID, txID, ca
 		CategoryID:  categoryID,
 	})
 
-	pattern := "%" + keyword + "%"
+	pattern := "%" + escapeLike(keyword) + "%"
 	affected, err := s.db.ClassifyTransactionsByKeyword(ctx, store.ClassifyTransactionsByKeywordParams{
 		WorkspaceID: ws.ID,
 		Lower:       pattern,
 		CategoryID:  nullCatID,
 	})
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	return affected, nil
@@ -343,4 +343,11 @@ func (s *PGClassificationService) loadExamples(ctx context.Context, workspaceID 
 
 func normalizeKeyword(desc string) string {
 	return strings.ToLower(strings.TrimSpace(desc))
+}
+
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
 }

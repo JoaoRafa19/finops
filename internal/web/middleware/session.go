@@ -31,8 +31,13 @@ func SessionLoader(auth service.AuthService, cookieName string, cookieSecure boo
 			session, err := auth.ValidateSession(r.Context(), sessionID)
 			if err != nil {
 				if errors.Is(err, service.ErrSessionNotFound) {
-					next.ServeHTTP(w, r)
-					return
+					http.SetCookie(w, &http.Cookie{
+						Name:     cookieName,
+						Path:     "/",
+						MaxAge:   -1,
+						HttpOnly: true,
+						Secure:   cookieSecure,
+					})
 				}
 				next.ServeHTTP(w, r)
 				return

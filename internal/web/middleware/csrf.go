@@ -3,7 +3,9 @@ package middleware
 import (
 	"encoding/json"
 	service "finops/internal/services"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -18,6 +20,10 @@ func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 			sessionID, ok := SessionIDFromContext(r.Context())
 
 			if !ok || sessionID == "" {
+				if !isSameOrigin(r) {
+					writeCSRFFailure(w, r, http.StatusForbidden, "cross-origin request blocked")
+					return
+				}
 				// Sem sessão autenticada, deixa AuthRequired decidir.
 				next.ServeHTTP(w, r)
 				return
@@ -49,6 +55,22 @@ func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func isSameOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+
+	host := r.Host
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+
+	u, err := url.Parse(origin)
+
+	return err == nil && u.Hostname() == host
 }
 
 func writeCSRFFailure(w http.ResponseWriter, r *http.Request, status int, msg string) {
