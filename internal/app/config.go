@@ -29,6 +29,12 @@ type Config struct {
 	EmbeddingBaseURL string
 	EmbeddingAPIKey  string
 	EmbeddingModel   string
+	AppBaseURL       string
+	SMTPHost         string
+	SMTPPort         string
+	SMTPUser         string
+	SMTPPassword     string
+	SMTPFrom         string
 }
 
 func LoadConfig() Config {
@@ -68,6 +74,12 @@ func LoadConfig() Config {
 		EmbeddingBaseURL: getEnv("EMBEDDING_BASE_URL", getEnv("LLM_BASE_URL", "http://localhost:11434")),
 		EmbeddingAPIKey:  getEnv("EMBEDDING_API_KEY", getEnv("LLM_API_KEY", "ollama")),
 		EmbeddingModel:   getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
+		AppBaseURL:       getEnv("APP_BASE_URL", "http://localhost:8080"),
+		SMTPHost:         getEnv("SMTP_HOST", ""),
+		SMTPPort:         getEnv("SMTP_PORT", "587"),
+		SMTPUser:         getEnv("SMTP_USER", ""),
+		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:         getEnv("SMTP_FROM", ""),
 	}
 }
 

@@ -45,6 +45,9 @@ func (a authServiceStub) Register(context.Context, string, string) (models.Sessi
 	return models.Session{}, nil
 }
 
+func (a authServiceStub) RequestPasswordReset(context.Context, string) error { return nil }
+func (a authServiceStub) ResetPassword(context.Context, string, string) error { return nil }
+
 func TestAuthControllerLoginRedirectsAfterSuccess(t *testing.T) {
 	t.Parallel()
 
