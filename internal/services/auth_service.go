@@ -13,4 +13,6 @@ type AuthService interface {
 	RotateSession(ctx context.Context, sessionID string) (models.Session, error)
 	IssueCSRFToken(ctx context.Context, sessionID string) (string, error)
 	ValidateCSRFToken(ctx context.Context, sessionID, token string) (bool, error)
+	RequestPasswordReset(ctx context.Context, email string) error
+	ResetPassword(ctx context.Context, token, newPassword string) error
 }

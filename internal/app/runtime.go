@@ -50,10 +50,19 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 
 	embSvc := service.NewEmbeddingService(cfg.EmbeddingBaseURL, cfg.EmbeddingAPIKey, cfg.EmbeddingModel)
 
+	var emailSvc service.EmailService
+	if cfg.SMTPHost != "" {
+		emailSvc = service.NewSMTPEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
+	} else {
+		emailSvc = service.NewNoopEmailService()
+	}
+
 	services := Services{
 		Auth: service.NewRedisAuthService(
 			redisClient,
 			queries,
+			emailSvc,
+			cfg.AppBaseURL,
 			cfg.SessionTTL,
 			cfg.RememberMeTTL,
 			cfg.SlidingSessionTTL,

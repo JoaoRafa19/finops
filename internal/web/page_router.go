@@ -50,6 +50,10 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	mux.HandleFunc("GET /login", authController.LoginPage)
 	mux.HandleFunc("POST /login", authController.Login)
 	mux.HandleFunc("POST /signup", authController.Signup)
+	mux.HandleFunc("GET /forgot-password", authController.ForgotPasswordPage)
+	mux.HandleFunc("POST /forgot-password", authController.ForgotPassword)
+	mux.HandleFunc("GET /reset-password", authController.ResetPasswordPage)
+	mux.HandleFunc("POST /reset-password", authController.ResetPassword)
 
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)

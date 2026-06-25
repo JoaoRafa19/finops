@@ -13,6 +13,9 @@ INSERT INTO users (email, password_hash, password_algo, is_admin)
 VALUES ($1, $2, $3, FALSE)
 RETURNING id;
 
+-- name: UpdatePasswordHash :exec
+UPDATE users SET password_hash = $2, password_algo = $3 WHERE email = $1;
+
 -- name: SetTourDone :exec
 UPDATE users SET has_done_tour = TRUE WHERE id = $1;
 

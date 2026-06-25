@@ -72,7 +72,7 @@ func LoginForm(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><label class=\"flex items-center gap-3 rounded-lg bg-slate-100/90 px-3 py-2 text-sm font-semibold text-finops-700\"><input type=\"checkbox\" name=\"remember_me\" class=\"size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400\"> Lembrar-me por 7 dias</label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"flex items-center justify-between\"><label class=\"flex items-center gap-2 text-sm font-semibold text-finops-700\"><input type=\"checkbox\" name=\"remember_me\" class=\"size-4 rounded border-slate-300 text-finops-500 focus:ring-finops-400\"> Lembrar-me por 7 dias</label> <a href=\"/forgot-password\" class=\"text-sm text-finops-500 transition hover:text-finops-900\">Esqueci minha senha</a></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

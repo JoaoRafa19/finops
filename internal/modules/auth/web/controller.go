@@ -138,6 +138,79 @@ func (c *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (c *Controller) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
+	render.Templ(w, r, http.StatusOK, templates.ForgotPasswordPage(false, ""))
+}
+
+func (c *Controller) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	if err := r.ParseForm(); err != nil {
+		render.Templ(w, r, http.StatusOK, templates.ForgotPasswordPage(false, "Erro ao processar formulário."))
+		return
+	}
+
+	email := strings.TrimSpace(r.FormValue("email"))
+	if email == "" {
+		render.Templ(w, r, http.StatusOK, templates.ForgotPasswordPage(false, "Informe seu email."))
+		return
+	}
+
+	if err := c.auth.RequestPasswordReset(r.Context(), email); err != nil {
+		logger.Error("forgot_password_failed", "error", err)
+		render.Templ(w, r, http.StatusOK, templates.ForgotPasswordPage(false, "Erro ao enviar email. Tente novamente."))
+		return
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.ForgotPasswordPage(true, ""))
+}
+
+func (c *Controller) ResetPasswordPage(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		render.Templ(w, r, http.StatusBadRequest, templates.ResetPasswordPage("", "Link inválido. Solicite um novo link."))
+		return
+	}
+	render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage(token, ""))
+}
+
+func (c *Controller) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	if err := r.ParseForm(); err != nil {
+		render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage("", "Erro ao processar formulário."))
+		return
+	}
+
+	token := r.FormValue("token")
+	password := r.FormValue("password")
+	confirm := r.FormValue("password_confirm")
+
+	if token == "" {
+		render.Templ(w, r, http.StatusBadRequest, templates.ResetPasswordPage("", "Link inválido. Solicite um novo link."))
+		return
+	}
+	if len(password) < 8 {
+		render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage(token, "A senha deve ter ao menos 8 caracteres."))
+		return
+	}
+	if password != confirm {
+		render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage(token, "As senhas não coincidem."))
+		return
+	}
+
+	if err := c.auth.ResetPassword(r.Context(), token, password); err != nil {
+		logger.Warn("reset_password_failed", "error", err)
+		if errors.Is(err, service.ErrInvalidOrExpiredToken) {
+			render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage("", "Link expirado ou inválido. Solicite um novo link."))
+			return
+		}
+		render.Templ(w, r, http.StatusOK, templates.ResetPasswordPage(token, "Erro ao redefinir senha. Tente novamente."))
+		return
+	}
+
+	logger.Info("reset_password_succeeded")
+	render.Templ(w, r, http.StatusOK, templates.ResetPasswordSuccessPage())
+}
+
 func (c *Controller) Logout(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	sessionID, ok := middleware.SessionIDFromContext(r.Context())

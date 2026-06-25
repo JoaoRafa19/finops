@@ -137,3 +137,18 @@ func (q *Queries) SetTourDone(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, setTourDone, id)
 	return err
 }
+
+const updatePasswordHash = `-- name: UpdatePasswordHash :exec
+UPDATE users SET password_hash = $2, password_algo = $3 WHERE email = $1
+`
+
+type UpdatePasswordHashParams struct {
+	Email        string
+	PasswordHash string
+	PasswordAlgo string
+}
+
+func (q *Queries) UpdatePasswordHash(ctx context.Context, arg UpdatePasswordHashParams) error {
+	_, err := q.db.ExecContext(ctx, updatePasswordHash, arg.Email, arg.PasswordHash, arg.PasswordAlgo)
+	return err
+}

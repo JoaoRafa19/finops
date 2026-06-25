@@ -18,9 +18,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const pwResetKeyFmt = "finops:pwreset:%s"
+const pwResetTTL = time.Hour
+
 type RedisAuthService struct {
 	rdb               *redis.Client
 	queries           *store.Queries
+	emailSvc          EmailService
+	appBaseURL        string
 	sessionTTL        time.Duration
 	rememberMeTTL     time.Duration
 	slidingSessionTTL bool
@@ -30,16 +35,84 @@ type RedisAuthService struct {
 // A sessão é persistida no Redis e identificada por um session_id no cookie.
 func NewRedisAuthService(rdb *redis.Client,
 	queries *store.Queries,
+	emailSvc EmailService,
+	appBaseURL string,
 	sessionTTL time.Duration,
 	rememberMeTTL time.Duration,
 	slidingSessionTTL bool) *RedisAuthService {
 	return &RedisAuthService{
 		rdb:               rdb,
 		queries:           queries,
+		emailSvc:          emailSvc,
+		appBaseURL:        appBaseURL,
 		sessionTTL:        sessionTTL,
 		rememberMeTTL:     rememberMeTTL,
 		slidingSessionTTL: slidingSessionTTL,
 	}
+}
+
+// RequestPasswordReset gera um token seguro, guarda no Redis por 1h e envia o link por email.
+// Sempre retorna nil para não vazar se o email existe ou não.
+func (s *RedisAuthService) RequestPasswordReset(ctx context.Context, email string) error {
+	logger := observability.Logger(ctx)
+	normalized := strings.ToLower(strings.TrimSpace(email))
+
+	// Verificar se o email existe sem vazar a informação para o caller
+	if _, err := s.queries.GetUserByEmail(ctx, normalized); err != nil {
+		logger.Info("password_reset_requested_unknown_email")
+		return nil
+	}
+
+	token, err := randomToken(32)
+	if err != nil {
+		return fmt.Errorf("generate reset token: %w", err)
+	}
+
+	key := fmt.Sprintf(pwResetKeyFmt, token)
+	if err := s.rdb.Set(ctx, key, normalized, pwResetTTL).Err(); err != nil {
+		return fmt.Errorf("store reset token: %w", err)
+	}
+
+	resetURL := strings.TrimRight(s.appBaseURL, "/") + "/reset-password?token=" + token
+	if err := s.emailSvc.SendPasswordReset(ctx, normalized, resetURL); err != nil {
+		logger.Error("password_reset_email_failed", "error", err)
+		_ = s.rdb.Del(ctx, key)
+		return fmt.Errorf("send reset email: %w", err)
+	}
+
+	logger.Info("password_reset_requested", "email", normalized)
+	return nil
+}
+
+// ResetPassword valida o token, atualiza o hash e invalida o token (uso único).
+func (s *RedisAuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	logger := observability.Logger(ctx)
+
+	key := fmt.Sprintf(pwResetKeyFmt, token)
+	email, err := s.rdb.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return ErrInvalidOrExpiredToken
+		}
+		return fmt.Errorf("get reset token: %w", err)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	if err := s.queries.UpdatePasswordHash(ctx, store.UpdatePasswordHashParams{
+		Email:        email,
+		PasswordHash: string(hash),
+		PasswordAlgo: "bcrypt",
+	}); err != nil {
+		return fmt.Errorf("update password: %w", err)
+	}
+
+	_ = s.rdb.Del(ctx, key)
+	logger.Info("password_reset_succeeded", "email", email)
+	return nil
 }
 
 // IssueCSRFToken rotaciona o token CSRF de uma sessão existente.
