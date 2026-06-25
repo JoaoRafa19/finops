@@ -48,6 +48,8 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		return nil, err
 	}
 
+	embSvc := service.NewEmbeddingService(cfg.EmbeddingBaseURL, cfg.EmbeddingAPIKey, cfg.EmbeddingModel)
+
 	services := Services{
 		Auth: service.NewRedisAuthService(
 			redisClient,
@@ -62,8 +64,12 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		Category:    service.NewPGCategoryService(queries),
 		Report:      service.NewPGReportService(queries),
 		Import:      service.NewPGImportService(db, queries),
-		Classification: service.NewPGClassificationService(queries, service.NewAIService(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel)),
-		Tour:           service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
+		Classification: service.NewPGClassificationService(
+			queries, db,
+			service.NewAIService(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel),
+			embSvc,
+		),
+		Tour: service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
 		Chat: service.NewOllamaAgentChatService(
 			cfg.LLMBaseURL,
 			cfg.LLMAPIKey,

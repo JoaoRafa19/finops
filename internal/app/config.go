@@ -23,9 +23,12 @@ type Config struct {
 	RememberMeTTL     time.Duration
 	SlidingSessionTTL bool
 	LogLevel          slog.Level
-	LLMBaseURL  string
-	LLMAPIKey   string
-	LLMModel    string
+	LLMBaseURL       string
+	LLMAPIKey        string
+	LLMModel         string
+	EmbeddingBaseURL string
+	EmbeddingAPIKey  string
+	EmbeddingModel   string
 }
 
 func LoadConfig() Config {
@@ -59,9 +62,12 @@ func LoadConfig() Config {
 		RememberMeTTL:     rememberMeTTL,
 		SlidingSessionTTL: slidingSessionTTL,
 		LogLevel:          logLevel,
-		LLMBaseURL: getEnv("LLM_BASE_URL", getEnv("OLLAMA_BASE_URL", "http://localhost:11434")),
-		LLMAPIKey:  getEnv("LLM_API_KEY", "ollama"),
-		LLMModel:   getEnv("LLM_MODEL", getEnv("OLLAMA_MODEL", "qwen2.5:3b")),
+		LLMBaseURL:       getEnv("LLM_BASE_URL", getEnv("OLLAMA_BASE_URL", "http://localhost:11434")),
+		LLMAPIKey:        getEnv("LLM_API_KEY", "ollama"),
+		LLMModel:         getEnv("LLM_MODEL", getEnv("OLLAMA_MODEL", "qwen2.5:3b")),
+		EmbeddingBaseURL: getEnv("EMBEDDING_BASE_URL", getEnv("LLM_BASE_URL", "http://localhost:11434")),
+		EmbeddingAPIKey:  getEnv("EMBEDDING_API_KEY", getEnv("LLM_API_KEY", "ollama")),
+		EmbeddingModel:   getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
 	}
 }
 

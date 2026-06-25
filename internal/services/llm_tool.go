@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	openai "github.com/sashabaranov/go-openai"
 
+	"finops/internal/store"
 	"finops/internal/utils"
 )
 
@@ -19,6 +21,9 @@ type financialTool struct {
 
 // params é um helper para construir JSON Schema de parâmetros de tools.
 func params(properties map[string]any, required ...string) json.RawMessage {
+	if properties == nil {
+		properties = map[string]any{}
+	}
 	schema := map[string]any{
 		"type":       "object",
 		"properties": properties,
@@ -45,6 +50,7 @@ func tool(name, description string, parameters json.RawMessage) openai.Tool {
 	}
 }
 
+// FinancialTools retorna as ferramentas disponíveis para o agente de chat.
 func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categorySvc CategoryService, userID int64) []financialTool {
 	return []financialTool{
 		accountBalancesTool(accountSvc, userID),
@@ -55,6 +61,13 @@ func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categor
 		monthlyComparisonTool(reportSvc, userID),
 		balanceHistoryTool(reportSvc, userID),
 		listTransactionsTool(reportSvc, userID),
+	}
+}
+
+// ClassificationTools retorna as ferramentas disponíveis para o agente de classificação.
+func ClassificationTools(embSvc EmbeddingService, rawDB *sql.DB, queries *store.Queries, userID int64) []financialTool {
+	return []financialTool{
+		searchSimilarClassificationsTool(embSvc, rawDB, queries, userID),
 	}
 }
 
@@ -293,6 +306,55 @@ func balanceHistoryTool(reportSvc ReportsService, userID int64) financialTool {
 			for _, p := range points {
 				month := fmt.Sprintf("%s/%d", months[p.Month.Month()-1], p.Month.Year())
 				fmt.Fprintf(&sb, "- %s: %s\n", month, utils.FormatMoney(p.Balance))
+			}
+			return sb.String(), nil
+		},
+	}
+}
+
+func searchSimilarClassificationsTool(embSvc EmbeddingService, rawDB *sql.DB, queries *store.Queries, userID int64) financialTool {
+	return financialTool{
+		schema: tool("search_similar_classifications",
+			"Busca transações já classificadas semanticamente semelhantes à descrição fornecida. Use para descobrir como transações parecidas foram categorizadas no passado.",
+			params(map[string]any{
+				"query": prop("string", "Descrição ou palavras-chave da transação a ser pesquisada"),
+				"limit": prop("integer", "Número de resultados (padrão 5, máximo 10)"),
+			}, "query"),
+		),
+		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
+			var p struct {
+				Query string `json:"query"`
+				Limit int    `json:"limit"`
+			}
+			if err := json.Unmarshal(args, &p); err != nil {
+				return "", fmt.Errorf("argumentos inválidos: %w", err)
+			}
+			if p.Limit <= 0 || p.Limit > 10 {
+				p.Limit = 5
+			}
+
+			ws, err := queries.GetWorkSpaceByOwnerUserID(ctx, userID)
+			if err != nil {
+				return "", err
+			}
+
+			emb, err := embSvc.Embed(ctx, p.Query)
+			if err != nil {
+				return "Serviço de embeddings indisponível.", nil
+			}
+
+			results, err := store.SearchClassificationEmbeddings(ctx, rawDB, ws.ID, emb, p.Limit)
+			if err != nil {
+				return "", err
+			}
+			if len(results) == 0 {
+				return "Nenhuma classificação similar encontrada.", nil
+			}
+
+			var sb strings.Builder
+			sb.WriteString("Classificações similares encontradas:\n")
+			for _, r := range results {
+				fmt.Fprintf(&sb, "- \"%s\" → %s\n", r.Description, r.Category)
 			}
 			return sb.String(), nil
 		},
