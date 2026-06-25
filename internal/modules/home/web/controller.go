@@ -127,8 +127,7 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	last, err := c.importService.LastImport(r.Context(), session.UserID)
-
-	if last.Before(time.Now().AddDate(0, 0, -3)) {
+	if err == nil && last.Before(time.Now().AddDate(0, 0, -3)) {
 		pending += 1
 	}
 

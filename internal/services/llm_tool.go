@@ -203,7 +203,9 @@ func topExpensesTool(reportSvc ReportsService, userID int64) financialTool {
 			var p struct {
 				Limit int32 `json:"limit"`
 			}
-			_ = json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return "", fmt.Errorf("argumentos inválidos: %w", err)
+			}
 			from, to, err := parsePeriod(args)
 			if err != nil {
 				return "", err
@@ -315,7 +317,9 @@ func listTransactionsTool(reportSvc ReportsService, userID int64) financialTool 
 				Direction string `json:"direction"`
 				Limit     int32  `json:"limit"`
 			}
-			_ = json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return "", fmt.Errorf("argumentos inválidos: %w", err)
+			}
 
 			filter := TransactionFilter{Limit: 10}
 			if p.Limit > 0 && p.Limit <= 50 {

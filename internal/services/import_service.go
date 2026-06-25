@@ -381,6 +381,8 @@ func (s *PGImportService) ImportRows(ctx context.Context, userID, accountID int6
 		return ImportResult{}, fmt.Errorf("conta não encontrada: %w", err)
 	}
 
+	
+
 	var result ImportResult
 	for _, row := range rows {
 		fitid := sql.NullString{}
@@ -413,9 +415,10 @@ func (s *PGImportService) ImportRows(ctx context.Context, userID, accountID int6
 		result.Inserted++
 	}
 
-	err = s.db.InsertImportDate(ctx, ws.ID)
-	if err != nil {
-		return ImportResult{}, err
+	if result.Inserted > 0 {
+		if err = s.db.InsertImportDate(ctx, ws.ID); err != nil {
+			return ImportResult{}, err
+		}
 	}
 
 	return result, nil
