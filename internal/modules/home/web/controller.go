@@ -11,22 +11,29 @@ import (
 )
 
 type Controller struct {
-	accountService     service.AccountService
-	categoryService    service.CategoryService
-	workspaceService   service.WorkspaceService
-	transactionService service.TransactionService
-	importService      service.ImportService
-	tourService        service.TourService
+	accountService   service.AccountService
+	workspaceService service.WorkspaceService
+	reportService    service.ReportsService
+	importService    service.ImportService
+	tourService      service.TourService
+	categoryService  service.CategoryService
 }
 
-func NewController(accountService service.AccountService, categoryService service.CategoryService, workspaceService service.WorkspaceService, transactionService service.TransactionService, importService service.ImportService, tourService service.TourService) *Controller {
+func NewController(
+	accountSvc service.AccountService,
+	workspaceSvc service.WorkspaceService,
+	reportSvc service.ReportsService,
+	importSvc service.ImportService,
+	tourSvc service.TourService,
+	categorySvc service.CategoryService,
+) *Controller {
 	return &Controller{
-		accountService:     accountService,
-		categoryService:    categoryService,
-		workspaceService:   workspaceService,
-		transactionService: transactionService,
-		importService:      importService,
-		tourService:        tourService,
+		accountService:   accountSvc,
+		workspaceService: workspaceSvc,
+		reportService:    reportSvc,
+		importService:    importSvc,
+		tourService:      tourSvc,
+		categoryService:  categorySvc,
 	}
 }
 
@@ -34,108 +41,108 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())
 	if !ok {
-		logger.Warn("home_unauthorized")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	exists, err := c.workspaceService.ExistsForUser(r.Context(), session.UserID)
 	if err != nil {
-		logger.Error("home_workspace_check_failed", "user_id", session.UserID, "error", err)
+		logger.Error("home_workspace_check_failed", "error", err)
 		http.Error(w, "failed to load workspace", http.StatusInternalServerError)
 		return
 	}
-
 	if !exists {
-		logger.Debug("home_redirect_onboarding", "user_id", session.UserID)
 		http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
 		return
 	}
 
-	// Redireciona para o tour se o usuário ainda não o fez (e não está no meio do tour)
 	if r.URL.Query().Get("tour") == "" {
 		done, err := c.tourService.HasDoneTour(r.Context(), session.UserID)
 		if err == nil && !done {
-			logger.Debug("home_redirect_tour", "user_id", session.UserID)
 			http.Redirect(w, r, "/tour", http.StatusSeeOther)
 			return
 		}
 	}
 
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken))
+}
+
+func (c *Controller) Dashboard(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	period, from, to := parsePeriod(r)
+
 	accounts, err := c.accountService.ListSummariesByUser(r.Context(), session.UserID)
 	if err != nil {
-		logger.Error("home_load_accounts_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
-		return
+		logger.Error("dashboard_accounts_failed", "error", err)
 	}
-
 	var totalBalance float64
-	for _, ac := range accounts {
-		totalBalance += ac.CurrentBalance
+	for _, a := range accounts {
+		totalBalance += a.CurrentBalance
 	}
 
-	categories, err := c.categoryService.GetCategories(r.Context(), session.UserID)
-	if err != nil {
-		logger.Error("home_load_categories_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "failed to load categories", http.StatusInternalServerError)
-		return
-	}
+	spending, _ := c.reportService.SpendingByCategory(r.Context(), session.UserID, from, to)
+	cashflow, _ := c.reportService.MonthlyComparison(r.Context(), session.UserID, from, to)
+	balanceHist, _ := c.reportService.BalancedHistory(r.Context(), session.UserID, from, to)
 
-	transactions, err := c.transactionService.ListRecentByUser(r.Context(), session.UserID, 10)
-	if err != nil {
-		logger.Error("home_load_transactions_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "failed to load transactions", http.StatusInternalServerError)
-		return
-	}
+	prevFrom, prevTo := service.PreviousPeriod(from, to)
+	prevSpending, _ := c.reportService.SpendingByCategory(r.Context(), session.UserID, prevFrom, prevTo)
+	prevCashflow, _ := c.reportService.MonthlyComparison(r.Context(), session.UserID, prevFrom, prevTo)
 
-	transactions_dto := make([]templates.TransactionDTO, len(transactions))
-	for i, t := range transactions {
-		transactions_dto[i] = templates.TransactionDTO{
-			ID:          int(t.ID),
-			Description: t.Description,
-			Amount:      t.Amount,
-			Category:    t.Category,
-			CreatedAt:   t.PostedOn,
-			Account:     t.AccountName,
-			Direction:   t.Direction,
-			Currency:    t.Currency,
-		}
-	}
+	data := service.BuildDashboard(totalBalance, spending, cashflow, balanceHist, prevSpending, prevCashflow)
 
-	accountsDTO := make([]templates.AccountItemDTO, len(accounts))
-	for i, acc := range accounts {
-		accountsDTO[i] = templates.AccountItemDTO{
-			ID:             int64(acc.ID),
-			Name:           acc.Name,
-			Type:           acc.Type,
-			Currency:       acc.Currency,
-			CurrentBalance: acc.CurrentBalance,
-		}
-	}
-
-	pending := 0
-
-	uncategorized, err := c.categoryService.GetUncategorized(r.Context(), session.UserID)
-	if err != nil {
-		logger.Error("home_load_data_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "failed to load data", http.StatusInternalServerError)
-		return
-	}
-
-	if uncategorized > 0 {
-		pending += int(uncategorized)
-	}
-
+	uncategorized, _ := c.categoryService.GetUncategorized(r.Context(), session.UserID)
+	pending := int(uncategorized)
 	last, err := c.importService.LastImport(r.Context(), session.UserID)
 	if err == nil && last.Before(time.Now().AddDate(0, 0, -3)) {
-		pending += 1
+		pending++
 	}
 
-	accountDTO := templates.AccountDTO{
-		TotalBalance: totalBalance,
-		Accounts:     accountsDTO,
-	}
+	render.Templ(w, r, http.StatusOK, templates.DashboardPartial(data, period, from, to, pending, session.CSRFToken))
+}
 
-	logger.Debug("home_rendered", "user_id", session.UserID, "accounts_count", len(accounts), "categories_count", len(categories))
-	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, accountDTO, categories, transactions_dto, pending))
+func parsePeriod(r *http.Request) (period string, from, to time.Time) {
+	now := time.Now().UTC()
+	period = r.URL.Query().Get("period")
+	if period == "" {
+		period = "this_month"
+	}
+	switch period {
+	case "last_30":
+		from = now.AddDate(0, 0, -30)
+		to = now
+	case "last_90":
+		from = now.AddDate(0, 0, -90)
+		to = now
+	case "this_year":
+		from = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+		to = now
+	case "custom":
+		if v := r.URL.Query().Get("from"); v != "" {
+			if t, err := time.Parse("2006-01-02", v); err == nil {
+				from = t
+			}
+		}
+		if v := r.URL.Query().Get("to"); v != "" {
+			if t, err := time.Parse("2006-01-02", v); err == nil {
+				to = t
+			}
+		}
+		if from.IsZero() {
+			from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		}
+		if to.IsZero() {
+			to = now
+		}
+	default: // this_month
+		period = "this_month"
+		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		to = now
+	}
+	return
 }

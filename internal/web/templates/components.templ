@@ -115,8 +115,10 @@ templ SideNav(currentPath, csrf string) {
 		@sideNavLink("/reports", "fa-chart-bar", "Relatórios", currentPath == "/reports")
 		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
 		@sideNavLink("/classify", "fa-tags", "Classificar", currentPath == "/classify")
+		
 		<div class="mt-auto"></div>
 		@sideNavLink("/profile", "fa-user", "Perfil", currentPath == "/profile")
+		@sideNavLink("/logout", "fa-logout", "Logout", true)
 	</nav>
 	@tourScript(currentPath)
 }
@@ -279,6 +281,7 @@ templ AppHead(title string, includeHTMX bool) {
 			<script src="https://unpkg.com/htmx.org@2.0.7"></script>
 		}
 		<script src="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.js.iife.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 		<script>
 			tailwind.config = {
 				theme: {
