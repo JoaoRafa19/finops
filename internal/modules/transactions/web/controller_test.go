@@ -40,6 +40,14 @@ func (s transactionServiceStub) ListRecentByUser(ctx context.Context, userID int
 	return nil, nil
 }
 
+func (s transactionServiceStub) GetForEdit(_ context.Context, _, _ int64) (store.GetTransactionForEditRow, error) {
+	return store.GetTransactionForEditRow{}, nil
+}
+func (s transactionServiceStub) Update(_ context.Context, _, _ int64, _ service.UpdateTransactionDTO) error {
+	return nil
+}
+func (s transactionServiceStub) Delete(_ context.Context, _, _ int64) error { return nil }
+
 type accountServiceStub struct {
 	listByUserFn          func(ctx context.Context, userID int64) ([]store.Account, error)
 	listSummariesByUserFn func(ctx context.Context, userID int64) ([]service.AccountSummary, error)

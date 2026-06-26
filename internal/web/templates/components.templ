@@ -4,6 +4,83 @@ import "fmt"
 
 // SideNav renders the collapsible left sidebar. Pass the current path to highlight the active link.
 templ SideNav(currentPath, csrf string) {
+	<!-- Token CSRF no meta tag para uso global pelo HTMX -->
+	<meta name="csrf-token" content={ csrf }/>
+	<style>
+		#page-content {
+			transition: opacity 180ms ease, transform 180ms ease;
+		}
+		#page-content.htmx-swapping {
+			opacity: 0;
+			transform: translateY(var(--slide-out, -14px));
+		}
+		#page-content.htmx-settling {
+			opacity: 0;
+			transform: translateY(var(--slide-in, 14px));
+		}
+	</style>
+	<script>
+		document.addEventListener("htmx:configRequest", function(evt) {
+			const token = document.querySelector("meta[name='csrf-token']")?.content;
+			if (token) evt.detail.headers["X-CSRF-Token"] = token;
+		});
+
+		// SPA: ordem das páginas para determinar direcção do slide
+		const _NAV_ORDER = { "/": 0, "/reports": 1, "/import": 2, "/classify": 3 };
+		let _currentOrder = _NAV_ORDER[window.location.pathname] ?? 0;
+
+		document.addEventListener("htmx:beforeRequest", function(evt) {
+			if (evt.detail.target?.id !== "page-content") return;
+			const targetPath = new URL(evt.detail.requestConfig.path, location.href).pathname;
+			const targetOrder = _NAV_ORDER[targetPath] ?? _currentOrder;
+			const el = document.getElementById("page-content");
+			if (!el) return;
+			if (targetOrder > _currentOrder) {
+				el.style.setProperty("--slide-out", "-14px");
+				el.style.setProperty("--slide-in",  "14px");
+			} else {
+				el.style.setProperty("--slide-out", "14px");
+				el.style.setProperty("--slide-in",  "-14px");
+			}
+		});
+
+		// Restaura foco no input de busca após swap do #report-content
+		document.addEventListener("htmx:afterSettle", function(evt) {
+			if (evt.detail.target?.id === "report-content") {
+				const desc = document.querySelector('input[name="description"]');
+				if (desc && desc.value) {
+					desc.focus();
+					desc.setSelectionRange(desc.value.length, desc.value.length);
+				}
+			}
+		});
+
+		document.addEventListener("htmx:afterSettle", function(evt) {
+			if (evt.detail.target?.id !== "page-content") return;
+			const path = window.location.pathname;
+			_currentOrder = _NAV_ORDER[path] ?? _currentOrder;
+
+			// Actualiza link activo na sidebar sem re-render
+			document.querySelectorAll("[data-nav-path]").forEach(function(a) {
+				const isActive = a.dataset.navPath === path;
+				a.classList.toggle("bg-finops-900", isActive);
+				a.classList.toggle("text-white", isActive);
+				a.classList.toggle("hover:bg-finops-800", isActive);
+				a.classList.toggle("text-finops-800", !isActive);
+				a.classList.toggle("hover:bg-slate-100", !isActive);
+			});
+		});
+
+		// Back/Forward do browser
+		window.addEventListener("popstate", function() {
+			const path = window.location.pathname;
+			htmx.ajax("GET", path, {
+				target: "#page-content",
+				select: "#page-content",
+				swap: "innerHTML settle:200ms",
+			});
+		});
+	</script>
 	@ChatWidget(csrf)
 	<nav
 		id="side-nav"
@@ -38,6 +115,8 @@ templ SideNav(currentPath, csrf string) {
 		@sideNavLink("/reports", "fa-chart-bar", "Relatórios", currentPath == "/reports")
 		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
 		@sideNavLink("/classify", "fa-tags", "Classificar", currentPath == "/classify")
+		<div class="mt-auto"></div>
+		@sideNavLink("/profile", "fa-user", "Perfil", currentPath == "/profile")
 	</nav>
 	@tourScript(currentPath)
 }
@@ -55,7 +134,13 @@ templ PendingBadge(count int) {
 
 templ sideNavLink(href, icon, label string, active bool) {
 	<a
+		data-nav-path={ href }
 		href={ templ.SafeURL(href) }
+		hx-get={ href }
+		hx-target="#page-content"
+		hx-select="#page-content"
+		hx-swap="outerHTML settle:200ms"
+		hx-push-url="true"
 		class={
 			"flex items-center gap-3 rounded-xl mx-1 px-2 py-2 text-sm font-semibold transition hover:bg-slate-100",
 			templ.KV("bg-finops-900 text-white hover:bg-finops-800", active),

@@ -11,11 +11,27 @@ WHERE t.workspace_id = $1
   AND t.transfer_group_id IS NULL
   AND (sqlc.narg('account_id')::bigint  IS NULL OR t.account_id  = sqlc.narg('account_id'))
   AND (sqlc.narg('category_id')::bigint IS NULL OR t.category_id = sqlc.narg('category_id'))
-  AND (sqlc.narg('direction')::text     IS NULL OR t.direction   = sqlc.narg('direction'))
-  AND (sqlc.narg('from_date')::date     IS NULL OR t.posted_on  >= sqlc.narg('from_date'))
-  AND (sqlc.narg('to_date')::date       IS NULL OR t.posted_on  <= sqlc.narg('to_date'))
+  AND (sqlc.narg('direction')::text    IS NULL OR t.direction             = sqlc.narg('direction'))
+  AND (sqlc.narg('description')::text  IS NULL OR lower(t.description) LIKE sqlc.narg('description'))
+  AND (sqlc.narg('from_date')::date    IS NULL OR t.posted_on           >= sqlc.narg('from_date'))
+  AND (sqlc.narg('to_date')::date      IS NULL OR t.posted_on           <= sqlc.narg('to_date'))
 ORDER BY t.posted_on DESC, t.id DESC
 LIMIT $2 OFFSET $3;
+
+-- name: GetTransactionForEdit :one
+SELECT t.id, t.account_id, t.category_id, t.posted_on, t.description,
+       t.amount, t.direction, t.transfer_group_id
+FROM transactions t
+WHERE t.id = $1 AND t.workspace_id = $2;
+
+-- name: UpdateTransaction :exec
+UPDATE transactions
+SET description = $3, amount = $4::numeric, direction = $5,
+    posted_on = $6, category_id = $7, account_id = $8
+WHERE id = $1 AND workspace_id = $2 AND transfer_group_id IS NULL;
+
+-- name: DeleteTransaction :exec
+DELETE FROM transactions WHERE id = $1 AND workspace_id = $2 AND transfer_group_id IS NULL;
 
 -- name: GetBalanceBefore :one
 SELECT COALESCE(SUM(CASE WHEN direction='credit' THEN amount::numeric

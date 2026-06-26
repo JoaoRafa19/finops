@@ -59,7 +59,7 @@ func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 pl-16 sm:px-6 sm:pl-16\"><section class=\"w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Workspace</p><h1 class=\"mt-3 text-3xl font-extrabold sm:text-4xl\">Finops online</h1><p class=\"mt-3 text-sm text-finops-700\">Voce esta autenticado como <span class=\"font-bold text-finops-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"page-content\" class=\"mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 pl-16 sm:px-6 sm:pl-16\"><section class=\"w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Workspace</p><h1 class=\"mt-3 text-3xl font-extrabold sm:text-4xl\">Finops online</h1><p class=\"mt-3 text-sm text-finops-700\">Voce esta autenticado como <span class=\"font-bold text-finops-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

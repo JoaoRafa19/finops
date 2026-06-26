@@ -2,10 +2,17 @@ package templates
 
 import (
 	"finops/internal/services"
+	"finops/internal/store"
 	"finops/internal/utils"
 	"fmt"
 	"time"
 )
+
+type TransactionFilters struct {
+	Description string
+	CategoryID  string
+	Direction   string
+}
 
 func fmtMonth(t time.Time) string {
 	months := [...]string{
@@ -46,7 +53,7 @@ templ ReportsPage(csrf string) {
 		@AppHead("Relatórios · Finops", true)
 		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
 			@SideNav("/reports", csrf)
-			<main class="mx-auto max-w-5xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+			<main id="page-content" class="mx-auto max-w-5xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
 				<div class="mb-6">
 					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
 					<h1 class="mt-1 text-3xl font-extrabold">Relatórios</h1>
@@ -92,44 +99,50 @@ templ ReportsPage(csrf string) {
 						</div>
 					</div>
 				</div>
+				<!-- Modal de edição de transação -->
+				<dialog id="report-tx-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+					<div id="report-tx-modal-body"></div>
+				</dialog>
+				<script>
+					(function() {
+						const TAB_ACTIVE   = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
+						const TAB_INACTIVE = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
+
+						let period = { from: "", to: "" };
+
+						function buildUrl(base) {
+							const p = new URLSearchParams();
+							if (period.from) p.set("from", period.from);
+							if (period.to)   p.set("to",   period.to);
+							return p.toString() ? base + "?" + p.toString() : base;
+						}
+
+						function loadTab(tab) {
+							document.querySelectorAll(".report-tab").forEach(t => t.className = TAB_INACTIVE);
+							tab.className = TAB_ACTIVE;
+							htmx.ajax("GET", buildUrl(tab.dataset.url), { target: "#report-content", swap: "innerHTML" });
+						}
+
+						function initReports() {
+							const tabs = document.querySelectorAll(".report-tab");
+							tabs.forEach(tab => tab.addEventListener("click", () => loadTab(tab)));
+							document.getElementById("apply-period")?.addEventListener("click", () => {
+								period.from = document.getElementById("from").value;
+								period.to   = document.getElementById("to").value;
+								const active = document.querySelector(".report-tab." + TAB_ACTIVE.split(" ")[2]);
+								if (active) loadTab(active);
+							});
+							if (tabs.length > 0) loadTab(tabs[0]);
+						}
+
+						if (document.readyState === "loading") {
+							document.addEventListener("DOMContentLoaded", initReports);
+						} else {
+							initReports();
+						}
+					})();
+				</script>
 			</main>
-			<script>
-				(function() {
-					const TAB_ACTIVE   = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
-					const TAB_INACTIVE = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
-
-					let period = { from: "", to: "" };
-
-					function buildUrl(base) {
-						const p = new URLSearchParams();
-						if (period.from) p.set("from", period.from);
-						if (period.to)   p.set("to",   period.to);
-						return p.toString() ? base + "?" + p.toString() : base;
-					}
-
-					function loadTab(tab) {
-						document.querySelectorAll(".report-tab").forEach(t => t.className = TAB_INACTIVE);
-						tab.className = TAB_ACTIVE;
-						htmx.ajax("GET", buildUrl(tab.dataset.url), { target: "#report-content", swap: "innerHTML" });
-					}
-
-					document.addEventListener("DOMContentLoaded", () => {
-						const tabs = document.querySelectorAll(".report-tab");
-
-						tabs.forEach(tab => tab.addEventListener("click", () => loadTab(tab)));
-
-						document.getElementById("apply-period").addEventListener("click", () => {
-							period.from = document.getElementById("from").value;
-							period.to   = document.getElementById("to").value;
-							const active = document.querySelector(".report-tab." + TAB_ACTIVE.split(" ")[2]);
-							if (active) loadTab(active);
-						});
-
-						// Carrega o primeiro tab ao abrir a página
-						if (tabs.length > 0) loadTab(tabs[0]);
-					});
-				})();
-			</script>
 		</body>
 	</html>
 }
@@ -245,14 +258,53 @@ func balanceClass(balance float64) string {
 	return base + "text-rose-700"
 }
 
-templ TransactionsFragment(items []service.TransactionListItem, page, pageSize int, from, to time.Time) {
+templ TransactionsFragment(items []service.TransactionListItem, categories []store.Category, filters TransactionFilters, page, pageSize int, from, to time.Time) {
 	<div>
 		<div class="mb-4 flex items-center justify-between">
 			<p class="font-bold text-finops-900">Transações</p>
 			<p class="text-sm text-finops-700">{ from.Format("02/01/2006") } – { to.Format("02/01/2006") }</p>
 		</div>
+		<!-- Filtros -->
+		<div class="mb-4 flex flex-wrap gap-3">
+			<input
+				type="text"
+				name="description"
+				value={ filters.Description }
+				placeholder="Buscar por descrição..."
+				class="flex-1 min-w-40 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+				hx-get="/reports/transactions"
+				hx-trigger="input changed delay:400ms"
+				hx-target="#report-content"
+				hx-include="[name=from],[name=to],[name=category_id],[name=direction]"
+			/>
+			<select
+				name="category_id"
+				class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500"
+				hx-get="/reports/transactions"
+				hx-trigger="change"
+				hx-target="#report-content"
+				hx-include="[name=from],[name=to],[name=description],[name=direction]"
+			>
+				<option value="" selected?={ filters.CategoryID == "" }>Todas as categorias</option>
+				for _, cat := range categories {
+					<option value={ fmt.Sprintf("%d", cat.ID) } selected?={ fmt.Sprintf("%d", cat.ID) == filters.CategoryID }>{ cat.Name }</option>
+				}
+			</select>
+			<select
+				name="direction"
+				class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500"
+				hx-get="/reports/transactions"
+				hx-trigger="change"
+				hx-target="#report-content"
+				hx-include="[name=from],[name=to],[name=description],[name=category_id]"
+			>
+				<option value="" selected?={ filters.Direction == "" }>Todos os tipos</option>
+				<option value="debit" selected?={ filters.Direction == "debit" }>Despesa</option>
+				<option value="credit" selected?={ filters.Direction == "credit" }>Receita</option>
+			</select>
+		</div>
 		if len(items) == 0 {
-			<p class="py-8 text-center text-sm text-finops-700">Nenhuma transação encontrada no período.</p>
+			<p class="py-8 text-center text-sm text-finops-700">Nenhuma transação encontrada.</p>
 		} else {
 			<div class="overflow-x-auto">
 				<table class="w-full text-sm">
@@ -263,16 +315,37 @@ templ TransactionsFragment(items []service.TransactionListItem, page, pageSize i
 							<th class="pb-3 pr-4">Conta</th>
 							<th class="pb-3 pr-4">Categoria</th>
 							<th class="pb-3 text-right">Valor</th>
+							<th class="pb-3"></th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100">
 						for _, tx := range items {
-							<tr>
+							<tr id={ fmt.Sprintf("report-tx-%d", tx.ID) }>
 								<td class="py-3 pr-4 text-finops-700">{ tx.PostedOn.Format("02/01/06") }</td>
 								<td class="py-3 pr-4 font-semibold text-finops-900">{ tx.Description }</td>
 								<td class="py-3 pr-4 text-finops-700">{ tx.AccountName }</td>
 								<td class="py-3 pr-4 text-finops-700">{ transactionCategoryLabel(tx.Category) }</td>
 								<td class={ transactionAmountClass(tx.Direction) }>{ utils.FormatMoney(signedAmount(tx)) }</td>
+								<td class="py-3 pl-2">
+									<div class="flex items-center gap-1">
+										<button
+											class="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-finops-700"
+											title="Editar"
+											hx-get={ fmt.Sprintf("/transactions/%d/edit-modal", tx.ID) }
+											hx-target="#report-tx-modal-body"
+											hx-swap="innerHTML"
+											hx-on::after-request="document.getElementById('report-tx-modal')?.showModal()"
+										><i class="fa-solid fa-pen text-xs"></i></button>
+										<button
+											class="rounded p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+											title="Apagar"
+											hx-delete={ fmt.Sprintf("/transactions/%d", tx.ID) }
+											hx-target={ fmt.Sprintf("#report-tx-%d", tx.ID) }
+											hx-swap="outerHTML"
+											hx-confirm="Apagar esta transação?"
+										><i class="fa-solid fa-trash text-xs"></i></button>
+									</div>
+								</td>
 							</tr>
 						}
 					</tbody>
@@ -284,7 +357,7 @@ templ TransactionsFragment(items []service.TransactionListItem, page, pageSize i
 					<button
 						type="button"
 						class="inline-flex items-center gap-1 text-sm font-semibold text-finops-700 hover:text-finops-900"
-						hx-get={ fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page-1) }
+						hx-get={ txPageURL(from, to, page-1, filters) }
 						hx-target="#report-content"
 						hx-swap="innerHTML"
 					><i class="fa-solid fa-chevron-left"></i> Anterior</button>
@@ -296,7 +369,7 @@ templ TransactionsFragment(items []service.TransactionListItem, page, pageSize i
 					<button
 						type="button"
 						class="inline-flex items-center gap-1 text-sm font-semibold text-finops-700 hover:text-finops-900"
-						hx-get={ fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page+1) }
+						hx-get={ txPageURL(from, to, page+1, filters) }
 						hx-target="#report-content"
 						hx-swap="innerHTML"
 					>Próxima <i class="fa-solid fa-chevron-right"></i></button>
@@ -306,6 +379,20 @@ templ TransactionsFragment(items []service.TransactionListItem, page, pageSize i
 			</div>
 		}
 	</div>
+}
+
+func txPageURL(from, to time.Time, page int, f TransactionFilters) string {
+	url := fmt.Sprintf("/reports/transactions?from=%s&to=%s&page=%d", fmtDate(from), fmtDate(to), page)
+	if f.Description != "" {
+		url += "&description=" + f.Description
+	}
+	if f.CategoryID != "" {
+		url += "&category_id=" + f.CategoryID
+	}
+	if f.Direction != "" {
+		url += "&direction=" + f.Direction
+	}
+	return url
 }
 
 func signedAmount(tx service.TransactionListItem) float64 {

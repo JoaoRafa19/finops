@@ -10,6 +10,7 @@ import (
 	home "finops/internal/modules/home/web"
 	imports "finops/internal/modules/imports/web"
 	onboarding "finops/internal/modules/onboarding/web"
+	profile "finops/internal/modules/profile/web"
 	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
@@ -35,11 +36,12 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.CategoryService,
 	)
 	categoryController := category.NewCategoryController(deps.CategoryService)
-	reportsController := reports.NewReportsController(deps.ReportService)
+	reportsController := reports.NewReportsController(deps.ReportService, deps.CategoryService)
 	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
 	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	chatController := chat.NewChatController(deps.ChatService)
 	tourController := tour.NewTourController(deps.TourService)
+	profileController := profile.NewController()
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -71,6 +73,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
+	private.HandleFunc("GET /transactions/{id}/edit-modal", transactionController.EditModal)
+	private.HandleFunc("POST /transactions/{id}", transactionController.UpdateTransaction)
+	private.HandleFunc("DELETE /transactions/{id}", transactionController.DeleteTransaction)
 	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
 	private.HandleFunc("GET /reports", reportsController.Page)
 	private.HandleFunc("GET /reports/spending", reportsController.Spending)
@@ -91,6 +96,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 	private.HandleFunc("POST /chat", chatController.Message)
 	private.HandleFunc("GET /chat/history", chatController.GetHistory)
+	private.HandleFunc("GET /profile", profileController.Page)
 	private.HandleFunc("GET /tour", tourController.Page)
 	private.HandleFunc("GET /tour/start", tourController.Start)
 	private.HandleFunc("GET /tour/complete", tourController.Complete)

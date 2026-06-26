@@ -11,6 +11,20 @@ import (
 	"time"
 )
 
+const deleteTransaction = `-- name: DeleteTransaction :exec
+DELETE FROM transactions WHERE id = $1 AND workspace_id = $2 AND transfer_group_id IS NULL
+`
+
+type DeleteTransactionParams struct {
+	ID          int64
+	WorkspaceID int64
+}
+
+func (q *Queries) DeleteTransaction(ctx context.Context, arg DeleteTransactionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTransaction, arg.ID, arg.WorkspaceID)
+	return err
+}
+
 const getBalanceBefore = `-- name: GetBalanceBefore :one
 SELECT COALESCE(SUM(CASE WHEN direction='credit' THEN amount::numeric
                          ELSE -amount::numeric END), 0)::float8 AS balance
@@ -284,6 +298,45 @@ func (q *Queries) GetTopExpenses(ctx context.Context, arg GetTopExpensesParams) 
 	return items, nil
 }
 
+const getTransactionForEdit = `-- name: GetTransactionForEdit :one
+SELECT t.id, t.account_id, t.category_id, t.posted_on, t.description,
+       t.amount, t.direction, t.transfer_group_id
+FROM transactions t
+WHERE t.id = $1 AND t.workspace_id = $2
+`
+
+type GetTransactionForEditParams struct {
+	ID          int64
+	WorkspaceID int64
+}
+
+type GetTransactionForEditRow struct {
+	ID              int64
+	AccountID       int64
+	CategoryID      sql.NullInt64
+	PostedOn        time.Time
+	Description     string
+	Amount          string
+	Direction       string
+	TransferGroupID sql.NullInt64
+}
+
+func (q *Queries) GetTransactionForEdit(ctx context.Context, arg GetTransactionForEditParams) (GetTransactionForEditRow, error) {
+	row := q.db.QueryRowContext(ctx, getTransactionForEdit, arg.ID, arg.WorkspaceID)
+	var i GetTransactionForEditRow
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.CategoryID,
+		&i.PostedOn,
+		&i.Description,
+		&i.Amount,
+		&i.Direction,
+		&i.TransferGroupID,
+	)
+	return i, err
+}
+
 const listTransactionsFiltered = `-- name: ListTransactionsFiltered :many
 SELECT t.id, t.workspace_id, t.account_id, a.name AS account_name,
        t.category_id, COALESCE(c.name,'') AS category_name,
@@ -297,9 +350,10 @@ WHERE t.workspace_id = $1
   AND t.transfer_group_id IS NULL
   AND ($4::bigint  IS NULL OR t.account_id  = $4)
   AND ($5::bigint IS NULL OR t.category_id = $5)
-  AND ($6::text     IS NULL OR t.direction   = $6)
-  AND ($7::date     IS NULL OR t.posted_on  >= $7)
-  AND ($8::date       IS NULL OR t.posted_on  <= $8)
+  AND ($6::text    IS NULL OR t.direction             = $6)
+  AND ($7::text  IS NULL OR lower(t.description) LIKE $7)
+  AND ($8::date    IS NULL OR t.posted_on           >= $8)
+  AND ($9::date      IS NULL OR t.posted_on           <= $9)
 ORDER BY t.posted_on DESC, t.id DESC
 LIMIT $2 OFFSET $3
 `
@@ -311,6 +365,7 @@ type ListTransactionsFilteredParams struct {
 	AccountID   sql.NullInt64
 	CategoryID  sql.NullInt64
 	Direction   sql.NullString
+	Description sql.NullString
 	FromDate    sql.NullTime
 	ToDate      sql.NullTime
 }
@@ -340,6 +395,7 @@ func (q *Queries) ListTransactionsFiltered(ctx context.Context, arg ListTransact
 		arg.AccountID,
 		arg.CategoryID,
 		arg.Direction,
+		arg.Description,
 		arg.FromDate,
 		arg.ToDate,
 	)
@@ -377,4 +433,36 @@ func (q *Queries) ListTransactionsFiltered(ctx context.Context, arg ListTransact
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTransaction = `-- name: UpdateTransaction :exec
+UPDATE transactions
+SET description = $3, amount = $4::numeric, direction = $5,
+    posted_on = $6, category_id = $7, account_id = $8
+WHERE id = $1 AND workspace_id = $2 AND transfer_group_id IS NULL
+`
+
+type UpdateTransactionParams struct {
+	ID          int64
+	WorkspaceID int64
+	Description string
+	Column4     string
+	Direction   string
+	PostedOn    time.Time
+	CategoryID  sql.NullInt64
+	AccountID   int64
+}
+
+func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionParams) error {
+	_, err := q.db.ExecContext(ctx, updateTransaction,
+		arg.ID,
+		arg.WorkspaceID,
+		arg.Description,
+		arg.Column4,
+		arg.Direction,
+		arg.PostedOn,
+		arg.CategoryID,
+		arg.AccountID,
+	)
+	return err
 }
