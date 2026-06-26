@@ -1,6 +1,7 @@
 package transactions
 
 import (
+	"database/sql"
 	"errors"
 	"finops/internal/models"
 	"finops/internal/observability"
@@ -181,6 +182,143 @@ func (c *Controller) CreateTransfer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (c *Controller) EditModal(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	txID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := c.transactionService.GetForEdit(r.Context(), session.UserID, txID)
+	if err != nil {
+		logger.Error("edit_modal_lookup_failed", "tx_id", txID, "error", err)
+		http.Error(w, "transaction not found", http.StatusNotFound)
+		return
+	}
+
+	if tx.TransferGroupID.Valid {
+		http.Error(w, "transfers cannot be edited", http.StatusBadRequest)
+		return
+	}
+
+	accounts, err := c.accountService.ListByUser(r.Context(), session.UserID)
+	if err != nil {
+		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
+		return
+	}
+	categories, err := c.categoryService.GetCategories(r.Context(), session.UserID)
+	if err != nil {
+		http.Error(w, "failed to load categories", http.StatusInternalServerError)
+		return
+	}
+
+	amount, _ := strconv.ParseFloat(tx.Amount, 64)
+	state := templates.TransactionFormState{
+		Description: tx.Description,
+		Amount:      strconv.FormatFloat(amount, 'f', 2, 64),
+		AccountID:   strconv.FormatInt(tx.AccountID, 10),
+		CategoryID:  "",
+		PostedOn:    tx.PostedOn.Format("2006-01-02"),
+		Direction:   tx.Direction,
+	}
+	if tx.CategoryID.Valid {
+		state.CategoryID = strconv.FormatInt(tx.CategoryID.Int64, 10)
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.TransactionEditModalDialog(txID, state, session.CSRFToken, accounts, categories))
+}
+
+func (c *Controller) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	txID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	payload, _, err := parseTransactionPayload(r)
+	if err != nil {
+		c.renderEditModal(w, r, session.UserID, txID, session.CSRFToken, buildTransactionFormState(r, err.Error()))
+		return
+	}
+
+	var catID sql.NullInt64
+	if payload.CategoryID != nil {
+		catID = sql.NullInt64{Int64: *payload.CategoryID, Valid: true}
+	}
+
+	if err := c.transactionService.Update(r.Context(), session.UserID, txID, service.UpdateTransactionDTO{
+		Description: payload.Description,
+		Amount:      payload.Amount,
+		Direction:   payload.Direction,
+		PostedOn:    payload.PostedOn,
+		CategoryID:  catID,
+		AccountID:   payload.AccountID,
+	}); err != nil {
+		logger.Error("update_transaction_failed", "tx_id", txID, "error", err)
+		c.renderEditModal(w, r, session.UserID, txID, session.CSRFToken, buildTransactionFormState(r, "erro ao atualizar transação"))
+		return
+	}
+
+	logger.Info("transaction_updated", "user_id", session.UserID, "tx_id", txID)
+	w.Header().Set("HX-Redirect", r.Header.Get("Referer"))
+	if w.Header().Get("HX-Redirect") == "" {
+		w.Header().Set("HX-Redirect", "/")
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (c *Controller) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	txID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.transactionService.Delete(r.Context(), session.UserID, txID); err != nil {
+		logger.Error("delete_transaction_failed", "tx_id", txID, "error", err)
+		http.Error(w, "failed to delete", http.StatusInternalServerError)
+		return
+	}
+
+	logger.Info("transaction_deleted", "user_id", session.UserID, "tx_id", txID)
+	w.WriteHeader(http.StatusOK) // HTMX outerHTML swap to empty removes the element
+}
+
+func (c *Controller) renderEditModal(w http.ResponseWriter, r *http.Request, userID, txID int64, csrf string, form templates.TransactionFormState) {
+	accounts, err := c.accountService.ListByUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "failed to load accounts", http.StatusInternalServerError)
+		return
+	}
+	categories, err := c.categoryService.GetCategories(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "failed to load categories", http.StatusInternalServerError)
+		return
+	}
+	render.Templ(w, r, http.StatusBadRequest, templates.TransactionEditModalDialog(txID, form, csrf, accounts, categories))
 }
 
 func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.TransactionFormState) {

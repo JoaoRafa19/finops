@@ -93,8 +93,75 @@ templ TransactionItem(transaction TransactionDTO) {
 		</div>
 		<div class="flex items-center gap-3">
 			<p class={ transactionAmountClass(transaction.Direction) }>{ transactionAmountLabel(transaction) }</p>
+			if transaction.Direction != "transfer" {
+				<button
+					class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-200 hover:text-finops-700"
+					title="Editar"
+					hx-get={ fmt.Sprintf("/transactions/%d/edit-modal", transaction.ID) }
+					hx-target="#transaction-modal-body"
+					hx-swap="innerHTML"
+					hx-on::after-request="document.getElementById('transaction-modal')?.showModal()"
+				><i class="fa-solid fa-pen text-xs"></i></button>
+				<button
+					class="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-100 hover:text-rose-600"
+					title="Apagar"
+					hx-delete={ fmt.Sprintf("/transactions/%d", transaction.ID) }
+					hx-target={ fmt.Sprintf("#transaction-%d", transaction.ID) }
+					hx-swap="outerHTML"
+					hx-confirm="Apagar esta transação?"
+				><i class="fa-solid fa-trash text-xs"></i></button>
+			}
 		</div>
 	</li>
+}
+
+templ TransactionEditModalDialog(txID int64, form TransactionFormState, csrf_token string, accounts []store.Account, categories []store.Category) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Editar Transação</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		if form.ErrorMessage != "" {
+			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ form.ErrorMessage }</p>
+		}
+		<form
+			hx-post={ fmt.Sprintf("/transactions/%d", txID) }
+			hx-target="#transaction-modal-body"
+			hx-swap="innerHTML"
+			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
+		>
+			<input type="hidden" name="_csrf" value={ csrf_token }/>
+			<div class="md:col-span-2">
+				@FormLabel("description", "Descrição")
+				@TextInput("description", "description", "text", form.Description, "Compra no supermercado", true)
+			</div>
+			<div>
+				@FormLabel("amount", "Valor")
+				@TextInput("amount", "amount", "text", form.Amount, "0.00", true)
+			</div>
+			<div>
+				@FormLabel("account_id", "Conta")
+				@SelectInput("account_id", "account_id", buildAccountOptions(accounts, form.AccountID), true)
+			</div>
+			<div>
+				@FormLabel("posted_on", "Data")
+				@TextInput("posted_on", "posted_on", "date", form.PostedOn, "", true)
+			</div>
+			<div>
+				@FormLabel("category_id", "Categoria")
+				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), true)
+			</div>
+			<div>
+				@FormLabel("direction", "Tipo")
+				@SelectInput("direction", "direction", buildTransactionDirectionOptions(form.Direction), true)
+			</div>
+			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
+				@PrimaryButton("submit", "Salvar alterações", true)
+			</div>
+		</form>
+	</div>
 }
 
 templ TransactionModalDialog(form TransactionFormState, csrf_token string, accounts []store.Account, categories []store.Category) {

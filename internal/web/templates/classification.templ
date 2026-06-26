@@ -15,7 +15,7 @@ templ ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf 
 		@AppHead("Classificar · Finops", true)
 		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
 			@SideNav("/classify", csrf)
-			<main class="mx-auto max-w-4xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+			<main id="page-content" class="mx-auto max-w-4xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
 				<div class="mb-6 flex items-center justify-between">
 					<div>
 						<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
@@ -59,31 +59,37 @@ templ ClassificationPage(txs []service.UnclassifiedTransaction, total int, csrf 
 					}
 					</div>
 				</div>
+				<!-- Modal de classificação -->
+				<dialog id="classify-modal" class="w-full max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+					<div id="classify-modal-body"></div>
+				</dialog>
+				<script>
+					(function() {
+						function initClassify() {
+							document.addEventListener("classify-done", (e) => {
+								const modal = document.getElementById("classify-modal");
+								modal?.close();
+								const txId = e.detail?.txId;
+								if (txId) document.getElementById("tx-" + txId)?.remove();
+							});
+							document.addEventListener("click", (e) => {
+								const modal = document.getElementById("classify-modal");
+								if (modal?.open) {
+									const rect = modal.getBoundingClientRect();
+									const inside = e.clientX >= rect.left && e.clientX <= rect.right &&
+									               e.clientY >= rect.top  && e.clientY <= rect.bottom;
+									if (!inside) modal.close();
+								}
+							});
+						}
+						if (document.readyState === "loading") {
+							document.addEventListener("DOMContentLoaded", initClassify);
+						} else {
+							initClassify();
+						}
+					})();
+				</script>
 			</main>
-			<!-- Modal de classificação -->
-			<dialog id="classify-modal" class="w-full max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
-				<div id="classify-modal-body"></div>
-			</dialog>
-			<script>
-				document.body.addEventListener("classify-done", (e) => {
-					const modal = document.getElementById("classify-modal");
-					modal?.close();
-					// Remove o item da lista
-					const txId = e.detail?.txId;
-					if (txId) {
-						document.getElementById("tx-" + txId)?.remove();
-					}
-				});
-				document.body.addEventListener("click", (e) => {
-					const modal = document.getElementById("classify-modal");
-					if (modal?.open) {
-						const rect = modal.getBoundingClientRect();
-						const inside = e.clientX >= rect.left && e.clientX <= rect.right &&
-						               e.clientY >= rect.top  && e.clientY <= rect.bottom;
-						if (!inside) modal.close();
-					}
-				});
-			</script>
 		</body>
 	</html>
 }

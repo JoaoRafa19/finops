@@ -23,12 +23,25 @@ type TransactionListItem struct {
 	Currency    string
 	Source      string
 	Category    string
+	CategoryID  sql.NullInt64
+}
+
+type UpdateTransactionDTO struct {
+	Description string
+	Amount      float64
+	Direction   string
+	PostedOn    time.Time
+	CategoryID  sql.NullInt64
+	AccountID   int64
 }
 
 type TransactionService interface {
 	CreateManual(ctx context.Context, input models.CreateTransactionDTO) (store.Transaction, error)
 	CreateTransfer(ctx context.Context, input models.CreateTransferDTO) ([]store.Transaction, error)
 	ListRecentByUser(ctx context.Context, userID int64, limit int32) ([]TransactionListItem, error)
+	GetForEdit(ctx context.Context, userID, txID int64) (store.GetTransactionForEditRow, error)
+	Update(ctx context.Context, userID, txID int64, input UpdateTransactionDTO) error
+	Delete(ctx context.Context, userID, txID int64) error
 }
 
 type PGTransactionService struct {
@@ -263,6 +276,7 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 		}
 
 		items = append(items, TransactionListItem{
+			CategoryID:  row.CategoryID,
 			ID:          row.ID,
 			AccountID:   row.AccountID,
 			AccountName: row.AccountName,
@@ -278,6 +292,45 @@ func (p *PGTransactionService) ListRecentByUser(ctx context.Context, userID int6
 
 	logger.Debug("transaction_list_recent_succeeded", "user_id", userID, "workspace_id", workspace.ID, "count", len(items))
 	return items, nil
+}
+
+func (p *PGTransactionService) GetForEdit(ctx context.Context, userID, txID int64) (store.GetTransactionForEditRow, error) {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return store.GetTransactionForEditRow{}, err
+	}
+	return p.db.GetTransactionForEdit(ctx, store.GetTransactionForEditParams{
+		ID:          txID,
+		WorkspaceID: ws.ID,
+	})
+}
+
+func (p *PGTransactionService) Update(ctx context.Context, userID, txID int64, input UpdateTransactionDTO) error {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return p.db.UpdateTransaction(ctx, store.UpdateTransactionParams{
+		ID:          txID,
+		WorkspaceID: ws.ID,
+		Description: input.Description,
+		Column4:     formatNumeric(input.Amount),
+		Direction:   input.Direction,
+		PostedOn:    input.PostedOn,
+		CategoryID:  input.CategoryID,
+		AccountID:   input.AccountID,
+	})
+}
+
+func (p *PGTransactionService) Delete(ctx context.Context, userID, txID int64) error {
+	ws, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return p.db.DeleteTransaction(ctx, store.DeleteTransactionParams{
+		ID:          txID,
+		WorkspaceID: ws.ID,
+	})
 }
 
 func formatNumeric(value float64) string {

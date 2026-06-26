@@ -53,7 +53,7 @@ func ImportPage(accounts []store.Account, csrf string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"mx-auto max-w-3xl px-4 py-12 pl-16 sm:px-6 sm:pl-16\"><div class=\"mb-6\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Finops</p><h1 class=\"mt-1 text-3xl font-extrabold\">Importar Transações</h1><p class=\"mt-2 text-sm text-finops-700\">Importe extratos nos formatos OFX (bancos BR) ou CSV.</p></div><div class=\"rounded-3xl border border-white/80 bg-white/85 p-6 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-8\"><form id=\"upload-form\" hx-post=\"/import/upload\" hx-target=\"#import-result\" hx-swap=\"innerHTML\" hx-encoding=\"multipart/form-data\" class=\"space-y-5\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"page-content\" class=\"mx-auto max-w-3xl px-4 py-12 pl-16 sm:px-6 sm:pl-16\"><div class=\"mb-6\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Finops</p><h1 class=\"mt-1 text-3xl font-extrabold\">Importar Transações</h1><p class=\"mt-2 text-sm text-finops-700\">Importe extratos nos formatos OFX (bancos BR) ou CSV.</p></div><div class=\"rounded-3xl border border-white/80 bg-white/85 p-6 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-8\"><form id=\"upload-form\" hx-post=\"/import/upload\" hx-target=\"#import-result\" hx-swap=\"innerHTML\" hx-encoding=\"multipart/form-data\" class=\"space-y-5\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

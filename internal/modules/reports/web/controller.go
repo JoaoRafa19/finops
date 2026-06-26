@@ -12,11 +12,12 @@ import (
 )
 
 type ReportsController struct {
-	reportSvc service.ReportsService
+	reportSvc   service.ReportsService
+	categorySvc service.CategoryService
 }
 
-func NewReportsController(serv service.ReportsService) *ReportsController {
-	return &ReportsController{reportSvc: serv}
+func NewReportsController(serv service.ReportsService, categorySvc service.CategoryService) *ReportsController {
+	return &ReportsController{reportSvc: serv, categorySvc: categorySvc}
 }
 
 func (c *ReportsController) Page(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +109,8 @@ func (c *ReportsController) Transactions(w http.ResponseWriter, r *http.Request)
 		Offset:   offset,
 	}
 
+	activeFilters := templates.TransactionFilters{}
+
 	if v := r.URL.Query().Get("account_id"); v != "" {
 		if id, err := strconv.ParseInt(v, 10, 64); err == nil {
 			filter.AccountID = &id
@@ -116,10 +119,16 @@ func (c *ReportsController) Transactions(w http.ResponseWriter, r *http.Request)
 	if v := r.URL.Query().Get("category_id"); v != "" {
 		if id, err := strconv.ParseInt(v, 10, 64); err == nil {
 			filter.CategoryID = &id
+			activeFilters.CategoryID = v
 		}
 	}
 	if v := r.URL.Query().Get("direction"); v == "debit" || v == "credit" {
 		filter.Direction = &v
+		activeFilters.Direction = v
+	}
+	if v := r.URL.Query().Get("description"); v != "" {
+		filter.Description = &v
+		activeFilters.Description = v
 	}
 
 	data, err := c.reportSvc.ListFiltered(r.Context(), session.UserID, filter)
@@ -129,7 +138,12 @@ func (c *ReportsController) Transactions(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.TransactionsFragment(data, page, pageSize, from, to))
+	categories, err := c.categorySvc.GetCategories(r.Context(), session.UserID)
+	if err != nil {
+		logger.Warn("reports_transactions_categories_failed", "error", err)
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.TransactionsFragment(data, categories, activeFilters, page, pageSize, from, to))
 }
 
 func parsePeriod(r *http.Request) (from, to time.Time) {

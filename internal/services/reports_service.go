@@ -6,6 +6,7 @@ import (
 	"errors"
 	"finops/internal/store"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -40,13 +41,14 @@ type TopExpenseItem struct {
 }
 
 type TransactionFilter struct {
-	AccountID  *int64
-	CategoryID *int64
-	Direction  *string
-	FromDate   *time.Time
-	ToDate     *time.Time
-	Limit      int32
-	Offset     int32
+	AccountID   *int64
+	CategoryID  *int64
+	Direction   *string
+	Description *string
+	FromDate    *time.Time
+	ToDate      *time.Time
+	Limit       int32
+	Offset      int32
 }
 
 type ReportsService interface {
@@ -137,6 +139,14 @@ func (p *PGReportService) ListFiltered(ctx context.Context, userID int64, filter
 		}
 	}
 
+	Description := sql.NullString{}
+	if filter.Description != nil && *filter.Description != "" {
+		Description = sql.NullString{
+			String: "%" + strings.ToLower(*filter.Description) + "%",
+			Valid:  true,
+		}
+	}
+
 	FromDate := sql.NullTime{}
 	if filter.FromDate != nil {
 		FromDate = sql.NullTime{
@@ -160,6 +170,7 @@ func (p *PGReportService) ListFiltered(ctx context.Context, userID int64, filter
 		AccountID:   accountId,
 		CategoryID:  CategoryID,
 		Direction:   Direction,
+		Description: Description,
 		FromDate:    FromDate,
 		ToDate:      ToDate,
 	})
