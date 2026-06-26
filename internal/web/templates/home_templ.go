@@ -9,20 +9,94 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"finops/internal/store"
+	"finops/internal/services"
 	"finops/internal/utils"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+	"time"
 )
 
-var accountTypeOptions = []SelectOption{
-	{Value: "", Label: "Selecione", Selected: true},
-	{Value: "checking", Label: "Conta corrente"},
-	{Value: "savings", Label: "Poupanca"},
-	{Value: "cash", Label: "Dinheiro"},
-	{Value: "credit_card", Label: "Cartao"},
-	{Value: "investment", Label: "Investimento"},
+// firstName extrai o primeiro nome do email.
+func firstName(email string) string {
+	name := email
+	if i := strings.Index(email, "@"); i > 0 {
+		name = email[:i]
+	}
+	if i := strings.IndexAny(name, "._-"); i > 0 {
+		name = name[:i]
+	}
+	if len(name) > 0 {
+		return strings.ToUpper(name[:1]) + name[1:]
+	}
+	return name
 }
 
-func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store.Category, transactions_dto []TransactionDTO, pending int) templ.Component {
+func periodLabel(period string) string {
+	switch period {
+	case "last_30":
+		return "Últimos 30 dias"
+	case "last_90":
+		return "Últimos 90 dias"
+	case "this_year":
+		return "Este ano"
+	default:
+		return "Este mês"
+	}
+}
+
+func deltaClass(delta float64) string {
+	if delta > 0 {
+		return "text-rose-600"
+	}
+	if delta < 0 {
+		return "text-emerald-600"
+	}
+	return "text-slate-400"
+}
+
+func incDeltaClass(delta float64) string {
+	if delta > 0 {
+		return "text-emerald-600"
+	}
+	if delta < 0 {
+		return "text-rose-600"
+	}
+	return "text-slate-400"
+}
+
+func deltaIcon(delta float64) string {
+	if delta > 0 {
+		return "↑"
+	}
+	if delta < 0 {
+		return "↓"
+	}
+	return "→"
+}
+
+// jsonFloats serializa []float64 para array JS (sem escaping de HTML).
+func jsonFloats(vals []float64) string {
+	parts := make([]string, len(vals))
+	for i, v := range vals {
+		parts[i] = strconv.FormatFloat(v, 'f', 2, 64)
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+// jsonStrings serializa []string para array JS JSON-safe.
+func jsonStrings(vals []string) string {
+	parts := make([]string, len(vals))
+	for i, v := range vals {
+		escaped := strings.ReplaceAll(v, `\`, `\\`)
+		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+		parts[i] = `"` + escaped + `"`
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+func HomePage(email, csrf string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -55,197 +129,651 @@ func HomePage(user, csrf_token string, accountDto AccountDTO, categories []store
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SideNav("/", csrf_token).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SideNav("/", csrf).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"page-content\" class=\"mx-auto flex min-h-screen max-w-5xl items-center px-4 py-12 pl-16 sm:px-6 sm:pl-16\"><section class=\"w-full rounded-3xl border border-white/80 bg-white/85 p-8 shadow-2xl shadow-finops-900/10 backdrop-blur-sm sm:p-10\"><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Workspace</p><h1 class=\"mt-3 text-3xl font-extrabold sm:text-4xl\">Finops online</h1><p class=\"mt-3 text-sm text-finops-700\">Voce esta autenticado como <span class=\"font-bold text-finops-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"page-content\" class=\"mx-auto max-w-5xl px-4 py-10 pl-16 sm:px-6 sm:pl-16\"><!-- Cabeçalho --><div class=\"mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between\"><div><h1 class=\"text-2xl font-extrabold text-finops-900\">Olá, ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(user)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(firstName(email))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 29, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 102, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span>.</p><div class=\"mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5\"><p class=\"text-sm font-semibold text-finops-800\">Sessao ativa e protegida por CSRF.</p>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if len(accountDto.Accounts) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<p class=\"mt-1 text-sm text-finops-700\">Seu workspace ja esta pronto. O proximo passo e cadastrar sua primeira conta.</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div id=\"action-buttons\" class=\"mt-8 flex justify-end gap-2\"><form method=\"get\" action=\"/account-modal\" hx-get=\"/account-modal\" hx-target=\"#account-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('account-modal')?.showModal()\"><input type=\"hidden\" name=\"_csrf\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 46, Col: 59}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = SecondaryButton("submit", "Cadastrar Conta").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</form>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if len(accountDto.Accounts) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<form method=\"get\" action=\"/transaction-modal\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-on::after-request=\"document.getElementById('transaction-modal')?.showModal()\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 58, Col: 60}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = SecondaryButton("submit", "Registrar Transacao").Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</form>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		if len(accountDto.Accounts) > 1 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<form method=\"get\" action=\"/transfer-modal\" hx-get=\"/transfer-modal\" hx-target=\"#transfer-modal-body\" hx-on::after-request=\"document.getElementById('transfer-modal')?.showModal()\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 71, Col: 60}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = SecondaryButton("submit", "Transferir").Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</form>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<form method=\"get\" action=\"/category-modal\" hx-get=\"/category-modal\" hx-target=\"#category-modal-body\" hx-on::after-request=\"document.getElementById('category-modal')?.showModal()\" hx-swap=\"innerHTML\"><input type=\"hidden\" name=\"_csrf\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 83, Col: 59}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = SecondaryButton("submit", "Criar Categoria").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</form><form method=\"post\" action=\"/logout\"><input type=\"hidden\" name=\"_csrf\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 87, Col: 59}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = PrimaryButton("submit", "Sair", false).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</form></div><div class=\"mt-8 space-y-4\"><div class=\"rounded-2xl border border-slate-200 bg-white p-6\"><p class=\"text-sm font-semibold text-finops-700\">Saldo total</p><p class=\"mt-2 text-3xl font-extrabold text-finops-900\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(accountDto.TotalBalance))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 95, Col: 52}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</p><p class=\"mt-1 text-sm text-finops-700\">Soma dos saldos atuais das contas cadastradas</p></div><div id=\"account-panels\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = AccountPanels(accountDto.Accounts).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><div id=\"transaction-panel\" class=\"mt-8\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = TransactionPanel(transactions_dto).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><div class=\"mt-8\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = CategoryPannels(csrf_token, categories, NewCategoryFormState()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div><dialog id=\"account-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-modal-body\"></div></dialog> <dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog> <dialog id=\"transfer-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transfer-modal-body\"></div></dialog> <dialog id=\"category-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"category-modal-body\"></div></dialog><script>\n\t\t\t\t\t document.body.addEventListener(\"category-created\", () => {\n\t\t\t\t\t\tconst dialog = document.getElementById(\"category-modal\");\n\t\t\t\t\t\tconst body = document.getElementById(\"category-modal-body\");\n\t\t\t\t\t\tdialog?.close();\n\t\t\t\t\t\tif (body) body.innerHTML = \"\";\n\t\t\t\t\t});\n\t\t\t\t\t\tdocument.body.addEventListener(\"click\", (event) => {\n\t\t\t\t\t\t\t[\"account-modal\", \"transaction-modal\", \"transfer-modal\", \"category-modal\"].forEach((id) => {\n\t\t\t\t\t\t\t\tconst dialog = document.getElementById(id);\n\t\t\t\t\t\t\t\tif (dialog && dialog.open) {\n\t\t\t\t\t\t\t\t\tconst rect = dialog.getBoundingClientRect();\n\t\t\t\t\t\t\t\t\tconst clickedInDialog = (\n\t\t\t\t\t\t\t\t\t\tevent.clientX >= rect.left &&\n\t\t\t\t\t\t\t\t\t\tevent.clientX <= rect.right &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY >= rect.top &&\n\t\t\t\t\t\t\t\t\t\tevent.clientY <= rect.bottom\n\t\t\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\t\t\tif (!clickedInDialog) {\n\t\t\t\t\t\t\t\t\t\tdialog.close();\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t});\n\t\t\t\t\t</script></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " 👋</h1><p class=\"mt-1 text-sm text-finops-700\">Como está minha situação financeira agora?</p></div><!-- Seletor de período --><div class=\"flex items-center gap-2\"><select id=\"period-select\" name=\"period\" class=\"rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-finops-900 shadow-sm outline-none focus:border-finops-500\" hx-get=\"/dashboard\" hx-target=\"#dashboard-content\" hx-swap=\"innerHTML\" hx-trigger=\"change\" hx-include=\"[name=custom-from],[name=custom-to]\"><option value=\"this_month\">Este mês</option> <option value=\"last_30\">Últimos 30 dias</option> <option value=\"last_90\">Últimos 90 dias</option> <option value=\"this_year\">Este ano</option> <option value=\"custom\">Personalizado</option></select><!-- Datas customizadas (ocultas por padrão) --><div id=\"custom-dates\" class=\"hidden flex items-center gap-2\"><input type=\"date\" name=\"custom-from\" class=\"rounded-xl border border-slate-300 px-2 py-2 text-sm outline-none focus:border-finops-500\"> <span class=\"text-slate-400\">–</span> <input type=\"date\" name=\"custom-to\" class=\"rounded-xl border border-slate-300 px-2 py-2 text-sm outline-none focus:border-finops-500\"> <button class=\"rounded-xl bg-finops-900 px-3 py-2 text-sm font-bold text-white transition hover:bg-finops-800\" hx-get=\"/dashboard\" hx-target=\"#dashboard-content\" hx-swap=\"innerHTML\" hx-include=\"[name=period],[name=custom-from],[name=custom-to]\">Aplicar</button></div></div></div><!-- Conteúdo do dashboard (recarrega com o período) --><div id=\"dashboard-content\" hx-get=\"/dashboard?period=this_month\" hx-trigger=\"load\" hx-swap=\"innerHTML\"><div class=\"flex items-center justify-center py-20 text-sm text-finops-700\"><i class=\"fa-solid fa-spinner fa-spin mr-2 text-finops-500\"></i> Carregando...</div></div><!-- Ações rápidas --><div id=\"action-buttons\" class=\"mt-8 flex flex-wrap gap-3\"><button class=\"inline-flex items-center gap-2 rounded-xl bg-finops-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-finops-800\" hx-get=\"/transaction-modal\" hx-target=\"#transaction-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('transaction-modal')?.showModal()\"><i class=\"fa-solid fa-plus\"></i> Registrar</button> <a href=\"/import\" class=\"inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50\"><i class=\"fa-solid fa-file-arrow-up\"></i> Importar</a> <button class=\"inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50\" hx-get=\"/transfer-modal\" hx-target=\"#transfer-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('transfer-modal')?.showModal()\"><i class=\"fa-solid fa-arrow-right-arrow-left\"></i> Transferir</button> <a href=\"/reports\" class=\"inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50\"><i class=\"fa-solid fa-chart-bar\"></i> Relatórios</a></div><!-- Modais --><dialog id=\"transaction-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transaction-modal-body\"></div></dialog> <dialog id=\"transfer-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"transfer-modal-body\"></div></dialog> <dialog id=\"account-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-modal-body\"></div></dialog> <dialog id=\"category-modal\" class=\"w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"category-modal-body\"></div></dialog><script>\n\t\t\t\t\tdocument.getElementById(\"period-select\")?.addEventListener(\"change\", function() {\n\t\t\t\t\t\tconst customDates = document.getElementById(\"custom-dates\");\n\t\t\t\t\t\tif (this.value === \"custom\") {\n\t\t\t\t\t\t\tcustomDates?.classList.remove(\"hidden\");\n\t\t\t\t\t\t\tcustomDates?.classList.add(\"flex\");\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tcustomDates?.classList.add(\"hidden\");\n\t\t\t\t\t\t\tcustomDates?.classList.remove(\"flex\");\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t</script></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		return nil
 	})
+}
+
+func DashboardPartial(data service.DashboardSummary, period string, from, to time.Time, pending int, csrf string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!-- Cards de resumo --><div class=\"mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4\"><!-- Saldo atual --><a href=\"/reports\" class=\"group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"text-xs font-bold uppercase tracking-wide text-finops-500\">Saldo Atual</p><p class=\"mt-2 text-2xl font-extrabold text-finops-900\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(data.TotalBalance))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 213, Col: 97}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p><p class=\"mt-1 text-xs text-finops-700\">Todas as contas</p></a><!-- Receitas --><a href=\"/reports\" class=\"group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"text-xs font-bold uppercase tracking-wide text-finops-500\">Receitas</p><p class=\"mt-2 text-2xl font-extrabold text-emerald-700\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(data.Income))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 219, Col: 92}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.HasDelta {
+			var templ_7745c5c3_Var6 = []any{"mt-1 text-xs font-semibold " + incDeltaClass(data.IncomeDelta)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<p class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var6).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(deltaIcon(data.IncomeDelta))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 222, Col: 34}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", math.Abs(data.IncomeDelta)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 222, Col: 88}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " vs anterior</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</a><!-- Despesas --><a href=\"/reports\" class=\"group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"text-xs font-bold uppercase tracking-wide text-finops-500\">Despesas</p><p class=\"mt-2 text-2xl font-extrabold text-rose-700\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(data.Expenses))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 229, Col: 91}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.HasDelta {
+			var templ_7745c5c3_Var11 = []any{"mt-1 text-xs font-semibold " + deltaClass(data.ExpensesDelta)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<p class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var11).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(deltaIcon(data.ExpensesDelta))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 232, Col: 36}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", math.Abs(data.ExpensesDelta)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 232, Col: 92}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " vs anterior</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</a><!-- Economia -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 = []any{"rounded-2xl border p-5 shadow-sm " + savingsCardClass(data.Savings)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var15...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var15).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><p class=\"text-xs font-bold uppercase tracking-wide text-finops-500\">Economia</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 = []any{"mt-2 text-2xl font-extrabold " + savingsAmountClass(data.Savings)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<p class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var17).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(data.Savings))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 239, Col: 116}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</p><p class=\"mt-1 text-xs text-finops-700\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.Savings >= 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "Receitas - Despesas")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "Déficit no período")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p></div></div><div class=\"mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3\"><!-- Evolução do saldo --><a href=\"/reports\" class=\"col-span-2 block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"mb-4 text-sm font-bold text-finops-900\">Evolução do Saldo</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(data.BalanceHistory) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"flex h-40 items-center justify-center text-sm text-slate-400\">Sem dados no período.</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"relative\" style=\"height:200px\" data-chart=\"balance\" data-labels=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonStrings(balanceLabels(data.BalanceHistory)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 261, Col: 66}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" data-values=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonFloats(balanceValues(data.BalanceHistory)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 262, Col: 65}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><canvas id=\"balance-chart\"></canvas></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</a><!-- Top Categorias --><div class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm\"><p class=\"mb-4 text-sm font-bold text-finops-900\">Top Categorias</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(data.TopCategories) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<p class=\"py-4 text-center text-sm text-slate-400\">Sem despesas categorizadas.</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<ul class=\"space-y-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, cat := range data.TopCategories {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<li><a href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var22 templ.SafeURL
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/reports"))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 279, Col: 40}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" class=\"block rounded-xl p-2 transition hover:bg-slate-50\"><div class=\"flex items-center justify-between\"><span class=\"text-sm font-semibold text-finops-900\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(cat.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 283, Col: 71}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if cat.HasDelta {
+					var templ_7745c5c3_Var24 = []any{"text-xs font-semibold " + deltaClass(cat.Delta)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var24...)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var25 string
+					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var24).String())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 1, Col: 0}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var26 string
+					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(deltaIcon(cat.Delta))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 286, Col: 33}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var27 string
+					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", math.Abs(cat.Delta)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 286, Col: 79}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</div><p class=\"mt-0.5 text-sm text-finops-700\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var28 string
+				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(utils.FormatMoney(cat.Total))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 290, Col: 80}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</p></a></li>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</ul>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div></div><div class=\"mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2\"><!-- Fluxo de caixa --><a href=\"/reports\" class=\"block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"mb-4 text-sm font-bold text-finops-900\">Fluxo de Caixa</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(data.CashFlow) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"flex h-40 items-center justify-center text-sm text-slate-400\">Sem dados no período.</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"relative\" style=\"height:200px\" data-chart=\"cashflow\" data-labels=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var29 string
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonStrings(cashflowLabels(data.CashFlow)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 310, Col: 61}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" data-income=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var30 string
+			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonFloats(cashflowIncome(data.CashFlow)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 311, Col: 60}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" data-expenses=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var31 string
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonFloats(cashflowExpenses(data.CashFlow)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 312, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><canvas id=\"cashflow-chart\"></canvas></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</a><!-- Distribuição dos gastos --><a href=\"/reports\" class=\"block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-finops-500 hover:shadow-md\"><p class=\"mb-4 text-sm font-bold text-finops-900\">Distribuição dos Gastos</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(data.Spending) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"flex h-40 items-center justify-center text-sm text-slate-400\">Sem dados no período.</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"relative\" style=\"height:200px\" data-chart=\"donut\" data-labels=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var32 string
+			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonStrings(spendingLabels(data.Spending)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 329, Col: 61}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" data-values=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var33 string
+			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(jsonFloats(spendingValues(data.Spending)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 330, Col: 60}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"><canvas id=\"donut-chart\"></canvas></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</a></div><!-- Insights -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(data.Insights) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm\"><p class=\"mb-3 text-sm font-bold text-finops-900\">Insights</p><ul class=\"space-y-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, insight := range data.Insights {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<li class=\"rounded-xl bg-slate-50 px-4 py-2.5 text-sm text-finops-800\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var34 string
+				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(insight)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 344, Col: 85}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</li>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</ul></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if pending > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div class=\"mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4\"><p class=\"text-sm font-semibold text-amber-800\"><i class=\"fa-solid fa-triangle-exclamation mr-2\"></i> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var35 string
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d transação(ões) aguardam classificação.", pending))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/home.templ`, Line: 354, Col: 76}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, " <a href=\"/classify\" class=\"ml-2 underline hover:no-underline\">Classificar agora</a></p></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<!-- Inicialização dos charts --><script>\n\t\t(function() {\n\t\t\tconst PALETTE = [\"#0ea5a4\",\"#f43f5e\",\"#f59e0b\",\"#8b5cf6\",\"#3b82f6\",\"#10b981\",\"#ec4899\",\"#6366f1\"];\n\n\t\t\tfunction makeChart(id, type, labels, datasets, extra) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tconst existing = Chart.getChart(canvas);\n\t\t\t\tif (existing) existing.destroy();\n\t\t\t\tconst options = {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tanimation: { duration: 300 },\n\t\t\t\t\tplugins: { legend: { display: false } },\n\t\t\t\t};\n\t\t\t\tif (extra) Object.assign(options, extra);\n\t\t\t\tnew Chart(canvas, { type, data: { labels, datasets }, options });\n\t\t\t}\n\n\t\t\t// Aguarda o layout antes de inicializar (evita canvas com tamanho errado)\n\t\t\trequestAnimationFrame(function() {\n\t\t\t\t// Evolução do Saldo — linha\n\t\t\t\tconst balanceEl = document.querySelector(\"[data-chart=balance]\");\n\t\t\t\tif (balanceEl) {\n\t\t\t\t\tmakeChart(\"balance-chart\", \"line\",\n\t\t\t\t\t\tJSON.parse(balanceEl.dataset.labels),\n\t\t\t\t\t\t[{ label: \"Saldo\", data: JSON.parse(balanceEl.dataset.values),\n\t\t\t\t\t\t   borderColor: \"#0ea5a4\", backgroundColor: \"rgba(14,165,164,0.1)\",\n\t\t\t\t\t\t   fill: true, tension: 0.4, pointRadius: 3 }],\n\t\t\t\t\t\t{ scales: { y: { ticks: { callback: v => \"R$ \" + Number(v).toLocaleString(\"pt-BR\") } } } }\n\t\t\t\t\t);\n\t\t\t\t}\n\n\t\t\t\t// Fluxo de Caixa — barras\n\t\t\t\tconst cfEl = document.querySelector(\"[data-chart=cashflow]\");\n\t\t\t\tif (cfEl) {\n\t\t\t\t\tmakeChart(\"cashflow-chart\", \"bar\",\n\t\t\t\t\t\tJSON.parse(cfEl.dataset.labels),\n\t\t\t\t\t\t[\n\t\t\t\t\t\t\t{ label: \"Receitas\",  data: JSON.parse(cfEl.dataset.income),   backgroundColor: \"#14b8a6\" },\n\t\t\t\t\t\t\t{ label: \"Despesas\",  data: JSON.parse(cfEl.dataset.expenses), backgroundColor: \"#f43f5e\" },\n\t\t\t\t\t\t],\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tplugins: { legend: { display: true, position: \"top\", labels: { boxWidth: 12, font: { size: 11 } } } },\n\t\t\t\t\t\t\tscales: { y: { ticks: { callback: v => \"R$ \" + Number(v).toLocaleString(\"pt-BR\") } } },\n\t\t\t\t\t\t}\n\t\t\t\t\t);\n\t\t\t\t}\n\n\t\t\t\t// Distribuição — donut\n\t\t\t\tconst donutEl = document.querySelector(\"[data-chart=donut]\");\n\t\t\t\tif (donutEl) {\n\t\t\t\t\tmakeChart(\"donut-chart\", \"doughnut\",\n\t\t\t\t\t\tJSON.parse(donutEl.dataset.labels),\n\t\t\t\t\t\t[{ data: JSON.parse(donutEl.dataset.values), backgroundColor: PALETTE, borderWidth: 2 }],\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tplugins: {\n\t\t\t\t\t\t\t\tlegend: {\n\t\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\t\tposition: \"bottom\",\n\t\t\t\t\t\t\t\t\tlabels: { boxWidth: 10, font: { size: 10 }, padding: 8 },\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t}\n\t\t\t\t\t);\n\t\t\t\t}\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// --- helpers de serialização para os charts ---
+
+func balanceLabels(h []service.BalancedHistory) []string {
+	out := make([]string, len(h))
+	for i, r := range h {
+		out[i] = fmtMonth(r.Month)
+	}
+	return out
+}
+
+func balanceValues(h []service.BalancedHistory) []float64 {
+	out := make([]float64, len(h))
+	for i, r := range h {
+		out[i] = r.Balance
+	}
+	return out
+}
+
+func cashflowLabels(rows []service.MonthlyRow) []string {
+	out := make([]string, len(rows))
+	for i, r := range rows {
+		out[i] = fmtMonth(r.Month)
+	}
+	return out
+}
+
+func cashflowIncome(rows []service.MonthlyRow) []float64 {
+	out := make([]float64, len(rows))
+	for i, r := range rows {
+		out[i] = r.Income
+	}
+	return out
+}
+
+func cashflowExpenses(rows []service.MonthlyRow) []float64 {
+	out := make([]float64, len(rows))
+	for i, r := range rows {
+		out[i] = r.Expenses
+	}
+	return out
+}
+
+func spendingLabels(rows []service.CategorySpend) []string {
+	out := make([]string, len(rows))
+	for i, r := range rows {
+		out[i] = r.CategoryName
+	}
+	return out
+}
+
+func spendingValues(rows []service.CategorySpend) []float64 {
+	out := make([]float64, len(rows))
+	for i, r := range rows {
+		out[i] = r.Total
+	}
+	return out
+}
+
+func savingsCardClass(savings float64) string {
+	if savings < 0 {
+		return "border-rose-200 bg-rose-50"
+	}
+	return "border-emerald-200 bg-emerald-50"
+}
+
+func savingsAmountClass(savings float64) string {
+	if savings < 0 {
+		return "text-rose-700"
+	}
+	return "text-emerald-700"
 }
 
 var _ = templruntime.GeneratedTemplate

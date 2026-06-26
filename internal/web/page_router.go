@@ -22,11 +22,11 @@ func newPageRouter(deps RouterDeps) http.Handler {
 
 	homeController := home.NewController(
 		deps.AccountService,
-		deps.CategoryService,
 		deps.WorkspaceService,
-		deps.TransactionService,
+		deps.ReportService,
 		deps.ImportService,
 		deps.TourService,
+		deps.CategoryService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
 	onboardingController := onboarding.NewController(deps.WorkspaceService)
@@ -59,6 +59,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
+	private.HandleFunc("GET /dashboard", homeController.Dashboard)
 	private.HandleFunc("POST /accounts", accountController.Create)
 	private.HandleFunc("GET /account-modal", accountController.AccountModal)
 	private.HandleFunc("GET /accounts/{id}/edit", accountController.EditForm)
