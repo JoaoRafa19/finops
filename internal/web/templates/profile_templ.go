@@ -73,7 +73,15 @@ func ProfilePage(email, csrf string, categories []store.Category, accounts []Acc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p><a href=\"/forgot-password\" class=\"mt-1 inline-block text-sm text-finops-500 transition hover:text-finops-900 hover:underline\">Alterar senha</a></div></div></section><!-- Categorias -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p><a href=\"/forgot-password\" class=\"mt-1 inline-block text-sm text-finops-500 transition hover:text-finops-900 hover:underline\">Alterar senha</a></div></div></section><!-- Preferências do assistente -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ChatPreferencesPanel().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Categorias -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -81,7 +89,7 @@ func ProfilePage(email, csrf string, categories []store.Category, accounts []Acc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Contas bancárias -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<!-- Contas bancárias -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -89,20 +97,20 @@ func ProfilePage(email, csrf string, categories []store.Category, accounts []Acc
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<!-- Logout --><section class=\"rounded-2xl border border-slate-200 bg-white p-6\"><h2 class=\"mb-4 text-sm font-bold uppercase tracking-wide text-finops-500\">Sessão</h2><form method=\"post\" action=\"/logout\" hx-post=\"/logout\" hx-target=\"body\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!-- Logout --><section class=\"rounded-2xl border border-slate-200 bg-white p-6\"><h2 class=\"mb-4 text-sm font-bold uppercase tracking-wide text-finops-500\">Sessão</h2><form method=\"post\" action=\"/logout\" hx-post=\"/logout\" hx-target=\"body\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/profile.templ`, Line: 41, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/profile.templ`, Line: 44, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"> <button type=\"submit\" class=\"inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100\"><i class=\"fa-solid fa-right-from-bracket\"></i> Sair da conta</button></form></section></div><dialog id=\"account-delete-modal\" class=\"w-full max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-delete-modal-body\"></div></dialog></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"> <button type=\"submit\" class=\"inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100\"><i class=\"fa-solid fa-right-from-bracket\"></i> Sair da conta</button></form></section></div><dialog id=\"account-delete-modal\" class=\"w-full max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div id=\"account-delete-modal-body\"></div></dialog></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

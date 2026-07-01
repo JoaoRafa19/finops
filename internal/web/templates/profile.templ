@@ -30,10 +30,13 @@ templ ProfilePage(email, csrf string, categories []store.Category, accounts []Ac
 							</div>
 						</div>
 					</section>
+					<!-- Preferências do assistente -->
+					@ChatPreferencesPanel()
 					<!-- Categorias -->
 					@CategoryPannels(csrf, categories, CategoryFormState{})
 					<!-- Contas bancárias -->
 					@AccountManagePanels(accounts, csrf)
+					
 					<!-- Logout -->
 					<section class="rounded-2xl border border-slate-200 bg-white p-6">
 						<h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-finops-500">Sessão</h2>
