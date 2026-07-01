@@ -9,10 +9,23 @@ import (
 	"strings"
 )
 
+// csrfExemptPaths são entry points públicos onde exigir CSRF token contra
+// uma sessão existente causa 403 espúrio (usuário volta ao /login com Back
+// button, submete de novo). Credencial já é o segredo desses endpoints.
+var csrfExemptPaths = map[string]struct{}{
+	"/login":  {},
+	"/signup": {},
+}
+
 func CSRFMiddleware(auth service.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if isSafeMethod(r.Method) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if _, exempt := csrfExemptPaths[r.URL.Path]; exempt {
 				next.ServeHTTP(w, r)
 				return
 			}
