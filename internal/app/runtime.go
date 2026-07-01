@@ -65,8 +65,11 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 
 	var emailSvc service.EmailService
 	if cfg.SMTPHost != "" {
+		slog.Info("email_service_smtp", "host", cfg.SMTPHost, "port", cfg.SMTPPort, "from", cfg.SMTPFrom)
 		emailSvc = service.NewSMTPEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
 	} else {
+		slog.Warn("email_service_noop",
+			"hint", "set SMTP_HOST/PORT/USER/PASSWORD/FROM to enable e-mail sending; links will only be logged")
 		emailSvc = service.NewNoopEmailService()
 	}
 
