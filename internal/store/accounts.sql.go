@@ -48,6 +48,20 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 	return i, err
 }
 
+const deleteTransactionsByAccount = `-- name: DeleteTransactionsByAccount :exec
+DELETE FROM transactions WHERE workspace_id = $1 AND account_id = $2
+`
+
+type DeleteTransactionsByAccountParams struct {
+	WorkspaceID int64
+	AccountID   int64
+}
+
+func (q *Queries) DeleteTransactionsByAccount(ctx context.Context, arg DeleteTransactionsByAccountParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTransactionsByAccount, arg.WorkspaceID, arg.AccountID)
+	return err
+}
+
 const getAccountByID = `-- name: GetAccountByID :one
 SELECT
     id,
@@ -107,6 +121,20 @@ func (q *Queries) GetAccountByWorkspaceAndID(ctx context.Context, arg GetAccount
 		&i.Archived,
 	)
 	return i, err
+}
+
+const hardDeleteAccount = `-- name: HardDeleteAccount :exec
+DELETE FROM accounts WHERE workspace_id = $1 AND id = $2
+`
+
+type HardDeleteAccountParams struct {
+	WorkspaceID int64
+	ID          int64
+}
+
+func (q *Queries) HardDeleteAccount(ctx context.Context, arg HardDeleteAccountParams) error {
+	_, err := q.db.ExecContext(ctx, hardDeleteAccount, arg.WorkspaceID, arg.ID)
+	return err
 }
 
 const listAccountSummariesByWorkspace = `-- name: ListAccountSummariesByWorkspace :many

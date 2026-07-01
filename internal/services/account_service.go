@@ -42,6 +42,7 @@ type AccountService interface {
 	GetByID(ctx context.Context, userID, accountID int64) (store.Account, error)
 	Create(ctx context.Context, createDto CreateAccountDTO) (store.Account, error)
 	Update(ctx context.Context, updateDto UpdateAccountDTO) (store.Account, error)
+	Delete(ctx context.Context, userID, accountID int64) error
 }
 
 type PGAccountService struct {
@@ -252,6 +253,52 @@ func (p *PGAccountService) Update(ctx context.Context, updateDto UpdateAccountDT
 
 	logger.Info("account_service_update_succeeded", "user_id", updateDto.UserID, "workspace_id", workspace.ID, "account_id", account.ID)
 	return account, nil
+}
+
+// Delete implements [AccountService]. Removes the account and all its transactions permanently.
+func (p *PGAccountService) Delete(ctx context.Context, userID, accountID int64) error {
+	logger := observability.Logger(ctx)
+
+	tx, err := p.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	queries := p.db.WithTx(tx)
+
+	workspace, err := queries.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if _, err := queries.GetAccountByWorkspaceAndID(ctx, store.GetAccountByWorkspaceAndIDParams{
+		WorkspaceID: workspace.ID,
+		ID:          accountID,
+	}); err != nil {
+		return err
+	}
+
+	if err := queries.DeleteTransactionsByAccount(ctx, store.DeleteTransactionsByAccountParams{
+		WorkspaceID: workspace.ID,
+		AccountID:   accountID,
+	}); err != nil {
+		return err
+	}
+
+	if err := queries.HardDeleteAccount(ctx, store.HardDeleteAccountParams{
+		WorkspaceID: workspace.ID,
+		ID:          accountID,
+	}); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	logger.Info("account_service_delete_succeeded", "user_id", userID, "workspace_id", workspace.ID, "account_id", accountID)
+	return nil
 }
 
 func createBalanceAdjustment(ctx context.Context, queries *store.Queries, workspaceID int64, account store.Account, delta float64) error {

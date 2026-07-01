@@ -91,3 +91,9 @@ WHERE workspace_id = $1
     AND id = $2
     AND archived = FALSE
 RETURNING *;
+
+-- name: DeleteTransactionsByAccount :exec
+DELETE FROM transactions WHERE workspace_id = $1 AND account_id = $2;
+
+-- name: HardDeleteAccount :exec
+DELETE FROM accounts WHERE workspace_id = $1 AND id = $2;

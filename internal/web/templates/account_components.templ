@@ -36,6 +36,86 @@ templ AccountModalDialog(form AccountFormState, csrf_token string) {
 	</div>
 }
 
+templ AccountManagePanels(accounts []AccountItemDTO, csrf string) {
+	<div id="accounts-manage-panel" class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="flex items-center justify-between">
+			<h2 class="text-sm font-bold uppercase tracking-wide text-finops-500">Contas bancárias</h2>
+			<p class="text-xs text-finops-700">Gerencie suas contas cadastradas</p>
+		</div>
+		if len(accounts) > 0 {
+			<ul class="mt-6 space-y-3" id="accounts-manage-list">
+				for _, ac := range accounts {
+					@AccountManageRow(ac, csrf)
+				}
+			</ul>
+		} else {
+			<p class="mt-4 text-sm text-finops-700">Nenhuma conta cadastrada ainda.</p>
+		}
+	</div>
+}
+
+templ AccountManageRow(account AccountItemDTO, csrf string) {
+	<li
+		id={ fmt.Sprintf("account-manage-%d", account.ID) }
+		class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+	>
+		<div>
+			<p class="font-semibold text-finops-900">{ account.Name }</p>
+			<p class="text-sm text-finops-700">{ account.Type } • { account.Currency } • { utils.FormatMoney(account.CurrentBalance) }</p>
+		</div>
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/accounts/%d/delete-modal", account.ID) }
+				hx-target="#account-delete-modal-body"
+				hx-swap="innerHTML"
+				hx-on::after-request="document.getElementById('account-delete-modal')?.showModal()"
+				class="inline-flex items-center rounded-lg bg-red-100 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-200"
+				title="Excluir conta"
+			><i class="fa-solid fa-trash"></i></button>
+		</div>
+	</li>
+}
+
+templ AccountDeleteModalDialog(id int64, name string, csrf string) {
+	<div class="p-6">
+		<div class="flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Excluir conta</p>
+			<form method="dialog">
+				@DefaultCloseModalButton()
+			</form>
+		</div>
+		<div class="mt-4 rounded-xl border-l-4 border-rose-500 bg-rose-50 p-4">
+			<p class="text-sm text-rose-900">
+				Todas as transações vinculadas à conta <strong>{ name }</strong> também serão <strong>excluídas permanentemente</strong>.
+			</p>
+			<p class="mt-2 text-sm text-rose-800">Esta ação não pode ser desfeita.</p>
+		</div>
+		<form
+			method="post"
+			hx-delete={ fmt.Sprintf("/accounts/%d", id) }
+			hx-target={ fmt.Sprintf("#account-manage-%d", id) }
+			hx-swap="outerHTML"
+			hx-on::after-request="document.getElementById('account-delete-modal')?.close()"
+			class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<button
+				type="button"
+				onclick="document.getElementById('account-delete-modal')?.close()"
+				class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100"
+			>Cancelar</button>
+			<button
+				type="submit"
+				class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+			>
+				<i class="fa-solid fa-trash"></i>
+				Excluir permanentemente
+			</button>
+		</form>
+	</div>
+}
+
 templ AccountItem(account AccountItemDTO) {
 	<li
 		id={ fmt.Sprintf("account-%d", account.ID) }
