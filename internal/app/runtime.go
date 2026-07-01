@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	service "finops/internal/services"
 	"finops/internal/store"
 	"fmt"
@@ -37,10 +38,15 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 	}
 
 	if cfg.MigrateOnStart {
+		slog.Info("migrate_on_start_running")
 		if err := store.MigrateUp(ctx, db); err != nil {
 			_ = db.Close()
 			return nil, fmt.Errorf("migrate on start: %w", err)
 		}
+		slog.Info("migrate_on_start_done")
+	} else {
+		slog.Warn("migrate_on_start_disabled",
+			"hint", "set MIGRATE_ON_START=true to auto-apply pending migrations")
 	}
 
 	queries := store.New(db)
