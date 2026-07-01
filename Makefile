@@ -12,8 +12,8 @@ start: gen run
 test_db:
 	echo ${DB_USER}
 
-run: # Run the application
-	go run $(CMD_PATH)
+run: build # Run the application
+	./bin/$(APP_NAME)
 	
 build: # Build the application
 	go build -o bin/$(APP_NAME) $(CMD_PATH)

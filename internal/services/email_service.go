@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"mime"
 	"net"
 	"net/smtp"
 	"strings"
@@ -32,7 +34,7 @@ func NewSMTPEmailService(host, port, user, password, from string) EmailService {
 }
 
 func (s *SMTPEmailService) SendPasswordReset(ctx context.Context, toEmail, resetURL string) error {
-	subject := "Redefinição de senha — Finops"
+	subject := mime.QEncoding.Encode("UTF-8", "Redefinição de senha — Finops")
 	plain := fmt.Sprintf(
 		"Olá,\r\n\r\nRecebemos uma solicitação para redefinir a senha da sua conta Finops.\r\n\r\nAcesse o link abaixo para criar uma nova senha (válido por 1 hora):\r\n\r\n%s\r\n\r\nSe você não solicitou isso, ignore este email.\r\n\r\nEquipe Finops",
 		resetURL,
@@ -45,15 +47,16 @@ func (s *SMTPEmailService) SendPasswordReset(ctx context.Context, toEmail, reset
 
 	boundary := fmt.Sprintf("=_%d_finops", time.Now().UnixNano())
 	msgID := fmt.Sprintf("<%d.finops@%s>", time.Now().UnixNano(), s.host)
+	fromHeader := mime.QEncoding.Encode("UTF-8", "Finops") + " <" + s.from + ">"
 
 	msg := fmt.Sprintf(
-		"From: Finops <%s>\r\nTo: %s\r\nSubject: %s\r\nMessage-ID: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n"+
-			"--%s\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n%s\r\n\r\n"+
-			"--%s\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n%s\r\n\r\n"+
+		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMessage-ID: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n"+
+			"--%s\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n%s\r\n\r\n"+
+			"--%s\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n%s\r\n\r\n"+
 			"--%s--\r\n",
-		s.from, toEmail, subject, msgID, time.Now().Format(time.RFC1123Z), boundary,
-		boundary, plain,
-		boundary, htmlBuf.String(),
+		fromHeader, toEmail, subject, msgID, time.Now().Format(time.RFC1123Z), boundary,
+		boundary, base64Chunked(plain),
+		boundary, base64Chunked(htmlBuf.String()),
 		boundary,
 	)
 
@@ -64,6 +67,19 @@ func (s *SMTPEmailService) SendPasswordReset(ctx context.Context, toEmail, reset
 		return s.sendTLS(addr, auth, toEmail, msg)
 	}
 	return smtp.SendMail(addr, auth, s.from, []string{toEmail}, []byte(msg))
+}
+
+// base64Chunked encodes the payload as base64 and breaks it into 76-char lines
+// (RFC 2045) so relays don't inject CRLF in the middle of long lines.
+func base64Chunked(s string) string {
+	encoded := base64.StdEncoding.EncodeToString([]byte(s))
+	var b strings.Builder
+	for i := 0; i < len(encoded); i += 76 {
+		end := min(i+76, len(encoded))
+		b.WriteString(encoded[i:end])
+		b.WriteString("\r\n")
+	}
+	return b.String()
 }
 
 func (s *SMTPEmailService) sendTLS(addr string, auth smtp.Auth, to, msg string) error {

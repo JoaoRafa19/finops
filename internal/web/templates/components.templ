@@ -118,7 +118,7 @@ templ SideNav(currentPath, csrf string) {
 		
 		<div class="mt-auto"></div>
 		@sideNavLink("/profile", "fa-user", "Perfil", currentPath == "/profile")
-		@sideNavLink("/logout", "fa-logout", "Logout", true)
+		@LogouSideNav( csrf)
 	</nav>
 	@tourScript(currentPath)
 }
@@ -132,6 +132,26 @@ templ PendingBadge(count int) {
 	} else {
 		<span id="pending-badge" class="hidden"></span>
 	}
+}
+
+templ LogouSideNav( csrf string) {
+	<form 
+	method="post" 
+	action="/logout" 
+	hx-post="/logout" 
+	hx-target="body"
+	>
+	<input type="hidden" name="_csrf" value={ csrf }/>
+		<button
+		type="submit"
+		class={
+				"flex items-center gap-1 rounded-xl mx-1 px-2 py-2 text-sm font-semibold transition hover:bg-slate-100 text-finops-800",
+			}
+		>
+			<i class={ "fa-solid fa-arrow-right-from-bracket w-6 shrink-0 text-center" }></i>
+			<span class="whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100">Logout</span>
+		</button>
+	</form>
 }
 
 templ sideNavLink(href, icon, label string, active bool) {

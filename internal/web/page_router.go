@@ -41,7 +41,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	chatController := chat.NewChatController(deps.ChatService)
 	tourController := tour.NewTourController(deps.TourService)
-	profileController := profile.NewController()
+	profileController := profile.NewController(deps.CategoryService)
 	authController := auth.NewController(
 		deps.AuthService,
 		deps.SessionCookie,
@@ -69,6 +69,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
+	private.HandleFunc("GET /categories/{id}/edit", categoryController.EditRow)
+	private.HandleFunc("GET /categories/{id}/row", categoryController.Row)
+	private.HandleFunc("POST /categories/{id}", categoryController.UpdateCategory)
 	private.HandleFunc("DELETE /categories/{id}/delete", categoryController.DeleteCategory)
 	private.HandleFunc("GET /category-modal", categoryController.CategoryModal)
 	private.HandleFunc("GET /transaction-modal", transactionController.RegisterTransactionModal)

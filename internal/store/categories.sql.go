@@ -184,3 +184,18 @@ func (q *Queries) UnarchiveCategory(ctx context.Context, arg UnarchiveCategoryPa
 	_, err := q.db.ExecContext(ctx, unarchiveCategory, arg.WorkspaceID, arg.Name)
 	return err
 }
+
+const updateCategoryName = `-- name: UpdateCategoryName :exec
+UPDATE categories SET name = $3 WHERE workspace_id = $1 AND id = $2 AND archived = false
+`
+
+type UpdateCategoryNameParams struct {
+	WorkspaceID int64
+	ID          int64
+	Name        string
+}
+
+func (q *Queries) UpdateCategoryName(ctx context.Context, arg UpdateCategoryNameParams) error {
+	_, err := q.db.ExecContext(ctx, updateCategoryName, arg.WorkspaceID, arg.ID, arg.Name)
+	return err
+}

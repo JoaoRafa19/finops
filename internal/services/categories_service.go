@@ -27,7 +27,9 @@ const (
 
 type CategoryService interface {
 	GetCategories(ctx context.Context, userid int64) ([]store.Category, error)
+	GetCategoryByID(ctx context.Context, userID, categoryID int64) (store.Category, error)
 	CreateCategory(ctx context.Context, dto CreateCategoryDTO) (*store.Category, error)
+	UpdateCategoryName(ctx context.Context, userID, categoryID int64, name string) error
 	DeleteCategory(ctx context.Context, userID, categoryID int64) error
 	GetUncategorized(ctx context.Context, userID int64) (int32, error)
 }
@@ -46,6 +48,43 @@ func (p *PGCategoryService) GetUncategorized(ctx context.Context, UserId int64) 
 	uncat, err := p.db.CountUnclassifiedTransactions(ctx, ws.ID)
 	return uncat, err
 
+}
+
+// GetCategoryByID implements [CategoryService].
+func (p *PGCategoryService) GetCategoryByID(ctx context.Context, userID, categoryID int64) (store.Category, error) {
+	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return store.Category{}, fmt.Errorf("error geting workspace %w", err)
+	}
+	return p.db.GetCategoryByWorkspaceAndID(ctx, store.GetCategoryByWorkspaceAndIDParams{
+		WorkspaceID: workspace.ID,
+		ID:          categoryID,
+	})
+}
+
+// UpdateCategoryName implements [CategoryService].
+func (p *PGCategoryService) UpdateCategoryName(ctx context.Context, userID, categoryID int64, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return errors.New("Category name required")
+	}
+	workspace, err := p.db.GetWorkSpaceByOwnerUserID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("error geting workspace %w", err)
+	}
+	err = p.db.UpdateCategoryName(ctx, store.UpdateCategoryNameParams{
+		WorkspaceID: workspace.ID,
+		ID:          categoryID,
+		Name:        name,
+	})
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return errors.New("category already exists")
+		}
+		return fmt.Errorf("error updating category, %w", err)
+	}
+	return nil
 }
 
 // DeleteCategory implements [CategoryService].

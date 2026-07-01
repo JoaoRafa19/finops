@@ -53,5 +53,8 @@ WHERE archived = false
 -- name: DeleteCategory :exec
 UPDATE categories SET archived = true WHERE workspace_id = $1 AND id = $2;
 
+-- name: UpdateCategoryName :exec
+UPDATE categories SET name = $3 WHERE workspace_id = $1 AND id = $2 AND archived = false;
+
 -- name: UnarchiveCategory :exec
 UPDATE categories SET archived = false WHERE workspace_id = $1 AND name = $2;
