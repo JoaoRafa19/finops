@@ -152,6 +152,78 @@ func (c *CategoryController) renderCategoryPannel(w http.ResponseWriter, r *http
 	render.Templ(w, r, http.StatusOK, templates.CategoryPannels(token, categories, form))
 }
 
+func (c *CategoryController) EditRow(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	cat, err := c.categoryService.GetCategoryByID(r.Context(), session.UserID, id)
+	if err != nil {
+		logger.Warn("category_edit_row_not_found", "user", session.UserID, "id", id, "error", err.Error())
+		http.Error(w, "categoria não encontrada", http.StatusNotFound)
+		return
+	}
+	render.Templ(w, r, http.StatusOK, templates.CategoryEditRow(cat, session.CSRFToken, ""))
+}
+
+func (c *CategoryController) Row(w http.ResponseWriter, r *http.Request) {
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	cat, err := c.categoryService.GetCategoryByID(r.Context(), session.UserID, id)
+	if err != nil {
+		http.Error(w, "categoria não encontrada", http.StatusNotFound)
+		return
+	}
+	render.Templ(w, r, http.StatusOK, templates.CategoryRow(cat, session.CSRFToken))
+}
+
+func (c *CategoryController) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+	name := strings.TrimSpace(r.FormValue("name"))
+	cat, err := c.categoryService.GetCategoryByID(r.Context(), session.UserID, id)
+	if err != nil {
+		http.Error(w, "categoria não encontrada", http.StatusNotFound)
+		return
+	}
+	if err := c.categoryService.UpdateCategoryName(r.Context(), session.UserID, id, name); err != nil {
+		logger.Warn("category_update_error", "user", session.UserID, "id", id, "error", err.Error())
+		cat.Name = name
+		render.Templ(w, r, http.StatusOK, templates.CategoryEditRow(cat, session.CSRFToken, err.Error()))
+		return
+	}
+	cat.Name = name
+	render.Templ(w, r, http.StatusOK, templates.CategoryRow(cat, session.CSRFToken))
+}
+
 func (c *CategoryController) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	logger := observability.Logger(r.Context())

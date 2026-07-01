@@ -101,6 +101,14 @@ func (s categoryServiceStub) GetUncategorized(ctx context.Context, userID int64)
 	return 0, nil
 }
 
+func (s categoryServiceStub) GetCategoryByID(ctx context.Context, userID, categoryID int64) (store.Category, error) {
+	return store.Category{}, nil
+}
+
+func (s categoryServiceStub) UpdateCategoryName(ctx context.Context, userID, categoryID int64, name string) error {
+	return nil
+}
+
 var _ service.CategoryService = categoryServiceStub{}
 
 // DeleteCategory implements [service.CategoryService].

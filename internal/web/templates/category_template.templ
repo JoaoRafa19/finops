@@ -25,32 +25,79 @@ templ CategoryPannels(csrf_token string, categories []store.Category, form Categ
 		if len(categories) > 0 {
 			<ul class="mt-6 space-y-3">
 				for _, cat := range categories {
-					<li id={ fmt.Sprintf("category-%d", cat.ID) } class="flex items-end justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-						<div>
-							<p class="font-semibold text-finops-900">{ cat.Name }</p>
-							<p class="text-sm text-finops-700">{ categoryKindLabel(cat.Kind) }</p>
-						</div>
-						<form
-							method="post"
-							hx-delete={ fmt.Sprintf("/categories/%d/delete", cat.ID) }
-							hx-target="closest li"
-							hx-swap="outerHTML"
-							class="mt-2"
-						>
-							<input type="hidden" name="_csrf" value={ csrf_token }/>
-							<button
-								type="submit"
-								class="inline-flex items-center rounded-lg bg-red-100 px-3 py-1 text-sm text-red-700 transition hover:bg-red-200"
-							>
-								<i class="fa-solid fa-trash"></i>
-								<span class="ml-1">Excluir</span>
-							</button>
-						</form>
-					</li>
+					@CategoryRow(cat, csrf_token)
 				}
 			</ul>
 		}
 	</div>
+}
+
+templ CategoryRow(cat store.Category, csrf string) {
+	<li id={ fmt.Sprintf("category-%d", cat.ID) } class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div>
+			<p class="font-semibold text-finops-900">{ cat.Name }</p>
+			<p class="text-sm text-finops-700">{ categoryKindLabel(cat.Kind) }</p>
+		</div>
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/categories/%d/edit", cat.ID) }
+				hx-target={ fmt.Sprintf("#category-%d", cat.ID) }
+				hx-swap="outerHTML"
+				class="inline-flex items-center rounded-lg bg-slate-200 px-3 py-1 text-sm text-finops-800 transition hover:bg-slate-300"
+				title="Editar"
+			><i class="fa-solid fa-pen"></i></button>
+			<form
+				method="post"
+				hx-delete={ fmt.Sprintf("/categories/%d/delete", cat.ID) }
+				hx-target="closest li"
+				hx-swap="outerHTML"
+				hx-confirm="Excluir esta categoria?"
+			>
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<button
+					type="submit"
+					class="inline-flex items-center rounded-lg bg-red-100 px-3 py-1 text-sm text-red-700 transition hover:bg-red-200"
+					title="Excluir"
+				><i class="fa-solid fa-trash"></i></button>
+			</form>
+		</div>
+	</li>
+}
+
+templ CategoryEditRow(cat store.Category, csrf, errMsg string) {
+	<li id={ fmt.Sprintf("category-%d", cat.ID) } class="rounded-xl border border-finops-500 bg-white px-4 py-3">
+		<form
+			method="post"
+			hx-post={ fmt.Sprintf("/categories/%d", cat.ID) }
+			hx-target={ fmt.Sprintf("#category-%d", cat.ID) }
+			hx-swap="outerHTML"
+			class="flex flex-col gap-2 sm:flex-row sm:items-center"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input
+				name="name"
+				type="text"
+				value={ cat.Name }
+				required
+				autofocus
+				class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500"
+			/>
+			<div class="flex items-center gap-2">
+				<button type="submit" class="rounded-lg bg-finops-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-finops-800">Salvar</button>
+				<button
+					type="button"
+					hx-get={ fmt.Sprintf("/categories/%d/row", cat.ID) }
+					hx-target={ fmt.Sprintf("#category-%d", cat.ID) }
+					hx-swap="outerHTML"
+					class="rounded-lg bg-slate-200 px-3 py-1.5 text-sm text-finops-800 transition hover:bg-slate-300"
+				>Cancelar</button>
+			</div>
+		</form>
+		if errMsg != "" {
+			<p class="mt-2 text-sm text-red-700">{ errMsg }</p>
+		}
+	</li>
 }
 
 templ CategoryModalDialog(form CategoryFormState, csrf_token string) {
