@@ -62,28 +62,48 @@ templ ReportsPage(csrf string) {
 					<!-- Seletor de período -->
 					<div class="flex flex-wrap items-end gap-4 border-b border-slate-200 pb-6">
 						<div>
-							@FormLabel("from", "De")
-							<input
-								id="from"
-								type="date"
-								name="from"
+							@FormLabel("period", "Período")
+							<select
+								id="period"
+								name="period"
 								class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
-							/>
+							>
+								<option value="1h">Última hora</option>
+								<option value="2h">Últimas 2 horas</option>
+								<option value="24h">Últimas 24 horas</option>
+								<option value="2d">Últimos 2 dias</option>
+								<option value="7d">Últimos 7 dias</option>
+								<option value="15d">Últimos 15 dias</option>
+								<option value="this_month" selected>Este mês</option>
+								<option value="30d">Últimos 30 dias</option>
+								<option value="custom">Personalizado…</option>
+							</select>
 						</div>
-						<div>
-							@FormLabel("to", "Até")
-							<input
-								id="to"
-								type="date"
-								name="to"
-								class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
-							/>
+						<div id="custom-range" class="hidden flex-wrap items-end gap-4">
+							<div>
+								@FormLabel("from", "De")
+								<input
+									id="from"
+									type="date"
+									name="from"
+									class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+								/>
+							</div>
+							<div>
+								@FormLabel("to", "Até")
+								<input
+									id="to"
+									type="date"
+									name="to"
+									class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-finops-900 shadow-sm outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20"
+								/>
+							</div>
+							<button
+								type="button"
+								id="apply-period"
+								class="inline-flex items-center justify-center rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-finops-800"
+							>Aplicar</button>
 						</div>
-						<button
-							type="button"
-							id="apply-period"
-							class="inline-flex items-center justify-center rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-finops-800"
-						>Aplicar</button>
 					</div>
 					<!-- Tabs -->
 					<div class="mt-6 flex flex-wrap gap-2" id="report-tabs">
@@ -108,12 +128,16 @@ templ ReportsPage(csrf string) {
 						const TAB_ACTIVE   = "report-tab rounded-xl bg-finops-900 px-4 py-2 text-sm font-bold text-white";
 						const TAB_INACTIVE = "report-tab rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100";
 
-						let period = { from: "", to: "" };
+						let period = { preset: "this_month", from: "", to: "" };
 
 						function buildUrl(base) {
 							const p = new URLSearchParams();
-							if (period.from) p.set("from", period.from);
-							if (period.to)   p.set("to",   period.to);
+							if (period.preset === "custom") {
+								if (period.from) p.set("from", period.from);
+								if (period.to)   p.set("to",   period.to);
+							} else {
+								p.set("period", period.preset);
+							}
 							return p.toString() ? base + "?" + p.toString() : base;
 						}
 
@@ -123,14 +147,32 @@ templ ReportsPage(csrf string) {
 							htmx.ajax("GET", buildUrl(tab.dataset.url), { target: "#report-content", swap: "innerHTML" });
 						}
 
+						function reloadActive() {
+							const active = document.querySelector(".report-tab.bg-finops-900");
+							if (active) loadTab(active);
+						}
+
 						function initReports() {
 							const tabs = document.querySelectorAll(".report-tab");
 							tabs.forEach(tab => tab.addEventListener("click", () => loadTab(tab)));
+
+							const periodSel = document.getElementById("period");
+							const customRange = document.getElementById("custom-range");
+							periodSel?.addEventListener("change", () => {
+								period.preset = periodSel.value;
+								if (period.preset === "custom") {
+									customRange.classList.remove("hidden");
+									customRange.classList.add("flex");
+								} else {
+									customRange.classList.add("hidden");
+									customRange.classList.remove("flex");
+									reloadActive();
+								}
+							});
 							document.getElementById("apply-period")?.addEventListener("click", () => {
 								period.from = document.getElementById("from").value;
 								period.to   = document.getElementById("to").value;
-								const active = document.querySelector(".report-tab." + TAB_ACTIVE.split(" ")[2]);
-								if (active) loadTab(active);
+								reloadActive();
 							});
 							if (tabs.length > 0) loadTab(tabs[0]);
 						}

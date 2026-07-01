@@ -162,6 +162,47 @@ func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (c *Controller) DeleteModal(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	accountID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	account, err := c.accountService.GetByID(r.Context(), session.UserID, accountID)
+	if err != nil {
+		logger.Warn("account_delete_modal_not_found", "user_id", session.UserID, "id", accountID, "error", err)
+		http.Error(w, "conta não encontrada", http.StatusNotFound)
+		return
+	}
+	render.Templ(w, r, http.StatusOK, templates.AccountDeleteModalDialog(account.ID, account.Name, session.CSRFToken))
+}
+
+func (c *Controller) Delete(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	accountID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	if err := c.accountService.Delete(r.Context(), session.UserID, accountID); err != nil {
+		logger.Error("account_delete_failed", "user_id", session.UserID, "account_id", accountID, "error", err)
+		http.Error(w, "erro ao excluir conta", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (c *Controller) AccountModal(w http.ResponseWriter, r *http.Request) {
 	logger := observability.Logger(r.Context())
 	session, ok := middleware.SessionFromContext(r.Context())

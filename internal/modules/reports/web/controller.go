@@ -148,8 +148,28 @@ func (c *ReportsController) Transactions(w http.ResponseWriter, r *http.Request)
 
 func parsePeriod(r *http.Request) (from, to time.Time) {
 	now := time.Now().UTC()
-	from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	to = now
+
+	switch r.URL.Query().Get("period") {
+	case "1h":
+		from = now.Add(-1 * time.Hour)
+	case "2h":
+		from = now.Add(-2 * time.Hour)
+	case "24h":
+		from = now.Add(-24 * time.Hour)
+	case "2d":
+		from = now.AddDate(0, 0, -2)
+	case "7d":
+		from = now.AddDate(0, 0, -7)
+	case "15d":
+		from = now.AddDate(0, 0, -15)
+	case "30d":
+		from = now.AddDate(0, 0, -30)
+	case "this_month":
+		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	default:
+		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
 
 	if v := r.URL.Query().Get("from"); v != "" {
 		if t, err := time.Parse("2006-01-02", v); err == nil {

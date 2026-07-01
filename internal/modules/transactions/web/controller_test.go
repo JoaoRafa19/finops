@@ -91,6 +91,10 @@ func (s accountServiceStub) Update(ctx context.Context, updateDto service.Update
 	return store.Account{}, nil
 }
 
+func (s accountServiceStub) Delete(ctx context.Context, userID, accountID int64) error {
+	return nil
+}
+
 type categoryServiceStub struct {
 	getCategoriesFn  func(ctx context.Context, userID int64) ([]store.Category, error)
 	createCategoryFn func(ctx context.Context, dto service.CreateCategoryDTO) (*store.Category, error)
