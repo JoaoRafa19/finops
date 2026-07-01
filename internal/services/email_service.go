@@ -5,10 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"mime"
 	"net"
+	"net/http"
 	"net/smtp"
 	"strings"
 	"time"
@@ -126,6 +129,64 @@ func (s *SMTPEmailService) sendTLS(addr string, auth smtp.Auth, to, msg string) 
 		return err
 	}
 	return w.Close()
+}
+
+// ResendEmailService envia via API HTTPS do Resend (porta 443, não bloqueada
+// por hospedagens que fecham SMTP outbound). Docs: https://resend.com/docs
+type ResendEmailService struct {
+	apiKey string
+	from   string
+	client *http.Client
+}
+
+func NewResendEmailService(apiKey, from string) EmailService {
+	return &ResendEmailService{
+		apiKey: apiKey,
+		from:   from,
+		client: &http.Client{Timeout: 20 * time.Second},
+	}
+}
+
+func (r *ResendEmailService) SendPasswordReset(ctx context.Context, toEmail, resetURL string) error {
+	var htmlBuf bytes.Buffer
+	if err := emailtemplates.PasswordReset(resetURL).Render(ctx, &htmlBuf); err != nil {
+		return fmt.Errorf("render email template: %w", err)
+	}
+	return r.send(ctx, toEmail, "Redefinição de senha — Finops", htmlBuf.String())
+}
+
+func (r *ResendEmailService) SendVerifyEmail(ctx context.Context, toEmail, verifyURL string) error {
+	var htmlBuf bytes.Buffer
+	if err := emailtemplates.VerifyEmail(verifyURL).Render(ctx, &htmlBuf); err != nil {
+		return fmt.Errorf("render email template: %w", err)
+	}
+	return r.send(ctx, toEmail, "Confirme seu e-mail — Finops", htmlBuf.String())
+}
+
+func (r *ResendEmailService) send(ctx context.Context, to, subject, html string) error {
+	body, _ := json.Marshal(map[string]any{
+		"from":    r.from,
+		"to":      []string{to},
+		"subject": subject,
+		"html":    html,
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.resend.com/emails", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+r.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("resend http: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return fmt.Errorf("resend status %d: %s", resp.StatusCode, string(msg))
+	}
+	return nil
 }
 
 // NoopEmailService loga o link em vez de enviar email — usado em desenvolvimento.

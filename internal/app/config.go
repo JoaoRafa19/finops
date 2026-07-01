@@ -35,6 +35,8 @@ type Config struct {
 	SMTPUser         string
 	SMTPPassword     string
 	SMTPFrom         string
+	ResendAPIKey     string
+	ResendFrom       string
 	MigrateOnStart   bool
 }
 
@@ -81,6 +83,8 @@ func LoadConfig() Config {
 		SMTPUser:         getEnv("SMTP_USER", ""),
 		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:         getEnv("SMTP_FROM", ""),
+		ResendAPIKey:     getEnv("RESEND_API_KEY", ""),
+		ResendFrom:       getEnv("RESEND_FROM", "onboarding@resend.dev"),
 		MigrateOnStart:   getEnvBool("MIGRATE_ON_START", false),
 	}
 }

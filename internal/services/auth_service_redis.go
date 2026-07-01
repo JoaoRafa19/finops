@@ -77,11 +77,15 @@ func (s *RedisAuthService) RequestPasswordReset(ctx context.Context, email strin
 	}
 
 	resetURL := strings.TrimRight(s.appBaseURL, "/") + "/reset-password?token=" + token
-	if err := s.emailSvc.SendPasswordReset(ctx, normalized, resetURL); err != nil {
-		logger.Error("password_reset_email_failed", "error", err)
-		_ = s.rdb.Del(ctx, key)
-		return fmt.Errorf("send reset email: %w", err)
-	}
+	go func() {
+		sendCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		defer cancel()
+		if err := s.emailSvc.SendPasswordReset(sendCtx, normalized, resetURL); err != nil {
+			observability.Logger(sendCtx).Error("password_reset_email_failed", "error", err)
+			return
+		}
+		observability.Logger(sendCtx).Info("password_reset_email_sent", "email", normalized)
+	}()
 
 	logger.Info("password_reset_requested", "email", normalized)
 	return nil
@@ -141,12 +145,19 @@ func (s *RedisAuthService) SendVerificationEmail(ctx context.Context, email stri
 	}
 
 	verifyURL := strings.TrimRight(s.appBaseURL, "/") + "/verify-email?token=" + token
-	if err := s.emailSvc.SendVerifyEmail(ctx, normalized, verifyURL); err != nil {
-		logger.Error("verify_email_send_failed", "error", err)
-		_ = s.rdb.Del(ctx, key)
-		return fmt.Errorf("send verify email: %w", err)
-	}
-	logger.Info("verify_email_sent", "email", normalized)
+	// Envio async: SMTP pode levar dezenas de segundos (ou timeout total em
+	// providers que bloqueiam porta 587). Handler HTTP não pode ficar preso.
+	go func() {
+		sendCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		defer cancel()
+		if err := s.emailSvc.SendVerifyEmail(sendCtx, normalized, verifyURL); err != nil {
+			observability.Logger(sendCtx).Error("verify_email_send_failed", "error", err)
+			// Não removemos o token; usuário pode tentar novamente / abrir link do log.
+			return
+		}
+		observability.Logger(sendCtx).Info("verify_email_sent", "email", normalized)
+	}()
+	logger.Info("verify_email_dispatched", "email", normalized)
 	return nil
 }
 

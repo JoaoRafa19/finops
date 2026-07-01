@@ -64,12 +64,16 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 	embSvc := service.NewEmbeddingService(cfg.EmbeddingBaseURL, cfg.EmbeddingAPIKey, cfg.EmbeddingModel)
 
 	var emailSvc service.EmailService
-	if cfg.SMTPHost != "" {
+	switch {
+	case cfg.ResendAPIKey != "":
+		slog.Info("email_service_resend", "from", cfg.ResendFrom)
+		emailSvc = service.NewResendEmailService(cfg.ResendAPIKey, cfg.ResendFrom)
+	case cfg.SMTPHost != "":
 		slog.Info("email_service_smtp", "host", cfg.SMTPHost, "port", cfg.SMTPPort, "from", cfg.SMTPFrom)
 		emailSvc = service.NewSMTPEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
-	} else {
+	default:
 		slog.Warn("email_service_noop",
-			"hint", "set SMTP_HOST/PORT/USER/PASSWORD/FROM to enable e-mail sending; links will only be logged")
+			"hint", "set RESEND_API_KEY (recommended in prod) or SMTP_HOST/PORT/USER/PASSWORD/FROM to enable e-mail sending")
 		emailSvc = service.NewNoopEmailService()
 	}
 

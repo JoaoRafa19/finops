@@ -62,7 +62,14 @@ services:
       - key: APP_BASE_URL
         sync: false  # preencher com URL final do Render (ex: https://finops.onrender.com)
 
-      # SMTP — envio de e-mails transacionais
+      # Resend (HTTPS, funciona em plano free do Render). Se RESEND_API_KEY
+      # estiver setado, ignora SMTP. Grátis 100/dia em resend.com
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: onboarding@resend.dev   # trocar por endereço no seu domínio verificado
+
+      # SMTP — fallback (não funciona em Render free por bloqueio de porta 587)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
