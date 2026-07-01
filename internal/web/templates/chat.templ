@@ -29,14 +29,16 @@ templ ChatWidget(csrf string) {
 						type="button"
 						onclick="document.getElementById('chat-tips-modal')?.showModal()"
 						class="text-white/60 transition hover:text-white"
-						title="Dicas de uso"
-					><i class="fa-solid fa-circle-info text-xs"></i></button>
+						title="Dicas de uso do assistente"
+						aria-label="Dicas de uso do assistente"
+					><i class="fa-solid fa-circle-info text-xs" aria-hidden="true"></i></button>
 				</div>
 				<button
 					onclick="chatToggle()"
 					class="text-white/60 transition hover:text-white"
-					title="Fechar"
-				><i class="fa-solid fa-xmark"></i></button>
+					title="Fechar chat"
+					aria-label="Fechar chat"
+				><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
 			</div>
 			@ChatTipsModal()
 			<!-- Mensagens -->
@@ -94,9 +96,10 @@ templ ChatWidget(csrf string) {
 			id="chat-open-btn"
 			onclick="chatToggle()"
 			class="flex h-12 w-12 items-center justify-center rounded-full bg-finops-900 text-white shadow-lg transition hover:bg-finops-800"
-			title="Assistente financeiro"
+			title="Abrir assistente financeiro"
+			aria-label="Abrir assistente financeiro"
 		>
-			<i class="fa-solid fa-comments"></i>
+			<i class="fa-solid fa-comments" aria-hidden="true"></i>
 		</button>
 	</div>
 	<style>

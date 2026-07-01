@@ -45,7 +45,7 @@ func SideNav(currentPath, csrf string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><style>\r\n\t\t#page-content {\r\n\t\t\ttransition: opacity 180ms ease, transform 180ms ease;\r\n\t\t}\r\n\t\t#page-content.htmx-swapping {\r\n\t\t\topacity: 0;\r\n\t\t\ttransform: translateY(var(--slide-out, -14px));\r\n\t\t}\r\n\t\t#page-content.htmx-settling {\r\n\t\t\topacity: 0;\r\n\t\t\ttransform: translateY(var(--slide-in, 14px));\r\n\t\t}\r\n\t</style><script>\r\n\t\tdocument.addEventListener(\"htmx:configRequest\", function(evt) {\r\n\t\t\tconst token = document.querySelector(\"meta[name='csrf-token']\")?.content;\r\n\t\t\tif (token) evt.detail.headers[\"X-CSRF-Token\"] = token;\r\n\t\t});\r\n\r\n\t\t// SPA: ordem das páginas para determinar direcção do slide\r\n\t\tconst _NAV_ORDER = { \"/\": 0, \"/reports\": 1, \"/import\": 2, \"/classify\": 3 };\r\n\t\tlet _currentOrder = _NAV_ORDER[window.location.pathname] ?? 0;\r\n\r\n\t\tdocument.addEventListener(\"htmx:beforeRequest\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id !== \"page-content\") return;\r\n\t\t\tconst targetPath = new URL(evt.detail.requestConfig.path, location.href).pathname;\r\n\t\t\tconst targetOrder = _NAV_ORDER[targetPath] ?? _currentOrder;\r\n\t\t\tconst el = document.getElementById(\"page-content\");\r\n\t\t\tif (!el) return;\r\n\t\t\tif (targetOrder > _currentOrder) {\r\n\t\t\t\tel.style.setProperty(\"--slide-out\", \"-14px\");\r\n\t\t\t\tel.style.setProperty(\"--slide-in\",  \"14px\");\r\n\t\t\t} else {\r\n\t\t\t\tel.style.setProperty(\"--slide-out\", \"14px\");\r\n\t\t\t\tel.style.setProperty(\"--slide-in\",  \"-14px\");\r\n\t\t\t}\r\n\t\t});\r\n\r\n\t\t// Restaura foco no input de busca após swap do #report-content\r\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id === \"report-content\") {\r\n\t\t\t\tconst desc = document.querySelector('input[name=\"description\"]');\r\n\t\t\t\tif (desc && desc.value) {\r\n\t\t\t\t\tdesc.focus();\r\n\t\t\t\t\tdesc.setSelectionRange(desc.value.length, desc.value.length);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t});\r\n\r\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id !== \"page-content\") return;\r\n\t\t\tconst path = window.location.pathname;\r\n\t\t\t_currentOrder = _NAV_ORDER[path] ?? _currentOrder;\r\n\r\n\t\t\t// Actualiza link activo na sidebar sem re-render\r\n\t\t\tdocument.querySelectorAll(\"[data-nav-path]\").forEach(function(a) {\r\n\t\t\t\tconst isActive = a.dataset.navPath === path;\r\n\t\t\t\ta.classList.toggle(\"bg-finops-900\", isActive);\r\n\t\t\t\ta.classList.toggle(\"text-white\", isActive);\r\n\t\t\t\ta.classList.toggle(\"hover:bg-finops-800\", isActive);\r\n\t\t\t\ta.classList.toggle(\"text-finops-800\", !isActive);\r\n\t\t\t\ta.classList.toggle(\"hover:bg-slate-100\", !isActive);\r\n\t\t\t});\r\n\t\t});\r\n\r\n\t\t// Back/Forward do browser\r\n\t\twindow.addEventListener(\"popstate\", function() {\r\n\t\t\tconst path = window.location.pathname;\r\n\t\t\thtmx.ajax(\"GET\", path, {\r\n\t\t\t\ttarget: \"#page-content\",\r\n\t\t\t\tselect: \"#page-content\",\r\n\t\t\t\tswap: \"innerHTML settle:200ms\",\r\n\t\t\t});\r\n\t\t});\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><style>\r\n\t\t#page-content {\r\n\t\t\ttransition: opacity 180ms ease, transform 180ms ease;\r\n\t\t}\r\n\t\t#page-content.htmx-swapping {\r\n\t\t\topacity: 0;\r\n\t\t\ttransform: translateY(var(--slide-out, -14px));\r\n\t\t}\r\n\t\t#page-content.htmx-settling {\r\n\t\t\topacity: 0;\r\n\t\t\ttransform: translateY(var(--slide-in, 14px));\r\n\t\t}\r\n\t\t/* Barra global de progresso HTMX */\r\n\t\t#global-htmx-bar {\r\n\t\t\tposition: fixed; top: 0; left: 0; right: 0; height: 3px;\r\n\t\t\tbackground: linear-gradient(90deg, #2dd4bf, #0d9488);\r\n\t\t\ttransform: scaleX(0); transform-origin: 0 50%;\r\n\t\t\ttransition: transform 300ms ease, opacity 200ms ease;\r\n\t\t\tz-index: 100; pointer-events: none; opacity: 0;\r\n\t\t}\r\n\t\tbody.htmx-request #global-htmx-bar { transform: scaleX(0.7); opacity: 1; }\r\n\t\tbody:not(.htmx-request) #global-htmx-bar { transform: scaleX(1); opacity: 0; transition-duration: 400ms; }\r\n\t\t/* Elementos-trigger de uma request HTMX (via `htmx-request` inline) */\r\n\t\tbutton.htmx-request, a.htmx-request { pointer-events: none; opacity: 0.65; position: relative; }\r\n\t\t/* Spinner discreto ao lado do label em botões primários durante request */\r\n\t\tbutton.htmx-request::after {\r\n\t\t\tcontent: \"\";\r\n\t\t\tdisplay: inline-block;\r\n\t\t\twidth: 0.875rem; height: 0.875rem;\r\n\t\t\tmargin-left: 0.5rem;\r\n\t\t\tborder-radius: 9999px;\r\n\t\t\tborder: 2px solid currentColor;\r\n\t\t\tborder-top-color: transparent;\r\n\t\t\tanimation: finops-spin 0.7s linear infinite;\r\n\t\t\tvertical-align: -2px;\r\n\t\t}\r\n\t\t@keyframes finops-spin { to { transform: rotate(360deg); } }\r\n\t\t/* Mobile sidenav (overlay). Em telas >= sm mantém comportamento original de hover-para-expandir. */\r\n\t\t@media (max-width: 639px) {\r\n\t\t\t#side-nav { width: 13rem; transform: translateX(-100%); transition: transform 200ms ease; }\r\n\t\t\t#side-nav span { opacity: 1 !important; }\r\n\t\t\tbody.nav-open #side-nav { transform: translateX(0); }\r\n\t\t\tbody.nav-open #nav-backdrop { display: block; }\r\n\t\t\t#nav-backdrop { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(15,23,42,0.4); }\r\n\t\t\t#mobile-nav-toggle { display: inline-flex; }\r\n\t\t\t/* Cancela o padding-left de sidenav fixo dos main containers em mobile */\r\n\t\t\tmain.pl-16 { padding-left: 1rem; }\r\n\t\t}\r\n\t\t#mobile-nav-toggle { display: none; }\r\n\t</style><div id=\"global-htmx-bar\" aria-hidden=\"true\"></div><div id=\"nav-backdrop\" onclick=\"document.body.classList.remove('nav-open')\" aria-hidden=\"true\"></div><button id=\"mobile-nav-toggle\" type=\"button\" aria-label=\"Abrir menu\" aria-controls=\"side-nav\" onclick=\"document.body.classList.toggle('nav-open')\" class=\"fixed left-3 top-3 z-50 h-10 w-10 items-center justify-center rounded-xl bg-white/95 text-finops-800 shadow-md ring-1 ring-slate-200\"><i class=\"fa-solid fa-bars\" aria-hidden=\"true\"></i></button><script>\r\n\t\tdocument.addEventListener(\"htmx:configRequest\", function(evt) {\r\n\t\t\tconst token = document.querySelector(\"meta[name='csrf-token']\")?.content;\r\n\t\t\tif (token) evt.detail.headers[\"X-CSRF-Token\"] = token;\r\n\t\t});\r\n\r\n\t\t// Barra global: sinaliza qualquer request HTMX ativo.\r\n\t\t(function() {\r\n\t\t\tlet active = 0;\r\n\t\t\tdocument.addEventListener(\"htmx:beforeRequest\", () => {\r\n\t\t\t\tactive++;\r\n\t\t\t\tdocument.body.classList.add(\"htmx-request\");\r\n\t\t\t});\r\n\t\t\tconst done = () => {\r\n\t\t\t\tactive = Math.max(0, active - 1);\r\n\t\t\t\tif (active === 0) document.body.classList.remove(\"htmx-request\");\r\n\t\t\t};\r\n\t\t\tdocument.addEventListener(\"htmx:afterRequest\", done);\r\n\t\t\tdocument.addEventListener(\"htmx:responseError\", done);\r\n\t\t\tdocument.addEventListener(\"htmx:sendError\", done);\r\n\t\t})();\r\n\r\n\t\t// SPA: ordem das páginas para determinar direcção do slide\r\n\t\tconst _NAV_ORDER = { \"/\": 0, \"/reports\": 1, \"/import\": 2, \"/classify\": 3 };\r\n\t\tlet _currentOrder = _NAV_ORDER[window.location.pathname] ?? 0;\r\n\r\n\t\tdocument.addEventListener(\"htmx:beforeRequest\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id !== \"page-content\") return;\r\n\t\t\tconst targetPath = new URL(evt.detail.requestConfig.path, location.href).pathname;\r\n\t\t\tconst targetOrder = _NAV_ORDER[targetPath] ?? _currentOrder;\r\n\t\t\tconst el = document.getElementById(\"page-content\");\r\n\t\t\tif (!el) return;\r\n\t\t\tif (targetOrder > _currentOrder) {\r\n\t\t\t\tel.style.setProperty(\"--slide-out\", \"-14px\");\r\n\t\t\t\tel.style.setProperty(\"--slide-in\",  \"14px\");\r\n\t\t\t} else {\r\n\t\t\t\tel.style.setProperty(\"--slide-out\", \"14px\");\r\n\t\t\t\tel.style.setProperty(\"--slide-in\",  \"-14px\");\r\n\t\t\t}\r\n\t\t});\r\n\r\n\t\t// Restaura foco no input de busca após swap do #report-content\r\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id === \"report-content\") {\r\n\t\t\t\tconst desc = document.querySelector('input[name=\"description\"]');\r\n\t\t\t\tif (desc && desc.value) {\r\n\t\t\t\t\tdesc.focus();\r\n\t\t\t\t\tdesc.setSelectionRange(desc.value.length, desc.value.length);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t});\r\n\r\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(evt) {\r\n\t\t\tif (evt.detail.target?.id !== \"page-content\") return;\r\n\t\t\t// Fecha sidenav mobile após navegar\r\n\t\t\tdocument.body.classList.remove(\"nav-open\");\r\n\t\t\tconst path = window.location.pathname;\r\n\t\t\t_currentOrder = _NAV_ORDER[path] ?? _currentOrder;\r\n\r\n\t\t\t// Actualiza link activo na sidebar sem re-render\r\n\t\t\tdocument.querySelectorAll(\"[data-nav-path]\").forEach(function(a) {\r\n\t\t\t\tconst isActive = a.dataset.navPath === path;\r\n\t\t\t\ta.classList.toggle(\"bg-finops-900\", isActive);\r\n\t\t\t\ta.classList.toggle(\"text-white\", isActive);\r\n\t\t\t\ta.classList.toggle(\"hover:bg-finops-800\", isActive);\r\n\t\t\t\ta.classList.toggle(\"text-finops-800\", !isActive);\r\n\t\t\t\ta.classList.toggle(\"hover:bg-slate-100\", !isActive);\r\n\t\t\t});\r\n\t\t});\r\n\r\n\t\t// Back/Forward do browser\r\n\t\twindow.addEventListener(\"popstate\", function() {\r\n\t\t\tconst path = window.location.pathname;\r\n\t\t\thtmx.ajax(\"GET\", path, {\r\n\t\t\t\ttarget: \"#page-content\",\r\n\t\t\t\tselect: \"#page-content\",\r\n\t\t\t\tswap: \"innerHTML settle:200ms\",\r\n\t\t\t});\r\n\t\t});\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -126,7 +126,7 @@ func PendingBadge(count int) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 131, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 198, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func LogouSideNav(csrf string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 144, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 211, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
@@ -189,7 +189,7 @@ func LogouSideNav(csrf string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button type=\"submit\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button type=\"submit\" aria-label=\"Sair da conta\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -224,7 +224,7 @@ func LogouSideNav(csrf string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"></i> <span class=\"whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100\">Logout</span></button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" aria-hidden=\"true\"></i> <span class=\"whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100\">Logout</span></button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -268,7 +268,7 @@ func sideNavLink(href, icon, label string, active bool) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(href)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 159, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 227, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -281,7 +281,7 @@ func sideNavLink(href, icon, label string, active bool) templ.Component {
 		var templ_7745c5c3_Var14 templ.SafeURL
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 160, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 228, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -294,7 +294,7 @@ func sideNavLink(href, icon, label string, active bool) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(href)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 161, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 229, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -342,7 +342,7 @@ func sideNavLink(href, icon, label string, active bool) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 173, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 241, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -423,7 +423,7 @@ func AppHead(title string, includeHTMX bool) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 325, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 393, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -465,7 +465,7 @@ func FormLabel(forID, text string) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(forID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 330, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 398, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {
@@ -478,7 +478,7 @@ func FormLabel(forID, text string) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 330, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 398, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -520,7 +520,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 335, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 403, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
@@ -533,7 +533,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(inputType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 336, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 404, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
@@ -546,7 +546,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 337, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 405, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 		if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 338, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 406, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
@@ -572,7 +572,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 339, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 407, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
@@ -624,7 +624,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 349, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 417, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 		if templ_7745c5c3_Err != nil {
@@ -637,7 +637,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 350, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 418, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
@@ -665,7 +665,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 358, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 426, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
@@ -688,7 +688,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 362, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 430, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -740,7 +740,7 @@ func PrimaryButton(buttonType, text string, fullWidth bool) templ.Component {
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(buttonType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 369, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 437, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 		if templ_7745c5c3_Err != nil {
@@ -766,7 +766,7 @@ func PrimaryButton(buttonType, text string, fullWidth bool) templ.Component {
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 372, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 440, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -808,7 +808,7 @@ func SecondaryButton(buttonType, text string) templ.Component {
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.ResolveAttributeValue(buttonType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 378, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 446, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var43)
 		if templ_7745c5c3_Err != nil {
@@ -821,7 +821,7 @@ func SecondaryButton(buttonType, text string) templ.Component {
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 381, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 449, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
@@ -863,7 +863,7 @@ func SecondaryLink(href, text string) templ.Component {
 		var templ_7745c5c3_Var46 templ.SafeURL
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinURLErrs(href)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 387, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 455, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -876,7 +876,7 @@ func SecondaryLink(href, text string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 390, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 458, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -911,7 +911,7 @@ func DefaultCloseModalButton() templ.Component {
 			templ_7745c5c3_Var48 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<button type=\"submit\" class=\"inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300\" title=\"Fechar modal\"><i class=\"fa-solid fa-xmark\"></i></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<button type=\"submit\" class=\"inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300\" title=\"Fechar modal\" aria-label=\"Fechar modal\"><i class=\"fa-solid fa-xmark\" aria-hidden=\"true\"></i></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

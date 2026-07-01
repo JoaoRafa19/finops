@@ -35,6 +35,7 @@ type Config struct {
 	SMTPUser         string
 	SMTPPassword     string
 	SMTPFrom         string
+	MigrateOnStart   bool
 }
 
 func LoadConfig() Config {
@@ -80,6 +81,7 @@ func LoadConfig() Config {
 		SMTPUser:         getEnv("SMTP_USER", ""),
 		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:         getEnv("SMTP_FROM", ""),
+		MigrateOnStart:   getEnvBool("MIGRATE_ON_START", false),
 	}
 }
 

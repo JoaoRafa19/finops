@@ -18,6 +18,7 @@ import (
 
 type EmailService interface {
 	SendPasswordReset(ctx context.Context, toEmail, resetURL string) error
+	SendVerifyEmail(ctx context.Context, toEmail, verifyURL string) error
 }
 
 // SMTPEmailService envia emails via SMTP com STARTTLS ou TLS.
@@ -34,17 +35,33 @@ func NewSMTPEmailService(host, port, user, password, from string) EmailService {
 }
 
 func (s *SMTPEmailService) SendPasswordReset(ctx context.Context, toEmail, resetURL string) error {
-	subject := mime.QEncoding.Encode("UTF-8", "Redefinição de senha — Finops")
 	plain := fmt.Sprintf(
 		"Olá,\r\n\r\nRecebemos uma solicitação para redefinir a senha da sua conta Finops.\r\n\r\nAcesse o link abaixo para criar uma nova senha (válido por 1 hora):\r\n\r\n%s\r\n\r\nSe você não solicitou isso, ignore este email.\r\n\r\nEquipe Finops",
 		resetURL,
 	)
-
 	var htmlBuf bytes.Buffer
 	if err := emailtemplates.PasswordReset(resetURL).Render(ctx, &htmlBuf); err != nil {
 		return fmt.Errorf("render email template: %w", err)
 	}
+	return s.sendMultipart(toEmail, "Redefinição de senha — Finops", plain, htmlBuf.String())
+}
 
+func (s *SMTPEmailService) SendVerifyEmail(ctx context.Context, toEmail, verifyURL string) error {
+	plain := fmt.Sprintf(
+		"Olá,\r\n\r\nBem-vindo ao Finops! Confirme seu e-mail acessando o link abaixo (válido por 24 horas):\r\n\r\n%s\r\n\r\nSe você não criou esta conta, ignore este e-mail.\r\n\r\nEquipe Finops",
+		verifyURL,
+	)
+	var htmlBuf bytes.Buffer
+	if err := emailtemplates.VerifyEmail(verifyURL).Render(ctx, &htmlBuf); err != nil {
+		return fmt.Errorf("render email template: %w", err)
+	}
+	return s.sendMultipart(toEmail, "Confirme seu e-mail — Finops", plain, htmlBuf.String())
+}
+
+// sendMultipart envia um multipart/alternative (text/plain + text/html) com
+// bodies em base64 chunked para escapar dos reescreves de linha dos relays.
+func (s *SMTPEmailService) sendMultipart(toEmail, subject, plain, html string) error {
+	encSubject := mime.QEncoding.Encode("UTF-8", subject)
 	boundary := fmt.Sprintf("=_%d_finops", time.Now().UnixNano())
 	msgID := fmt.Sprintf("<%d.finops@%s>", time.Now().UnixNano(), s.host)
 	fromHeader := mime.QEncoding.Encode("UTF-8", "Finops") + " <" + s.from + ">"
@@ -54,15 +71,14 @@ func (s *SMTPEmailService) SendPasswordReset(ctx context.Context, toEmail, reset
 			"--%s\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n%s\r\n\r\n"+
 			"--%s\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n%s\r\n\r\n"+
 			"--%s--\r\n",
-		fromHeader, toEmail, subject, msgID, time.Now().Format(time.RFC1123Z), boundary,
+		fromHeader, toEmail, encSubject, msgID, time.Now().Format(time.RFC1123Z), boundary,
 		boundary, base64Chunked(plain),
-		boundary, base64Chunked(htmlBuf.String()),
+		boundary, base64Chunked(html),
 		boundary,
 	)
 
 	addr := net.JoinHostPort(s.host, s.port)
 	auth := smtp.PlainAuth("", s.user, s.password, s.host)
-
 	if s.port == "465" {
 		return s.sendTLS(addr, auth, toEmail, msg)
 	}
@@ -119,5 +135,10 @@ func NewNoopEmailService() EmailService { return &NoopEmailService{} }
 
 func (n *NoopEmailService) SendPasswordReset(_ context.Context, toEmail, resetURL string) error {
 	slog.Info("password_reset_link", "to", toEmail, "url", resetURL)
+	return nil
+}
+
+func (n *NoopEmailService) SendVerifyEmail(_ context.Context, toEmail, verifyURL string) error {
+	slog.Info("verify_email_link", "to", toEmail, "url", verifyURL)
 	return nil
 }

@@ -49,7 +49,12 @@ templ AccountManagePanels(accounts []AccountItemDTO, csrf string) {
 				}
 			</ul>
 		} else {
-			<p class="mt-4 text-sm text-finops-700">Nenhuma conta cadastrada ainda.</p>
+			<div class="mt-4 flex flex-col items-start gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+				<p class="text-sm text-finops-700">Nenhuma conta cadastrada ainda. Comece cadastrando sua primeira conta.</p>
+				<a href="/" class="inline-flex items-center gap-2 rounded-xl bg-finops-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-finops-800">
+					<i class="fa-solid fa-plus" aria-hidden="true"></i> Ir para a home e cadastrar
+				</a>
+			</div>
 		}
 	</div>
 }
@@ -72,7 +77,8 @@ templ AccountManageRow(account AccountItemDTO, csrf string) {
 				hx-on::after-request="document.getElementById('account-delete-modal')?.showModal()"
 				class="inline-flex items-center rounded-lg bg-red-100 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-200"
 				title="Excluir conta"
-			><i class="fa-solid fa-trash"></i></button>
+				aria-label={ "Excluir conta " + account.Name }
+			><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
 		</div>
 	</li>
 }
@@ -135,7 +141,8 @@ templ AccountItem(account AccountItemDTO) {
 				hx-on::after-request="document.getElementById('account-modal')?.showModal()"
 				class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
 				title="Editar conta"
-			><i class="fa-solid fa-pen-to-square"></i></button>
+				aria-label={ "Editar conta " + account.Name }
+			><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
 		</div>
 	</li>
 }

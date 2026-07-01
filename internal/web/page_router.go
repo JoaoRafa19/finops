@@ -62,6 +62,8 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	mux.Handle("POST /forgot-password", forgotRL(http.HandlerFunc(authController.ForgotPassword)))
 	mux.HandleFunc("GET /reset-password", authController.ResetPasswordPage)
 	mux.Handle("POST /reset-password", resetRL(http.HandlerFunc(authController.ResetPassword)))
+	verifyRL := middleware.RateLimit(deps.RedisClient, "verify", 20, time.Hour)
+	mux.Handle("GET /verify-email", verifyRL(http.HandlerFunc(authController.VerifyEmail)))
 
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
@@ -76,6 +78,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /onboarding", onboardingController.Page)
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
+	private.HandleFunc("GET /verify-email/pending", authController.VerifyEmailPending)
+	resendVerifyRL := middleware.RateLimit(deps.RedisClient, "verify-resend", 5, time.Hour)
+	private.Handle("POST /verify-email/resend", resendVerifyRL(http.HandlerFunc(authController.ResendVerification)))
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
 	private.HandleFunc("GET /categories/{id}/edit", categoryController.EditRow)
 	private.HandleFunc("GET /categories/{id}/row", categoryController.Row)
@@ -114,7 +119,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /tour/complete", tourController.Complete)
 	private.HandleFunc("GET /tour/skip", tourController.Skip)
 
-	privateChain := middleware.AuthRequired(private)
+	privateChain := middleware.AuthRequired(middleware.EmailVerified(deps.AuthService)(private))
 	mux.Handle("/", privateChain)
 
 	return mux

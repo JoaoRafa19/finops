@@ -52,3 +52,32 @@ services:
         value: "true"
       - key: LOG_LEVEL
         value: "info"
+
+      # Aplica migrations pendentes automaticamente ao startup.
+      - key: MIGRATE_ON_START
+        value: "true"
+
+      # URL pública (usada em links de reset senha e verificação de e-mail)
+      - key: APP_BASE_URL
+        sync: false  # preencher com URL final do Render (ex: https://finops.onrender.com)
+
+      # SMTP — envio de e-mails transacionais
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+      # Embeddings (opcional; deixar vazio desabilita busca semântica).
+      # Em produção usar um provider OpenAI-compatible que suporte /v1/embeddings.
+      - key: EMBEDDING_BASE_URL
+        sync: false
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        sync: false

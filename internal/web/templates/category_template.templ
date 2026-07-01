@@ -28,6 +28,13 @@ templ CategoryPannels(csrf_token string, categories []store.Category, form Categ
 					@CategoryRow(cat, csrf_token)
 				}
 			</ul>
+		} else {
+			<div class="mt-6 flex flex-col items-start gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+				<p class="text-sm text-finops-700">Você ainda não tem categorias. Crie a primeira para começar a classificar transações.</p>
+				<a href="/" class="inline-flex items-center gap-2 rounded-xl bg-finops-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-finops-800">
+					<i class="fa-solid fa-plus" aria-hidden="true"></i> Ir para a home
+				</a>
+			</div>
 		}
 	</div>
 }
@@ -45,8 +52,9 @@ templ CategoryRow(cat store.Category, csrf string) {
 				hx-target={ fmt.Sprintf("#category-%d", cat.ID) }
 				hx-swap="outerHTML"
 				class="inline-flex items-center rounded-lg bg-slate-200 px-3 py-1 text-sm text-finops-800 transition hover:bg-slate-300"
-				title="Editar"
-			><i class="fa-solid fa-pen"></i></button>
+				title="Editar categoria"
+				aria-label={ "Editar categoria " + cat.Name }
+			><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
 			<form
 				method="post"
 				hx-delete={ fmt.Sprintf("/categories/%d/delete", cat.ID) }
@@ -58,8 +66,9 @@ templ CategoryRow(cat store.Category, csrf string) {
 				<button
 					type="submit"
 					class="inline-flex items-center rounded-lg bg-red-100 px-3 py-1 text-sm text-red-700 transition hover:bg-red-200"
-					title="Excluir"
-				><i class="fa-solid fa-trash"></i></button>
+					title="Excluir categoria"
+					aria-label={ "Excluir categoria " + cat.Name }
+				><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
 			</form>
 		</div>
 	</li>

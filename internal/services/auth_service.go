@@ -15,4 +15,7 @@ type AuthService interface {
 	ValidateCSRFToken(ctx context.Context, sessionID, token string) (bool, error)
 	RequestPasswordReset(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, token, newPassword string) error
+	SendVerificationEmail(ctx context.Context, email string) error
+	VerifyEmail(ctx context.Context, token string) (email string, err error)
+	IsEmailVerified(ctx context.Context, userID int64) (bool, error)
 }
