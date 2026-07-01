@@ -15,6 +15,7 @@ import (
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
 	"net/http"
+	"time"
 )
 
 func newPageRouter(deps RouterDeps) http.Handler {
@@ -49,13 +50,18 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.RememberMeTTL,
 	)
 
+	loginRL := middleware.RateLimit(deps.RedisClient, "login", 10, 5*time.Minute)
+	signupRL := middleware.RateLimit(deps.RedisClient, "signup", 5, time.Hour)
+	forgotRL := middleware.RateLimit(deps.RedisClient, "forgot", 5, time.Hour)
+	resetRL := middleware.RateLimit(deps.RedisClient, "reset", 10, time.Hour)
+
 	mux.HandleFunc("GET /login", authController.LoginPage)
-	mux.HandleFunc("POST /login", authController.Login)
-	mux.HandleFunc("POST /signup", authController.Signup)
+	mux.Handle("POST /login", loginRL(http.HandlerFunc(authController.Login)))
+	mux.Handle("POST /signup", signupRL(http.HandlerFunc(authController.Signup)))
 	mux.HandleFunc("GET /forgot-password", authController.ForgotPasswordPage)
-	mux.HandleFunc("POST /forgot-password", authController.ForgotPassword)
+	mux.Handle("POST /forgot-password", forgotRL(http.HandlerFunc(authController.ForgotPassword)))
 	mux.HandleFunc("GET /reset-password", authController.ResetPasswordPage)
-	mux.HandleFunc("POST /reset-password", authController.ResetPassword)
+	mux.Handle("POST /reset-password", resetRL(http.HandlerFunc(authController.ResetPassword)))
 
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
