@@ -4,7 +4,6 @@ import (
 	"context"
 	"finops/internal/app"
 	"finops/internal/web"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,7 +13,6 @@ import (
 )
 
 func main() {
-	fmt.Printf("%d\n", os.Getpid())
 	cfg := app.LoadConfig()
 	var logger *slog.Logger
 	if cfg.LogLevel == slog.LevelDebug {
