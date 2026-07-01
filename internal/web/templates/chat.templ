@@ -8,7 +8,7 @@ templ ChatWidget(csrf string) {
 		<div
 			id="chat-panel"
 			class="relative hidden flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-finops-900/20"
-			style="width:320px; height:480px; min-width:260px; min-height:340px;"
+			style="width:min(320px, calc(100vw - 5rem)); height:min(480px, calc(100vh - 7rem)); min-width:220px; min-height:280px;"
 		>
 			<!-- Handle de redimensionamento -->
 			<div
@@ -25,6 +25,12 @@ templ ChatWidget(csrf string) {
 				<div class="flex items-center gap-2">
 					<i class="fa-solid fa-robot text-finops-400"></i>
 					<span class="text-sm font-bold text-white">Assistente Finops</span>
+					<button
+						type="button"
+						onclick="document.getElementById('chat-tips-modal')?.showModal()"
+						class="text-white/60 transition hover:text-white"
+						title="Dicas de uso"
+					><i class="fa-solid fa-circle-info text-xs"></i></button>
 				</div>
 				<button
 					onclick="chatToggle()"
@@ -32,6 +38,7 @@ templ ChatWidget(csrf string) {
 					title="Fechar"
 				><i class="fa-solid fa-xmark"></i></button>
 			</div>
+			@ChatTipsModal()
 			<!-- Mensagens -->
 			<div
 				id="chat-messages"
@@ -93,12 +100,13 @@ templ ChatWidget(csrf string) {
 		</button>
 	</div>
 	<style>
+		#chat-messages { font-size: var(--chat-font, 13px); line-height: 1.45; }
 		.chat-md p { margin: 0.25rem 0; }
 		.chat-md ul, .chat-md ol { margin: 0.25rem 0 0.25rem 1rem; }
 		.chat-md li { margin: 0.1rem 0; }
 		.chat-md strong { font-weight: 700; }
 		.chat-md em { font-style: italic; }
-		.chat-md code { background: #e2e8f0; border-radius: 3px; padding: 0 3px; font-size: 0.8em; }
+		.chat-md code { background: #e2e8f0; border-radius: 3px; padding: 0 3px; font-size: 0.85em; }
 		.chat-md pre { background: #e2e8f0; border-radius: 6px; padding: 6px 8px; overflow-x: auto; margin: 0.25rem 0; }
 		.chat-md pre code { background: none; padding: 0; }
 		.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4 { font-weight: 700; margin: 0.4rem 0 0.1rem; }
@@ -116,17 +124,30 @@ templ ChatWidget(csrf string) {
 			}
 		}
 
+		// Aplica tamanho de fonte do chat (persistido em localStorage).
+		function applyChatFont() {
+			const size = localStorage.getItem("finops_chat_font") || "13";
+			document.documentElement.style.setProperty("--chat-font", size + "px");
+		}
+		window.setChatFont = function(size) {
+			localStorage.setItem("finops_chat_font", String(size));
+			applyChatFont();
+		};
+		applyChatFont();
+
 		(function() {
 			const STORAGE_KEY = "finops_chat_size";
 			const panel = document.getElementById("chat-panel");
 			const handle = document.getElementById("chat-resize-handle");
 
-			// Restaurar tamanho salvo
+			// Restaurar tamanho salvo, clampeando ao viewport atual.
 			try {
 				const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
 				if (saved) {
-					panel.style.width  = saved.w + "px";
-					panel.style.height = saved.h + "px";
+					const maxW = window.innerWidth  - 80;
+					const maxH = window.innerHeight - 112;
+					panel.style.width  = Math.min(saved.w, maxW) + "px";
+					panel.style.height = Math.min(saved.h, maxH) + "px";
 				}
 			} catch (_) {}
 
@@ -199,7 +220,7 @@ templ ChatErrorBubble(errMsg string) {
 
 templ chatUserBubble(content string) {
 	<div class="flex justify-end">
-		<div class="max-w-[85%] rounded-2xl rounded-tr-sm bg-finops-900 px-3 py-2 text-sm text-white">
+		<div class="max-w-[85%] rounded-2xl rounded-tr-sm bg-finops-900 px-3 py-2 text-white">
 			{ content }
 		</div>
 	</div>
@@ -207,8 +228,92 @@ templ chatUserBubble(content string) {
 
 templ chatAssistantBubble(content string) {
 	<div class="flex justify-start">
-		<div class="chat-md prose prose-sm max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm text-finops-900">
+		<div class="chat-md prose prose-sm max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-finops-900">
 			{ content }
 		</div>
 	</div>
+}
+
+templ ChatTipsModal() {
+	<dialog id="chat-tips-modal" class="w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+		<div class="p-6">
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Assistente Finops</p>
+					<h2 class="mt-1 text-lg font-bold text-finops-900">Como aproveitar melhor</h2>
+				</div>
+				<form method="dialog">
+					@DefaultCloseModalButton()
+				</form>
+			</div>
+			<p class="mt-2 text-sm text-finops-700">Exemplos de perguntas que ajudam a obter respostas mais úteis.</p>
+			<div class="mt-5 space-y-4">
+				@chatTipSection("📊 Análise financeira", []string{
+					"Como posso economizar mais este mês?",
+					"Em quais categorias estou gastando mais?",
+					"Compare meus gastos deste mês com o anterior.",
+				})
+				@chatTipSection("🎯 Planejamento", []string{
+					"Quanto posso gastar com lazer este mês?",
+					"Estou dentro do meu orçamento?",
+				})
+				@chatTipSection("💡 Insights", []string{
+					"Existe alguma despesa incomum?",
+					"Quais assinaturas eu poderia cancelar?",
+					"Onde consigo reduzir meus gastos?",
+				})
+				@chatTipSection("📈 Investimentos", []string{
+					"Quanto consegui economizar nos últimos meses?",
+					"Qual foi minha média de economia?",
+				})
+			</div>
+		</div>
+	</dialog>
+}
+
+templ chatTipSection(title string, examples []string) {
+	<div>
+		<p class="text-sm font-bold text-finops-900">{ title }</p>
+		<ul class="mt-2 space-y-1.5">
+			for _, ex := range examples {
+				<li class="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-finops-800">
+					<i class="fa-solid fa-quote-left mt-1 text-xs text-finops-400"></i>
+					<span>{ ex }</span>
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+templ ChatPreferencesPanel() {
+	<section class="rounded-2xl border border-slate-200 bg-white p-6">
+		<h2 class="mb-1 text-sm font-bold uppercase tracking-wide text-finops-500">Assistente Finops</h2>
+		<p class="mb-4 text-sm text-finops-700">Tamanho da fonte no chat.</p>
+		<div class="flex flex-wrap gap-2" id="chat-font-choices">
+			<button type="button" data-size="12" class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-finops-800 transition hover:bg-slate-100">Pequeno</button>
+			<button type="button" data-size="13" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100">Médio</button>
+			<button type="button" data-size="15" class="rounded-xl border border-slate-300 px-4 py-2 text-base font-semibold text-finops-800 transition hover:bg-slate-100">Grande</button>
+		</div>
+		<script>
+			(function() {
+				const ACTIVE = "bg-finops-900 text-white border-finops-900";
+				const root = document.getElementById("chat-font-choices");
+				if (!root) return;
+				const current = localStorage.getItem("finops_chat_font") || "13";
+				function paint(size) {
+					root.querySelectorAll("button").forEach(b => {
+						const on = b.dataset.size === String(size);
+						ACTIVE.split(" ").forEach(c => b.classList.toggle(c, on));
+					});
+				}
+				paint(current);
+				root.querySelectorAll("button").forEach(b => {
+					b.addEventListener("click", () => {
+						window.setChatFont?.(b.dataset.size);
+						paint(b.dataset.size);
+					});
+				});
+			})();
+		</script>
+	</section>
 }

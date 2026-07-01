@@ -31,20 +31,28 @@ func ChatWidget(csrf string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"chat-widget\" class=\"fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3\"><!-- Painel --><div id=\"chat-panel\" class=\"relative hidden flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-finops-900/20\" style=\"width:320px; height:480px; min-width:260px; min-height:340px;\"><!-- Handle de redimensionamento --><div id=\"chat-resize-handle\" class=\"absolute left-0 top-0 z-10 flex h-5 w-5 cursor-nw-resize items-center justify-center\" title=\"Redimensionar\"><svg class=\"h-3 w-3 text-slate-400 opacity-60\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M2 14L14 2M2 9L9 2M2 4L4 2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"></path></svg></div><!-- Cabeçalho --><div class=\"flex shrink-0 items-center justify-between bg-finops-900 px-4 py-3\"><div class=\"flex items-center gap-2\"><i class=\"fa-solid fa-robot text-finops-400\"></i> <span class=\"text-sm font-bold text-white\">Assistente Finops</span></div><button onclick=\"chatToggle()\" class=\"text-white/60 transition hover:text-white\" title=\"Fechar\"><i class=\"fa-solid fa-xmark\"></i></button></div><!-- Mensagens --><div id=\"chat-messages\" class=\"flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4\" hx-get=\"/chat/history\" hx-trigger=\"click from:#chat-open-btn once\" hx-swap=\"innerHTML\" hx-on::after-settle=\"this.scrollTop = this.scrollHeight; chatRenderMarkdown();\"><div class=\"flex flex-col items-center justify-center gap-2 py-8 text-center\"><i class=\"fa-solid fa-comments text-2xl text-finops-400\"></i><p class=\"text-xs text-finops-700\">Olá! Pergunte sobre suas finanças.</p></div></div><!-- Indicador de carregamento --><div id=\"chat-loading\" class=\"htmx-indicator shrink-0 px-4 pb-1\"><div class=\"flex items-center gap-2 text-xs text-finops-500\"><i class=\"fa-solid fa-spinner fa-spin\"></i> <span>Processando...</span></div></div><!-- Input --><div class=\"shrink-0 border-t border-slate-200 p-3\"><form hx-post=\"/chat\" hx-target=\"#chat-messages\" hx-swap=\"beforeend\" hx-indicator=\"#chat-loading\" hx-on::after-request=\"const m=document.getElementById('chat-messages'); m.scrollTop=m.scrollHeight; chatRenderMarkdown(); document.getElementById('chat-input').value=''; document.getElementById('chat-input').focus();\"><input type=\"hidden\" name=\"_csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"chat-widget\" class=\"fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3\"><!-- Painel --><div id=\"chat-panel\" class=\"relative hidden flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-finops-900/20\" style=\"width:min(320px, calc(100vw - 5rem)); height:min(480px, calc(100vh - 7rem)); min-width:220px; min-height:280px;\"><!-- Handle de redimensionamento --><div id=\"chat-resize-handle\" class=\"absolute left-0 top-0 z-10 flex h-5 w-5 cursor-nw-resize items-center justify-center\" title=\"Redimensionar\"><svg class=\"h-3 w-3 text-slate-400 opacity-60\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M2 14L14 2M2 9L9 2M2 4L4 2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"></path></svg></div><!-- Cabeçalho --><div class=\"flex shrink-0 items-center justify-between bg-finops-900 px-4 py-3\"><div class=\"flex items-center gap-2\"><i class=\"fa-solid fa-robot text-finops-400\"></i> <span class=\"text-sm font-bold text-white\">Assistente Finops</span> <button type=\"button\" onclick=\"document.getElementById('chat-tips-modal')?.showModal()\" class=\"text-white/60 transition hover:text-white\" title=\"Dicas de uso\"><i class=\"fa-solid fa-circle-info text-xs\"></i></button></div><button onclick=\"chatToggle()\" class=\"text-white/60 transition hover:text-white\" title=\"Fechar\"><i class=\"fa-solid fa-xmark\"></i></button></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ChatTipsModal().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<!-- Mensagens --><div id=\"chat-messages\" class=\"flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4\" hx-get=\"/chat/history\" hx-trigger=\"click from:#chat-open-btn once\" hx-swap=\"innerHTML\" hx-on::after-settle=\"this.scrollTop = this.scrollHeight; chatRenderMarkdown();\"><div class=\"flex flex-col items-center justify-center gap-2 py-8 text-center\"><i class=\"fa-solid fa-comments text-2xl text-finops-400\"></i><p class=\"text-xs text-finops-700\">Olá! Pergunte sobre suas finanças.</p></div></div><!-- Indicador de carregamento --><div id=\"chat-loading\" class=\"htmx-indicator shrink-0 px-4 pb-1\"><div class=\"flex items-center gap-2 text-xs text-finops-500\"><i class=\"fa-solid fa-spinner fa-spin\"></i> <span>Processando...</span></div></div><!-- Input --><div class=\"shrink-0 border-t border-slate-200 p-3\"><form hx-post=\"/chat\" hx-target=\"#chat-messages\" hx-swap=\"beforeend\" hx-indicator=\"#chat-loading\" hx-on::after-request=\"const m=document.getElementById('chat-messages'); m.scrollTop=m.scrollHeight; chatRenderMarkdown(); document.getElementById('chat-input').value=''; document.getElementById('chat-input').focus();\"><input type=\"hidden\" name=\"_csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 65, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 72, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><div class=\"flex gap-2\"><input id=\"chat-input\" name=\"message\" type=\"text\" placeholder=\"Pergunte sobre suas finanças...\" autocomplete=\"off\" class=\"flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20\"> <button type=\"submit\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-finops-900 text-white transition hover:bg-finops-800\"><i class=\"fa-solid fa-paper-plane text-xs\"></i></button></div></form></div></div><!-- Botão de abrir/fechar --><button id=\"chat-open-btn\" onclick=\"chatToggle()\" class=\"flex h-12 w-12 items-center justify-center rounded-full bg-finops-900 text-white shadow-lg transition hover:bg-finops-800\" title=\"Assistente financeiro\"><i class=\"fa-solid fa-comments\"></i></button></div><style>\n\t\t.chat-md p { margin: 0.25rem 0; }\n\t\t.chat-md ul, .chat-md ol { margin: 0.25rem 0 0.25rem 1rem; }\n\t\t.chat-md li { margin: 0.1rem 0; }\n\t\t.chat-md strong { font-weight: 700; }\n\t\t.chat-md em { font-style: italic; }\n\t\t.chat-md code { background: #e2e8f0; border-radius: 3px; padding: 0 3px; font-size: 0.8em; }\n\t\t.chat-md pre { background: #e2e8f0; border-radius: 6px; padding: 6px 8px; overflow-x: auto; margin: 0.25rem 0; }\n\t\t.chat-md pre code { background: none; padding: 0; }\n\t\t.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4 { font-weight: 700; margin: 0.4rem 0 0.1rem; }\n\t</style><script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script><script>\n\t\tfunction chatToggle() {\n\t\t\tconst p = document.getElementById(\"chat-panel\");\n\t\t\tif (p.classList.contains(\"hidden\")) {\n\t\t\t\tp.classList.remove(\"hidden\");\n\t\t\t\tp.classList.add(\"flex\");\n\t\t\t} else {\n\t\t\t\tp.classList.remove(\"flex\");\n\t\t\t\tp.classList.add(\"hidden\");\n\t\t\t}\n\t\t}\n\n\t\t(function() {\n\t\t\tconst STORAGE_KEY = \"finops_chat_size\";\n\t\t\tconst panel = document.getElementById(\"chat-panel\");\n\t\t\tconst handle = document.getElementById(\"chat-resize-handle\");\n\n\t\t\t// Restaurar tamanho salvo\n\t\t\ttry {\n\t\t\t\tconst saved = JSON.parse(localStorage.getItem(STORAGE_KEY));\n\t\t\t\tif (saved) {\n\t\t\t\t\tpanel.style.width  = saved.w + \"px\";\n\t\t\t\t\tpanel.style.height = saved.h + \"px\";\n\t\t\t\t}\n\t\t\t} catch (_) {}\n\n\t\t\tlet startX, startY, startW, startH;\n\n\t\t\thandle.addEventListener(\"mousedown\", function(e) {\n\t\t\t\te.preventDefault();\n\t\t\t\tstartX = e.clientX;\n\t\t\t\tstartY = e.clientY;\n\t\t\t\tstartW = panel.offsetWidth;\n\t\t\t\tstartH = panel.offsetHeight;\n\n\t\t\t\tfunction onMove(e) {\n\t\t\t\t\tconst newW = Math.max(260, startW - (e.clientX - startX));\n\t\t\t\t\tconst newH = Math.max(340, startH - (e.clientY - startY));\n\t\t\t\t\tpanel.style.width  = newW + \"px\";\n\t\t\t\t\tpanel.style.height = newH + \"px\";\n\t\t\t\t}\n\n\t\t\t\tfunction onUp() {\n\t\t\t\t\tdocument.removeEventListener(\"mousemove\", onMove);\n\t\t\t\t\tdocument.removeEventListener(\"mouseup\", onUp);\n\t\t\t\t\ttry {\n\t\t\t\t\t\tlocalStorage.setItem(STORAGE_KEY, JSON.stringify({\n\t\t\t\t\t\t\tw: panel.offsetWidth,\n\t\t\t\t\t\t\th: panel.offsetHeight\n\t\t\t\t\t\t}));\n\t\t\t\t\t} catch (_) {}\n\t\t\t\t}\n\n\t\t\t\tdocument.addEventListener(\"mousemove\", onMove);\n\t\t\t\tdocument.addEventListener(\"mouseup\", onUp);\n\t\t\t});\n\t\t})();\n\n\t\tfunction chatRenderMarkdown() {\n\t\t\tdocument.querySelectorAll(\".chat-md:not([data-rendered])\").forEach(el => {\n\t\t\t\tel.innerHTML = marked.parse(el.textContent || \"\");\n\t\t\t\tel.dataset.rendered = \"1\";\n\t\t\t});\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><div class=\"flex gap-2\"><input id=\"chat-input\" name=\"message\" type=\"text\" placeholder=\"Pergunte sobre suas finanças...\" autocomplete=\"off\" class=\"flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm text-finops-900 outline-none focus:border-finops-500 focus:ring-2 focus:ring-finops-400/20\"> <button type=\"submit\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-finops-900 text-white transition hover:bg-finops-800\"><i class=\"fa-solid fa-paper-plane text-xs\"></i></button></div></form></div></div><!-- Botão de abrir/fechar --><button id=\"chat-open-btn\" onclick=\"chatToggle()\" class=\"flex h-12 w-12 items-center justify-center rounded-full bg-finops-900 text-white shadow-lg transition hover:bg-finops-800\" title=\"Assistente financeiro\"><i class=\"fa-solid fa-comments\"></i></button></div><style>\n\t\t#chat-messages { font-size: var(--chat-font, 13px); line-height: 1.45; }\n\t\t.chat-md p { margin: 0.25rem 0; }\n\t\t.chat-md ul, .chat-md ol { margin: 0.25rem 0 0.25rem 1rem; }\n\t\t.chat-md li { margin: 0.1rem 0; }\n\t\t.chat-md strong { font-weight: 700; }\n\t\t.chat-md em { font-style: italic; }\n\t\t.chat-md code { background: #e2e8f0; border-radius: 3px; padding: 0 3px; font-size: 0.85em; }\n\t\t.chat-md pre { background: #e2e8f0; border-radius: 6px; padding: 6px 8px; overflow-x: auto; margin: 0.25rem 0; }\n\t\t.chat-md pre code { background: none; padding: 0; }\n\t\t.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4 { font-weight: 700; margin: 0.4rem 0 0.1rem; }\n\t</style><script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script><script>\n\t\tfunction chatToggle() {\n\t\t\tconst p = document.getElementById(\"chat-panel\");\n\t\t\tif (p.classList.contains(\"hidden\")) {\n\t\t\t\tp.classList.remove(\"hidden\");\n\t\t\t\tp.classList.add(\"flex\");\n\t\t\t} else {\n\t\t\t\tp.classList.remove(\"flex\");\n\t\t\t\tp.classList.add(\"hidden\");\n\t\t\t}\n\t\t}\n\n\t\t// Aplica tamanho de fonte do chat (persistido em localStorage).\n\t\tfunction applyChatFont() {\n\t\t\tconst size = localStorage.getItem(\"finops_chat_font\") || \"13\";\n\t\t\tdocument.documentElement.style.setProperty(\"--chat-font\", size + \"px\");\n\t\t}\n\t\twindow.setChatFont = function(size) {\n\t\t\tlocalStorage.setItem(\"finops_chat_font\", String(size));\n\t\t\tapplyChatFont();\n\t\t};\n\t\tapplyChatFont();\n\n\t\t(function() {\n\t\t\tconst STORAGE_KEY = \"finops_chat_size\";\n\t\t\tconst panel = document.getElementById(\"chat-panel\");\n\t\t\tconst handle = document.getElementById(\"chat-resize-handle\");\n\n\t\t\t// Restaurar tamanho salvo, clampeando ao viewport atual.\n\t\t\ttry {\n\t\t\t\tconst saved = JSON.parse(localStorage.getItem(STORAGE_KEY));\n\t\t\t\tif (saved) {\n\t\t\t\t\tconst maxW = window.innerWidth  - 80;\n\t\t\t\t\tconst maxH = window.innerHeight - 112;\n\t\t\t\t\tpanel.style.width  = Math.min(saved.w, maxW) + \"px\";\n\t\t\t\t\tpanel.style.height = Math.min(saved.h, maxH) + \"px\";\n\t\t\t\t}\n\t\t\t} catch (_) {}\n\n\t\t\tlet startX, startY, startW, startH;\n\n\t\t\thandle.addEventListener(\"mousedown\", function(e) {\n\t\t\t\te.preventDefault();\n\t\t\t\tstartX = e.clientX;\n\t\t\t\tstartY = e.clientY;\n\t\t\t\tstartW = panel.offsetWidth;\n\t\t\t\tstartH = panel.offsetHeight;\n\n\t\t\t\tfunction onMove(e) {\n\t\t\t\t\tconst newW = Math.max(260, startW - (e.clientX - startX));\n\t\t\t\t\tconst newH = Math.max(340, startH - (e.clientY - startY));\n\t\t\t\t\tpanel.style.width  = newW + \"px\";\n\t\t\t\t\tpanel.style.height = newH + \"px\";\n\t\t\t\t}\n\n\t\t\t\tfunction onUp() {\n\t\t\t\t\tdocument.removeEventListener(\"mousemove\", onMove);\n\t\t\t\t\tdocument.removeEventListener(\"mouseup\", onUp);\n\t\t\t\t\ttry {\n\t\t\t\t\t\tlocalStorage.setItem(STORAGE_KEY, JSON.stringify({\n\t\t\t\t\t\t\tw: panel.offsetWidth,\n\t\t\t\t\t\t\th: panel.offsetHeight\n\t\t\t\t\t\t}));\n\t\t\t\t\t} catch (_) {}\n\t\t\t\t}\n\n\t\t\t\tdocument.addEventListener(\"mousemove\", onMove);\n\t\t\t\tdocument.addEventListener(\"mouseup\", onUp);\n\t\t\t});\n\t\t})();\n\n\t\tfunction chatRenderMarkdown() {\n\t\t\tdocument.querySelectorAll(\".chat-md:not([data-rendered])\").forEach(el => {\n\t\t\t\tel.innerHTML = marked.parse(el.textContent || \"\");\n\t\t\t\tel.dataset.rendered = \"1\";\n\t\t\t});\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -107,7 +115,7 @@ func ChatHistoryFragment(messages []service.ChatMessage) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(messages) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex flex-col items-center justify-center gap-2 py-8 text-center\"><i class=\"fa-solid fa-comments text-2xl text-finops-400\"></i><p class=\"text-xs text-finops-700\">Olá! Pergunte sobre suas finanças.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"flex flex-col items-center justify-center gap-2 py-8 text-center\"><i class=\"fa-solid fa-comments text-2xl text-finops-400\"></i><p class=\"text-xs text-finops-700\">Olá! Pergunte sobre suas finanças.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -180,20 +188,20 @@ func chatUserBubble(content string) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"flex justify-end\"><div class=\"max-w-[85%] rounded-2xl rounded-tr-sm bg-finops-900 px-3 py-2 text-sm text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex justify-end\"><div class=\"max-w-[85%] rounded-2xl rounded-tr-sm bg-finops-900 px-3 py-2 text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 203, Col: 12}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 224, Col: 12}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -222,20 +230,185 @@ func chatAssistantBubble(content string) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex justify-start\"><div class=\"chat-md prose prose-sm max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm text-finops-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"flex justify-start\"><div class=\"chat-md prose prose-sm max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-finops-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 211, Col: 12}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 232, Col: 12}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func ChatTipsModal() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<dialog id=\"chat-tips-modal\" class=\"w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40\"><div class=\"p-6\"><div class=\"flex items-start justify-between gap-4\"><div><p class=\"text-xs font-bold uppercase tracking-[0.2em] text-finops-500\">Assistente Finops</p><h2 class=\"mt-1 text-lg font-bold text-finops-900\">Como aproveitar melhor</h2></div><form method=\"dialog\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DefaultCloseModalButton().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</form></div><p class=\"mt-2 text-sm text-finops-700\">Exemplos de perguntas que ajudam a obter respostas mais úteis.</p><div class=\"mt-5 space-y-4\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = chatTipSection("📊 Análise financeira", []string{
+			"Como posso economizar mais este mês?",
+			"Em quais categorias estou gastando mais?",
+			"Compare meus gastos deste mês com o anterior.",
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = chatTipSection("🎯 Planejamento", []string{
+			"Quanto posso gastar com lazer este mês?",
+			"Estou dentro do meu orçamento?",
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = chatTipSection("💡 Insights", []string{
+			"Existe alguma despesa incomum?",
+			"Quais assinaturas eu poderia cancelar?",
+			"Onde consigo reduzir meus gastos?",
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = chatTipSection("📈 Investimentos", []string{
+			"Quanto consegui economizar nos últimos meses?",
+			"Qual foi minha média de economia?",
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div></dialog>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func chatTipSection(title string, examples []string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div><p class=\"text-sm font-bold text-finops-900\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 276, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p><ul class=\"mt-2 space-y-1.5\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, ex := range examples {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<li class=\"flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-finops-800\"><i class=\"fa-solid fa-quote-left mt-1 text-xs text-finops-400\"></i> <span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/chat.templ`, Line: 281, Col: 15}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span></li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</ul></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func ChatPreferencesPanel() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<section class=\"rounded-2xl border border-slate-200 bg-white p-6\"><h2 class=\"mb-1 text-sm font-bold uppercase tracking-wide text-finops-500\">Assistente Finops</h2><p class=\"mb-4 text-sm text-finops-700\">Tamanho da fonte no chat.</p><div class=\"flex flex-wrap gap-2\" id=\"chat-font-choices\"><button type=\"button\" data-size=\"12\" class=\"rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-finops-800 transition hover:bg-slate-100\">Pequeno</button> <button type=\"button\" data-size=\"13\" class=\"rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-finops-800 transition hover:bg-slate-100\">Médio</button> <button type=\"button\" data-size=\"15\" class=\"rounded-xl border border-slate-300 px-4 py-2 text-base font-semibold text-finops-800 transition hover:bg-slate-100\">Grande</button></div><script>\n\t\t\t(function() {\n\t\t\t\tconst ACTIVE = \"bg-finops-900 text-white border-finops-900\";\n\t\t\t\tconst root = document.getElementById(\"chat-font-choices\");\n\t\t\t\tif (!root) return;\n\t\t\t\tconst current = localStorage.getItem(\"finops_chat_font\") || \"13\";\n\t\t\t\tfunction paint(size) {\n\t\t\t\t\troot.querySelectorAll(\"button\").forEach(b => {\n\t\t\t\t\t\tconst on = b.dataset.size === String(size);\n\t\t\t\t\t\tACTIVE.split(\" \").forEach(c => b.classList.toggle(c, on));\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t\tpaint(current);\n\t\t\t\troot.querySelectorAll(\"button\").forEach(b => {\n\t\t\t\t\tb.addEventListener(\"click\", () => {\n\t\t\t\t\t\twindow.setChatFont?.(b.dataset.size);\n\t\t\t\t\t\tpaint(b.dataset.size);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t})();\n\t\t</script></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

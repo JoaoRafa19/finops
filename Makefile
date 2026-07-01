@@ -15,7 +15,7 @@ test_db:
 run: build # Run the application
 	./bin/$(APP_NAME)
 	
-build: # Build the application
+build: templ # Build the application
 	go build -o bin/$(APP_NAME) $(CMD_PATH)
 
 test: # Run all tests
