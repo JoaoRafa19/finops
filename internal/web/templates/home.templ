@@ -261,7 +261,7 @@ templ DashboardPartial(data service.DashboardSummary, period string, from, to ti
 					data-labels={ jsonStrings(balanceLabels(data.BalanceHistory)) }
 					data-values={ jsonFloats(balanceValues(data.BalanceHistory)) }
 				>
-					<canvas id="balance-chart"></canvas>
+					<canvas id="balance-chart" role="img" aria-label="Gráfico de linha da evolução do saldo no período selecionado"></canvas>
 				</div>
 			}
 		</a>
@@ -311,7 +311,7 @@ templ DashboardPartial(data service.DashboardSummary, period string, from, to ti
 					data-income={ jsonFloats(cashflowIncome(data.CashFlow)) }
 					data-expenses={ jsonFloats(cashflowExpenses(data.CashFlow)) }
 				>
-					<canvas id="cashflow-chart"></canvas>
+					<canvas id="cashflow-chart" role="img" aria-label="Gráfico de barras comparando receitas e despesas por mês"></canvas>
 				</div>
 			}
 		</a>
@@ -329,7 +329,7 @@ templ DashboardPartial(data service.DashboardSummary, period string, from, to ti
 					data-labels={ jsonStrings(spendingLabels(data.Spending)) }
 					data-values={ jsonFloats(spendingValues(data.Spending)) }
 				>
-					<canvas id="donut-chart"></canvas>
+					<canvas id="donut-chart" role="img" aria-label="Gráfico de pizza da distribuição de despesas por categoria"></canvas>
 				</div>
 			}
 		</a>

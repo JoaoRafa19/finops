@@ -49,6 +49,9 @@ gen: # Generate sqlc code
 templ:
 	templ generate ./...
 
+backfill-embeddings: # Generate embeddings for already-classified transactions
+	go run ./cmd/backfill-embeddings $(ARGS)
+
 setup: # Install necessary tools
 	go install github.com/a-h/templ/cmd/templ@latest
 	go install github.com/jackc/tern/v2@latest

@@ -21,6 +21,9 @@ import (
 const pwResetKeyFmt = "finops:pwreset:%s"
 const pwResetTTL = time.Hour
 
+const verifyEmailKeyFmt = "finops:verifyemail:%s"
+const verifyEmailTTL = 24 * time.Hour
+
 type RedisAuthService struct {
 	rdb               *redis.Client
 	queries           *store.Queries
@@ -115,6 +118,64 @@ func (s *RedisAuthService) ResetPassword(ctx context.Context, token, newPassword
 	return nil
 }
 
+// SendVerificationEmail gera um token, guarda no Redis e envia link por email.
+// Idempotente: pode ser chamado no signup e como reenvio. Sempre retorna nil se
+// o email não existe, para não vazar existência de conta.
+func (s *RedisAuthService) SendVerificationEmail(ctx context.Context, email string) error {
+	logger := observability.Logger(ctx)
+	normalized := strings.ToLower(strings.TrimSpace(email))
+
+	if _, err := s.queries.GetUserByEmail(ctx, normalized); err != nil {
+		logger.Info("verify_email_unknown_email")
+		return nil
+	}
+
+	token, err := randomToken(32)
+	if err != nil {
+		return fmt.Errorf("generate verify token: %w", err)
+	}
+
+	key := fmt.Sprintf(verifyEmailKeyFmt, token)
+	if err := s.rdb.Set(ctx, key, normalized, verifyEmailTTL).Err(); err != nil {
+		return fmt.Errorf("store verify token: %w", err)
+	}
+
+	verifyURL := strings.TrimRight(s.appBaseURL, "/") + "/verify-email?token=" + token
+	if err := s.emailSvc.SendVerifyEmail(ctx, normalized, verifyURL); err != nil {
+		logger.Error("verify_email_send_failed", "error", err)
+		_ = s.rdb.Del(ctx, key)
+		return fmt.Errorf("send verify email: %w", err)
+	}
+	logger.Info("verify_email_sent", "email", normalized)
+	return nil
+}
+
+// VerifyEmail consome o token, marca o email como verificado no BD e retorna
+// o email verificado. Token de uso único.
+func (s *RedisAuthService) VerifyEmail(ctx context.Context, token string) (string, error) {
+	logger := observability.Logger(ctx)
+	key := fmt.Sprintf(verifyEmailKeyFmt, token)
+	email, err := s.rdb.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", ErrInvalidOrExpiredToken
+		}
+		return "", fmt.Errorf("get verify token: %w", err)
+	}
+
+	if err := s.queries.MarkEmailVerified(ctx, email); err != nil {
+		return "", fmt.Errorf("mark email verified: %w", err)
+	}
+	_ = s.rdb.Del(ctx, key)
+	logger.Info("verify_email_succeeded", "email", email)
+	return email, nil
+}
+
+// IsEmailVerified consulta o BD; simples e correto após qualquer mudança.
+func (s *RedisAuthService) IsEmailVerified(ctx context.Context, userID int64) (bool, error) {
+	return s.queries.IsEmailVerified(ctx, userID)
+}
+
 // IssueCSRFToken rotaciona o token CSRF de uma sessão existente.
 // Mantemos o mesmo TTL remanescente da sessão para não alterar sua janela de validade.
 func (s *RedisAuthService) IssueCSRFToken(ctx context.Context, sessionID string) (string, error) {
@@ -207,7 +268,7 @@ func (s *RedisAuthService) ValidateCSRFToken(ctx context.Context, sessionID stri
 		logger.Warn("auth_validate_csrf_invalid", "user_id", session.UserID)
 	}
 
-	logger.Debug("Login successful", "user_id", session.UserID, "csrf_valid", valid)
+	logger.Debug("auth_validate_csrf_completed", "user_id", session.UserID, "csrf_valid", valid)
 
 	return valid, nil
 

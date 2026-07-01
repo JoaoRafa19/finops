@@ -430,7 +430,7 @@ func DashboardPartial(data service.DashboardSummary, period string, from, to tim
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><canvas id=\"balance-chart\"></canvas></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><canvas id=\"balance-chart\" role=\"img\" aria-label=\"Gráfico de linha da evolução do saldo no período selecionado\"></canvas></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -598,7 +598,7 @@ func DashboardPartial(data service.DashboardSummary, period string, from, to tim
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><canvas id=\"cashflow-chart\"></canvas></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><canvas id=\"cashflow-chart\" role=\"img\" aria-label=\"Gráfico de barras comparando receitas e despesas por mês\"></canvas></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -639,7 +639,7 @@ func DashboardPartial(data service.DashboardSummary, period string, from, to tim
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"><canvas id=\"donut-chart\"></canvas></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"><canvas id=\"donut-chart\" role=\"img\" aria-label=\"Gráfico de pizza da distribuição de despesas por categoria\"></canvas></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

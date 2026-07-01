@@ -18,12 +18,77 @@ templ SideNav(currentPath, csrf string) {
 			opacity: 0;
 			transform: translateY(var(--slide-in, 14px));
 		}
+		/* Barra global de progresso HTMX */
+		#global-htmx-bar {
+			position: fixed; top: 0; left: 0; right: 0; height: 3px;
+			background: linear-gradient(90deg, #2dd4bf, #0d9488);
+			transform: scaleX(0); transform-origin: 0 50%;
+			transition: transform 300ms ease, opacity 200ms ease;
+			z-index: 100; pointer-events: none; opacity: 0;
+		}
+		body.htmx-request #global-htmx-bar { transform: scaleX(0.7); opacity: 1; }
+		body:not(.htmx-request) #global-htmx-bar { transform: scaleX(1); opacity: 0; transition-duration: 400ms; }
+		/* Elementos-trigger de uma request HTMX (via `htmx-request` inline) */
+		button.htmx-request, a.htmx-request { pointer-events: none; opacity: 0.65; position: relative; }
+		/* Spinner discreto ao lado do label em botões primários durante request */
+		button.htmx-request::after {
+			content: "";
+			display: inline-block;
+			width: 0.875rem; height: 0.875rem;
+			margin-left: 0.5rem;
+			border-radius: 9999px;
+			border: 2px solid currentColor;
+			border-top-color: transparent;
+			animation: finops-spin 0.7s linear infinite;
+			vertical-align: -2px;
+		}
+		@keyframes finops-spin { to { transform: rotate(360deg); } }
+		/* Mobile sidenav (overlay). Em telas >= sm mantém comportamento original de hover-para-expandir. */
+		@media (max-width: 639px) {
+			#side-nav { width: 13rem; transform: translateX(-100%); transition: transform 200ms ease; }
+			#side-nav span { opacity: 1 !important; }
+			body.nav-open #side-nav { transform: translateX(0); }
+			body.nav-open #nav-backdrop { display: block; }
+			#nav-backdrop { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(15,23,42,0.4); }
+			#mobile-nav-toggle { display: inline-flex; }
+			/* Cancela o padding-left de sidenav fixo dos main containers em mobile */
+			main.pl-16 { padding-left: 1rem; }
+		}
+		#mobile-nav-toggle { display: none; }
 	</style>
+	<div id="global-htmx-bar" aria-hidden="true"></div>
+	<div id="nav-backdrop" onclick="document.body.classList.remove('nav-open')" aria-hidden="true"></div>
+	<button
+		id="mobile-nav-toggle"
+		type="button"
+		aria-label="Abrir menu"
+		aria-controls="side-nav"
+		onclick="document.body.classList.toggle('nav-open')"
+		class="fixed left-3 top-3 z-50 h-10 w-10 items-center justify-center rounded-xl bg-white/95 text-finops-800 shadow-md ring-1 ring-slate-200"
+	>
+		<i class="fa-solid fa-bars" aria-hidden="true"></i>
+	</button>
 	<script>
 		document.addEventListener("htmx:configRequest", function(evt) {
 			const token = document.querySelector("meta[name='csrf-token']")?.content;
 			if (token) evt.detail.headers["X-CSRF-Token"] = token;
 		});
+
+		// Barra global: sinaliza qualquer request HTMX ativo.
+		(function() {
+			let active = 0;
+			document.addEventListener("htmx:beforeRequest", () => {
+				active++;
+				document.body.classList.add("htmx-request");
+			});
+			const done = () => {
+				active = Math.max(0, active - 1);
+				if (active === 0) document.body.classList.remove("htmx-request");
+			};
+			document.addEventListener("htmx:afterRequest", done);
+			document.addEventListener("htmx:responseError", done);
+			document.addEventListener("htmx:sendError", done);
+		})();
 
 		// SPA: ordem das páginas para determinar direcção do slide
 		const _NAV_ORDER = { "/": 0, "/reports": 1, "/import": 2, "/classify": 3 };
@@ -57,6 +122,8 @@ templ SideNav(currentPath, csrf string) {
 
 		document.addEventListener("htmx:afterSettle", function(evt) {
 			if (evt.detail.target?.id !== "page-content") return;
+			// Fecha sidenav mobile após navegar
+			document.body.classList.remove("nav-open");
 			const path = window.location.pathname;
 			_currentOrder = _NAV_ORDER[path] ?? _currentOrder;
 
@@ -144,11 +211,12 @@ templ LogouSideNav( csrf string) {
 	<input type="hidden" name="_csrf" value={ csrf }/>
 		<button
 		type="submit"
+		aria-label="Sair da conta"
 		class={
 				"flex items-center gap-1 rounded-xl mx-1 px-2 py-2 text-sm font-semibold transition hover:bg-slate-100 text-finops-800",
 			}
 		>
-			<i class={ "fa-solid fa-arrow-right-from-bracket w-6 shrink-0 text-center" }></i>
+			<i class={ "fa-solid fa-arrow-right-from-bracket w-6 shrink-0 text-center" } aria-hidden="true"></i>
 			<span class="whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover:opacity-100">Logout</span>
 		</button>
 	</form>
@@ -396,5 +464,6 @@ templ DefaultCloseModalButton() {
 		type="submit"
 		class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-200 text-finops-500 transition hover:bg-slate-300"
 		title="Fechar modal"
-	><i class="fa-solid fa-xmark"></i></button>
+		aria-label="Fechar modal"
+	><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
 }

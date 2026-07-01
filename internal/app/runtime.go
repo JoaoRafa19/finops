@@ -36,6 +36,13 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		return nil, err
 	}
 
+	if cfg.MigrateOnStart {
+		if err := store.MigrateUp(ctx, db); err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("migrate on start: %w", err)
+		}
+	}
+
 	queries := store.New(db)
 	if queries == nil {
 		_ = db.Close()

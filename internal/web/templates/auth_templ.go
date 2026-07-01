@@ -125,7 +125,7 @@ func SignupForm(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"mt-2 flex items-center gap-2\" aria-live=\"polite\"><div class=\"h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200\"><div id=\"pw-strength-bar\" class=\"h-full w-0 rounded-full bg-rose-400 transition-all duration-200\"></div></div><span id=\"pw-strength-label\" class=\"w-16 text-right text-xs font-semibold text-slate-500\"></span></div><ul id=\"pw-hints\" class=\"mt-2 space-y-0.5 text-xs text-slate-500\"><li data-rule=\"len\">• Pelo menos 8 caracteres</li><li data-rule=\"mix\">• Letras e números</li><li data-rule=\"sym\">• Símbolo (opcional, aumenta a força)</li></ul></div><div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -145,7 +145,7 @@ func SignupForm(errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</form><script>\n\t\t(function() {\n\t\t\tconst pw    = document.getElementById(\"signup-password\");\n\t\t\tconst bar   = document.getElementById(\"pw-strength-bar\");\n\t\t\tconst label = document.getElementById(\"pw-strength-label\");\n\t\t\tconst hints = document.getElementById(\"pw-hints\");\n\t\t\tif (!pw || !bar) return;\n\n\t\t\tfunction score(v) {\n\t\t\t\tlet s = 0;\n\t\t\t\tconst rules = {\n\t\t\t\t\tlen: v.length >= 8,\n\t\t\t\t\tmix: /[a-zA-Z]/.test(v) && /[0-9]/.test(v),\n\t\t\t\t\tsym: /[^a-zA-Z0-9]/.test(v),\n\t\t\t\t};\n\t\t\t\tif (rules.len) s++;\n\t\t\t\tif (rules.mix) s++;\n\t\t\t\tif (rules.sym) s++;\n\t\t\t\tif (v.length >= 12) s++;\n\t\t\t\treturn { s, rules };\n\t\t\t}\n\t\t\tconst LABELS = [\"Muito fraca\", \"Fraca\", \"Média\", \"Boa\", \"Forte\"];\n\t\t\tconst COLORS = [\"#f43f5e\", \"#f97316\", \"#eab308\", \"#22c55e\", \"#0d9488\"];\n\t\t\tconst WIDTHS = [\"10%\", \"25%\", \"50%\", \"75%\", \"100%\"];\n\n\t\t\tpw.addEventListener(\"input\", () => {\n\t\t\t\tif (!pw.value) { bar.style.width = \"0%\"; label.textContent = \"\"; return; }\n\t\t\t\tconst { s, rules } = score(pw.value);\n\t\t\t\tbar.style.width           = WIDTHS[s];\n\t\t\t\tbar.style.backgroundColor = COLORS[s];\n\t\t\t\tlabel.textContent         = LABELS[s];\n\t\t\t\tlabel.style.color         = COLORS[s];\n\t\t\t\thints.querySelectorAll(\"li\").forEach(li => {\n\t\t\t\t\tconst ok = rules[li.dataset.rule];\n\t\t\t\t\tli.style.color = ok ? \"#0d9488\" : \"\";\n\t\t\t\t\tli.style.fontWeight = ok ? \"600\" : \"\";\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

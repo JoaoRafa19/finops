@@ -129,6 +129,26 @@ func (q *Queries) GetUserTourStatus(ctx context.Context, id int64) (bool, error)
 	return has_done_tour, err
 }
 
+const isEmailVerified = `-- name: IsEmailVerified :one
+SELECT (email_verified_at IS NOT NULL)::BOOLEAN AS verified FROM users WHERE id = $1
+`
+
+func (q *Queries) IsEmailVerified(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isEmailVerified, id)
+	var verified bool
+	err := row.Scan(&verified)
+	return verified, err
+}
+
+const markEmailVerified = `-- name: MarkEmailVerified :exec
+UPDATE users SET email_verified_at = NOW() WHERE email = $1 AND email_verified_at IS NULL
+`
+
+func (q *Queries) MarkEmailVerified(ctx context.Context, email string) error {
+	_, err := q.db.ExecContext(ctx, markEmailVerified, email)
+	return err
+}
+
 const setTourDone = `-- name: SetTourDone :exec
 UPDATE users SET has_done_tour = TRUE WHERE id = $1
 `

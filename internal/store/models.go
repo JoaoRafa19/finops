@@ -67,13 +67,14 @@ type Transaction struct {
 }
 
 type User struct {
-	ID           int64
-	Email        string
-	PasswordHash string
-	PasswordAlgo string
-	IsAdmin      bool
-	CreatedAt    time.Time
-	HasDoneTour  bool
+	ID              int64
+	Email           string
+	PasswordHash    string
+	PasswordAlgo    string
+	IsAdmin         bool
+	CreatedAt       time.Time
+	HasDoneTour     bool
+	EmailVerifiedAt sql.NullTime
 }
 
 type Workspace struct {

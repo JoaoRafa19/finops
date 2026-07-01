@@ -96,20 +96,22 @@ templ TransactionItem(transaction TransactionDTO) {
 			if transaction.Direction != "transfer" {
 				<button
 					class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-200 hover:text-finops-700"
-					title="Editar"
+					title="Editar transação"
+					aria-label={ "Editar transação " + transaction.Description }
 					hx-get={ fmt.Sprintf("/transactions/%d/edit-modal", transaction.ID) }
 					hx-target="#transaction-modal-body"
 					hx-swap="innerHTML"
 					hx-on::after-request="document.getElementById('transaction-modal')?.showModal()"
-				><i class="fa-solid fa-pen text-xs"></i></button>
+				><i class="fa-solid fa-pen text-xs" aria-hidden="true"></i></button>
 				<button
 					class="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-100 hover:text-rose-600"
-					title="Apagar"
+					title="Apagar transação"
+					aria-label={ "Apagar transação " + transaction.Description }
 					hx-delete={ fmt.Sprintf("/transactions/%d", transaction.ID) }
 					hx-target={ fmt.Sprintf("#transaction-%d", transaction.ID) }
 					hx-swap="outerHTML"
 					hx-confirm="Apagar esta transação?"
-				><i class="fa-solid fa-trash text-xs"></i></button>
+				><i class="fa-solid fa-trash text-xs" aria-hidden="true"></i></button>
 			}
 		</div>
 	</li>
@@ -185,7 +187,7 @@ templ TransactionModalDialog(form TransactionFormState, csrf_token string, accou
 		>
 			<input type="hidden" name="_csrf" value={ csrf_token }/>
 			<div class="md:col-span-2">
-				@FormLabel("description", "Descricao")
+				@FormLabel("description", "Descrição")
 				@TextInput("description", "description", "text", form.Description, "Compra no supermercado", true)
 			</div>
 			<div>
@@ -209,7 +211,7 @@ templ TransactionModalDialog(form TransactionFormState, csrf_token string, accou
 				@SelectInput("direction", "direction", buildTransactionDirectionOptions(form.Direction), true)
 			</div>
 			<div class="md:col-span-2 flex flex-col gap-3 sm:flex-row">
-				@PrimaryButton("submit", "Adicionar Transacao", true)
+				@PrimaryButton("submit", "Adicionar Transação", true)
 			</div>
 		</form>
 	</div>

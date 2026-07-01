@@ -130,12 +130,60 @@ func (c *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	c.setSessionCookie(w, session)
 	logger.Info("signup_succeeded", "user_id", session.UserID)
 
+	// Dispara email de verificação. Erro é logado mas não bloqueia — usuário
+	// pode reenviar depois pela tela pendente.
+	if err := c.auth.SendVerificationEmail(r.Context(), email); err != nil {
+		logger.Warn("signup_verification_email_failed", "user_id", session.UserID, "error", err)
+	}
+
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", "/")
+		w.Header().Set("HX-Redirect", "/verify-email/pending")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/verify-email/pending", http.StatusSeeOther)
+}
+
+func (c *Controller) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	token := strings.TrimSpace(r.URL.Query().Get("token"))
+	if token == "" {
+		render.Templ(w, r, http.StatusBadRequest, templates.VerifyEmailResult(false, "Link inválido."))
+		return
+	}
+	if _, err := c.auth.VerifyEmail(r.Context(), token); err != nil {
+		if errors.Is(err, service.ErrInvalidOrExpiredToken) {
+			render.Templ(w, r, http.StatusOK, templates.VerifyEmailResult(false, "Link expirado ou já utilizado. Solicite um novo pela sua conta."))
+			return
+		}
+		logger.Error("verify_email_failed", "error", err)
+		render.Templ(w, r, http.StatusInternalServerError, templates.VerifyEmailResult(false, "Erro ao verificar. Tente novamente."))
+		return
+	}
+	render.Templ(w, r, http.StatusOK, templates.VerifyEmailResult(true, ""))
+}
+
+func (c *Controller) VerifyEmailPending(w http.ResponseWriter, r *http.Request) {
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	sent := r.URL.Query().Get("sent") == "1"
+	render.Templ(w, r, http.StatusOK, templates.VerifyEmailPending(session.Email, session.CSRFToken, sent))
+}
+
+func (c *Controller) ResendVerification(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if err := c.auth.SendVerificationEmail(r.Context(), session.Email); err != nil {
+		logger.Warn("resend_verification_failed", "user_id", session.UserID, "error", err)
+	}
+	http.Redirect(w, r, "/verify-email/pending?sent=1", http.StatusSeeOther)
 }
 
 func (c *Controller) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {

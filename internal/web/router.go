@@ -36,6 +36,8 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	handler := middleware.CSRFMiddleware(deps.AuthService)(mux)
 	handler = middleware.SessionLoader(deps.AuthService, deps.SessionCookie, deps.CookieSecure)(handler)
+	handler = middleware.NotFoundInterceptor(handler)
+	handler = middleware.PanicRecover(handler)
 	handler = middleware.Logging(handler)
 	handler = middleware.RequestID(handler)
 

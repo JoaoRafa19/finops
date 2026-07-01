@@ -16,6 +16,12 @@ RETURNING id;
 -- name: UpdatePasswordHash :exec
 UPDATE users SET password_hash = $2, password_algo = $3 WHERE email = $1;
 
+-- name: IsEmailVerified :one
+SELECT (email_verified_at IS NOT NULL)::BOOLEAN AS verified FROM users WHERE id = $1;
+
+-- name: MarkEmailVerified :exec
+UPDATE users SET email_verified_at = NOW() WHERE email = $1 AND email_verified_at IS NULL;
+
 -- name: SetTourDone :exec
 UPDATE users SET has_done_tour = TRUE WHERE id = $1;
 
