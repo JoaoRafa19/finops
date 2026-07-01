@@ -14,10 +14,11 @@ services:
 
   - type: web
     name: finops
-    env: docker
+    env: go
     region: oregon
     plan: free
-    dockerfilePath: ./Dockerfile
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app ./cmd/finops
+    startCommand: ./app
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
