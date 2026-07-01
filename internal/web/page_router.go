@@ -79,7 +79,9 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /onboarding", onboardingController.CreateWorkspace)
 	private.HandleFunc("POST /logout", authController.Logout)
 	private.HandleFunc("GET /verify-email/pending", authController.VerifyEmailPending)
-	resendVerifyRL := middleware.RateLimit(deps.RedisClient, "verify-resend", 5, time.Hour)
+	// prefix "verify-resend2" para "resetar" a chave — a versão anterior
+	// ("verify-resend") pode estar com contador max no Redis; renomear zera.
+	resendVerifyRL := middleware.RateLimit(deps.RedisClient, "verify-resend2", 20, time.Hour)
 	private.Handle("POST /verify-email/resend", resendVerifyRL(http.HandlerFunc(authController.ResendVerification)))
 	private.HandleFunc("POST /categories", categoryController.CreateCategory)
 	private.HandleFunc("GET /categories/{id}/edit", categoryController.EditRow)
