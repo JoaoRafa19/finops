@@ -88,7 +88,7 @@ func jsonStrings(vals []string) string {
 	return "[" + strings.Join(parts, ",") + "]"
 }
 
-templ HomePage(email, csrf string) {
+templ HomePage(email, csrf string, tourActive bool) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
 		@AppHead("Finops", true)
@@ -116,7 +116,7 @@ templ HomePage(email, csrf string) {
 							hx-include="[name=custom-from],[name=custom-to]"
 						>
 							<option value="this_month">Este mês</option>
-							<option value="last_30">Últimos 30 dias</option>
+							<option value="last_30" selected>Últimos 30 dias</option>
 							<option value="last_90">Últimos 90 dias</option>
 							<option value="this_year">Este ano</option>
 							<option value="custom">Personalizado</option>
@@ -140,7 +140,11 @@ templ HomePage(email, csrf string) {
 				<!-- Conteúdo do dashboard (recarrega com o período) -->
 				<div
 					id="dashboard-content"
-					hx-get="/dashboard?period=this_month"
+					if tourActive {
+						hx-get="/dashboard?period=last_30&tour=1"
+					} else {
+						hx-get="/dashboard?period=last_30"
+					}
 					hx-trigger="load"
 					hx-swap="innerHTML"
 				>
@@ -202,6 +206,10 @@ templ HomePage(email, csrf string) {
 				</dialog>
 
 				<script>
+					// Fecha o modal de categoria quando o backend sinaliza sucesso (HX-Trigger-After-Swap)
+					document.body.addEventListener("category-created", function() {
+						document.getElementById("category-modal")?.close();
+					});
 					document.getElementById("period-select")?.addEventListener("change", function() {
 						const customDates = document.getElementById("custom-dates");
 						if (this.value === "custom") {

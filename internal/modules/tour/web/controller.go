@@ -29,12 +29,7 @@ func (c *TourController) Start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := c.tourSvc.SeedMockData(r.Context(), session.UserID); err != nil {
-		logger.Error("tour_seed_failed", "user_id", session.UserID, "error", err)
-		http.Error(w, "erro ao iniciar tour", http.StatusInternalServerError)
-		return
-	}
-
+	// Tour usa dados mock em memória; nada é persistido.
 	logger.Info("tour_started", "user_id", session.UserID)
 	http.Redirect(w, r, "/?tour=1", http.StatusSeeOther)
 }

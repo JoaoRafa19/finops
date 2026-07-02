@@ -5,6 +5,8 @@ templ TourPage() {
 	<html lang="pt-BR">
 		@AppHead("Bem-vindo ao Finops", false)
 		<body class="min-h-screen bg-[radial-gradient(circle_at_top,_#99f6e4_0%,_#f8fafc_35%,_#e2e8f0_100%)] font-display text-finops-900">
+			<!-- Reset do progresso salvo: chegar aqui significa recomeçar (ou pular) o tour -->
+			<script>localStorage.removeItem("finops_tour_step");</script>
 			<main class="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-4 py-12">
 				<div class="w-full rounded-3xl border border-white/80 bg-white/85 p-10 shadow-2xl shadow-finops-900/10 backdrop-blur-sm text-center">
 					<div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-finops-900">

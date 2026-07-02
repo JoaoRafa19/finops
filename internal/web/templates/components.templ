@@ -256,12 +256,10 @@ templ tourScript(currentPath string) {
 
 		// Definição completa dos passos
 		const steps = [
-			// Passo 0 — Home: Saldo total
-			{ path: "/", element: "section", popover: { title: "💰 Saldo Total", description: "Aqui você vê o saldo consolidado de todas as suas contas.", side: "bottom" } },
-			// Passo 1 — Home: Painel de contas
-			{ path: "/", element: "#account-panels", popover: { title: "🏦 Suas Contas", description: "Cada conta aparece com seu saldo atual. Clique para ver detalhes e transações.", side: "top" } },
-			// Passo 2 — Home: Transações recentes
-			{ path: "/", element: "#transaction-panel", popover: { title: "📋 Transações Recentes", description: "As últimas movimentações ficam aqui — débitos e créditos de todas as contas.", side: "top" } },
+			// Passo 0 — Home: Dashboard (saldo, receitas, despesas e gráficos)
+			{ path: "/", element: "#dashboard-content", popover: { title: "💰 Resumo Financeiro", description: "Aqui você vê o saldo consolidado, receitas, despesas e os gráficos do período.", side: "bottom" } },
+			// Passo 1 — Home: Seletor de período
+			{ path: "/", element: "#period-select", popover: { title: "📅 Período", description: "Escolha o período do resumo: últimos 30 dias, este mês, este ano ou datas personalizadas.", side: "bottom" } },
 			// Passo 3 — Home: Botões de ação
 			{ path: "/", element: "#action-buttons", popover: { title: "⚡ Ações Rápidas", description: "Cadastre contas, registre transações e crie categorias com um clique.", side: "bottom" } },
 			// Passo 4 — Home: Nav

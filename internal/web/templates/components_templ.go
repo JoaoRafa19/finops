@@ -377,7 +377,7 @@ func tourScript(currentPath string) templ.Component {
 			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<script>\r\n\t(function() {\r\n\t\tconst TOUR_KEY = \"finops_tour_step\";\r\n\t\tconst params = new URLSearchParams(window.location.search);\r\n\t\tconst isTourStart = params.get(\"tour\") === \"1\";\r\n\t\tconst savedStep  = parseInt(localStorage.getItem(TOUR_KEY) || \"-1\", 10);\r\n\r\n\t\tif (!isTourStart && savedStep < 0) return; // sem tour ativo\r\n\r\n\t\tconst currentPath = window.location.pathname;\r\n\r\n\t\t// Definição completa dos passos\r\n\t\tconst steps = [\r\n\t\t\t// Passo 0 — Home: Saldo total\r\n\t\t\t{ path: \"/\", element: \"section\", popover: { title: \"💰 Saldo Total\", description: \"Aqui você vê o saldo consolidado de todas as suas contas.\", side: \"bottom\" } },\r\n\t\t\t// Passo 1 — Home: Painel de contas\r\n\t\t\t{ path: \"/\", element: \"#account-panels\", popover: { title: \"🏦 Suas Contas\", description: \"Cada conta aparece com seu saldo atual. Clique para ver detalhes e transações.\", side: \"top\" } },\r\n\t\t\t// Passo 2 — Home: Transações recentes\r\n\t\t\t{ path: \"/\", element: \"#transaction-panel\", popover: { title: \"📋 Transações Recentes\", description: \"As últimas movimentações ficam aqui — débitos e créditos de todas as contas.\", side: \"top\" } },\r\n\t\t\t// Passo 3 — Home: Botões de ação\r\n\t\t\t{ path: \"/\", element: \"#action-buttons\", popover: { title: \"⚡ Ações Rápidas\", description: \"Cadastre contas, registre transações e crie categorias com um clique.\", side: \"bottom\" } },\r\n\t\t\t// Passo 4 — Home: Nav\r\n\t\t\t{ path: \"/\", element: \"#side-nav\", popover: { title: \"🗂️ Navegação\", description: \"Acesse Relatórios, Importação e Classificação pelo menu lateral.\", side: \"right\" } },\r\n\t\t\t// Passo 5 — Reports\r\n\t\t\t{ path: \"/reports\", element: \"main\", popover: { title: \"📊 Relatórios\", description: \"Visualize seus gastos por categoria, compare receitas e despesas mês a mês e acompanhe a evolução do seu patrimônio.\", side: \"bottom\" } },\r\n\t\t\t// Passo 6 — Reports: tabs\r\n\t\t\t{ path: \"/reports\", element: \"#report-tabs\", popover: { title: \"📑 Abas de Relatório\", description: \"Alterne entre Gastos por Categoria, Receitas x Despesas, Evolução de Saldo e lista de Transações.\", side: \"bottom\" } },\r\n\t\t\t// Passo 7 — Import\r\n\t\t\t{ path: \"/import\", element: \"main\", popover: { title: \"📥 Importar Extratos\", description: \"Importe arquivos OFX do seu banco ou planilhas CSV. O sistema detecta duplicatas automaticamente.\", side: \"bottom\" } },\r\n\t\t\t// Passo 8 — Classify\r\n\t\t\t{ path: \"/classify\", element: \"main\", popover: { title: \"🏷️ Classificar Transações\", description: \"Transações sem categoria aparecem aqui. Classifique manualmente ou deixe a IA sugerir.\", side: \"bottom\" } },\r\n\t\t\t// Passo 9 — Classify: AI button\r\n\t\t\t{ path: \"/classify\", element: \"#auto-classify-btn\", popover: { title: \"🤖 Classificação por IA\", description: \"Clique aqui para deixar a IA classificar automaticamente todas as transações com base no seu histórico.\", side: \"bottom\" } },\r\n\t\t\t// Passo 10 — Home: Chat\r\n\t\t\t{ path: \"/\", element: \"#chat-open-btn\", popover: { title: \"💬 Assistente Financeiro\", description: \"Clique aqui para conversar com a IA. Pergunte coisas como: \\\"Quanto gastei este mês?\\\" ou \\\"Onde posso economizar?\\\"\", side: \"top\" } },\r\n\t\t];\r\n\r\n\t\t// Filtra passos da página atual\r\n\t\tfunction stepsForPath(path) {\r\n\t\t\treturn steps.map((s, i) => ({ ...s, originalIndex: i })).filter(s => s.path === path);\r\n\t\t}\r\n\r\n\t\tfunction navigateTo(path, nextOriginalIndex) {\r\n\t\t\tlocalStorage.setItem(TOUR_KEY, nextOriginalIndex.toString());\r\n\t\t\twindow.location.href = path + \"?tour=1\";\r\n\t\t}\r\n\r\n\t\tfunction completeTour() {\r\n\t\t\tlocalStorage.removeItem(TOUR_KEY);\r\n\t\t\twindow.location.href = \"/tour/complete\";\r\n\t\t}\r\n\r\n\t\tconst pageSteps = stepsForPath(currentPath);\r\n\t\tif (pageSteps.length === 0) return;\r\n\r\n\t\t// Determina qual passo da página começar\r\n\t\tlet startLocal = 0;\r\n\t\tif (!isTourStart && savedStep >= 0) {\r\n\t\t\t// Retomando — encontra o passo local que corresponde ao savedStep\r\n\t\t\tconst found = pageSteps.findIndex(s => s.originalIndex >= savedStep);\r\n\t\t\tstartLocal = found >= 0 ? found : 0;\r\n\t\t}\r\n\r\n\t\t// Monta a configuração do driver.js para essa página\r\n\t\tconst driverSteps = pageSteps.map((s, localIdx) => {\r\n\t\t\tconst isLastOnPage = localIdx === pageSteps.length - 1;\r\n\t\t\tconst isVeryLast   = s.originalIndex === steps.length - 1;\r\n\r\n\t\t\treturn {\r\n\t\t\t\telement:  s.element,\r\n\t\t\t\tpopover:  {\r\n\t\t\t\t\t...s.popover,\r\n\t\t\t\t\tnextBtnText: isLastOnPage && !isVeryLast ? \"Próxima tela →\" : isVeryLast ? \"Concluir tour 🎉\" : \"Próximo →\",\r\n\t\t\t\t\tprevBtnText: \"← Voltar\",\r\n\t\t\t\t},\r\n\t\t\t\tonNextClick: isLastOnPage ? (isVeryLast\r\n\t\t\t\t\t? () => completeTour()\r\n\t\t\t\t\t: () => {\r\n\t\t\t\t\t\t// Próxima tela: acha o primeiro passo da próxima página\r\n\t\t\t\t\t\tconst nextOrigIdx = pageSteps[pageSteps.length - 1].originalIndex + 1;\r\n\t\t\t\t\t\tif (nextOrigIdx < steps.length) {\r\n\t\t\t\t\t\t\tnavigateTo(steps[nextOrigIdx].path, nextOrigIdx);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t) : undefined,\r\n\t\t\t};\r\n\t\t});\r\n\r\n\t\t// Aguarda DOM pronto e inicia\r\n\t\tdocument.addEventListener(\"DOMContentLoaded\", function() {\r\n\t\t\tconst d = window.driver.js.driver({\r\n\t\t\t\tanimate:           true,\r\n\t\t\t\toverlayColor:      \"#0f172a\",\r\n\t\t\t\toverlayOpacity:    0.7,\r\n\t\t\t\tstagePadding:      8,\r\n\t\t\t\tallowClose:        false,\r\n\t\t\t\tdisableActiveInteraction: false,\r\n\t\t\t\tsteps: driverSteps,\r\n\t\t\t\tonDestroyStarted: () => {\r\n\t\t\t\t\t// Usuário fechou o tour manualmente — marca como concluído\r\n\t\t\t\t\tif (confirm(\"Sair do tour? Você pode reiniciá-lo pelo menu depois.\")) {\r\n\t\t\t\t\t\tcompleteTour();\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t});\r\n\r\n\t\t\td.drive(startLocal);\r\n\t\t});\r\n\t})();\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<script>\r\n\t(function() {\r\n\t\tconst TOUR_KEY = \"finops_tour_step\";\r\n\t\tconst params = new URLSearchParams(window.location.search);\r\n\t\tconst isTourStart = params.get(\"tour\") === \"1\";\r\n\t\tconst savedStep  = parseInt(localStorage.getItem(TOUR_KEY) || \"-1\", 10);\r\n\r\n\t\tif (!isTourStart && savedStep < 0) return; // sem tour ativo\r\n\r\n\t\tconst currentPath = window.location.pathname;\r\n\r\n\t\t// Definição completa dos passos\r\n\t\tconst steps = [\r\n\t\t\t// Passo 0 — Home: Dashboard (saldo, receitas, despesas e gráficos)\r\n\t\t\t{ path: \"/\", element: \"#dashboard-content\", popover: { title: \"💰 Resumo Financeiro\", description: \"Aqui você vê o saldo consolidado, receitas, despesas e os gráficos do período.\", side: \"bottom\" } },\r\n\t\t\t// Passo 1 — Home: Seletor de período\r\n\t\t\t{ path: \"/\", element: \"#period-select\", popover: { title: \"📅 Período\", description: \"Escolha o período do resumo: últimos 30 dias, este mês, este ano ou datas personalizadas.\", side: \"bottom\" } },\r\n\t\t\t// Passo 3 — Home: Botões de ação\r\n\t\t\t{ path: \"/\", element: \"#action-buttons\", popover: { title: \"⚡ Ações Rápidas\", description: \"Cadastre contas, registre transações e crie categorias com um clique.\", side: \"bottom\" } },\r\n\t\t\t// Passo 4 — Home: Nav\r\n\t\t\t{ path: \"/\", element: \"#side-nav\", popover: { title: \"🗂️ Navegação\", description: \"Acesse Relatórios, Importação e Classificação pelo menu lateral.\", side: \"right\" } },\r\n\t\t\t// Passo 5 — Reports\r\n\t\t\t{ path: \"/reports\", element: \"main\", popover: { title: \"📊 Relatórios\", description: \"Visualize seus gastos por categoria, compare receitas e despesas mês a mês e acompanhe a evolução do seu patrimônio.\", side: \"bottom\" } },\r\n\t\t\t// Passo 6 — Reports: tabs\r\n\t\t\t{ path: \"/reports\", element: \"#report-tabs\", popover: { title: \"📑 Abas de Relatório\", description: \"Alterne entre Gastos por Categoria, Receitas x Despesas, Evolução de Saldo e lista de Transações.\", side: \"bottom\" } },\r\n\t\t\t// Passo 7 — Import\r\n\t\t\t{ path: \"/import\", element: \"main\", popover: { title: \"📥 Importar Extratos\", description: \"Importe arquivos OFX do seu banco ou planilhas CSV. O sistema detecta duplicatas automaticamente.\", side: \"bottom\" } },\r\n\t\t\t// Passo 8 — Classify\r\n\t\t\t{ path: \"/classify\", element: \"main\", popover: { title: \"🏷️ Classificar Transações\", description: \"Transações sem categoria aparecem aqui. Classifique manualmente ou deixe a IA sugerir.\", side: \"bottom\" } },\r\n\t\t\t// Passo 9 — Classify: AI button\r\n\t\t\t{ path: \"/classify\", element: \"#auto-classify-btn\", popover: { title: \"🤖 Classificação por IA\", description: \"Clique aqui para deixar a IA classificar automaticamente todas as transações com base no seu histórico.\", side: \"bottom\" } },\r\n\t\t\t// Passo 10 — Home: Chat\r\n\t\t\t{ path: \"/\", element: \"#chat-open-btn\", popover: { title: \"💬 Assistente Financeiro\", description: \"Clique aqui para conversar com a IA. Pergunte coisas como: \\\"Quanto gastei este mês?\\\" ou \\\"Onde posso economizar?\\\"\", side: \"top\" } },\r\n\t\t];\r\n\r\n\t\t// Filtra passos da página atual\r\n\t\tfunction stepsForPath(path) {\r\n\t\t\treturn steps.map((s, i) => ({ ...s, originalIndex: i })).filter(s => s.path === path);\r\n\t\t}\r\n\r\n\t\tfunction navigateTo(path, nextOriginalIndex) {\r\n\t\t\tlocalStorage.setItem(TOUR_KEY, nextOriginalIndex.toString());\r\n\t\t\twindow.location.href = path + \"?tour=1\";\r\n\t\t}\r\n\r\n\t\tfunction completeTour() {\r\n\t\t\tlocalStorage.removeItem(TOUR_KEY);\r\n\t\t\twindow.location.href = \"/tour/complete\";\r\n\t\t}\r\n\r\n\t\tconst pageSteps = stepsForPath(currentPath);\r\n\t\tif (pageSteps.length === 0) return;\r\n\r\n\t\t// Determina qual passo da página começar\r\n\t\tlet startLocal = 0;\r\n\t\tif (!isTourStart && savedStep >= 0) {\r\n\t\t\t// Retomando — encontra o passo local que corresponde ao savedStep\r\n\t\t\tconst found = pageSteps.findIndex(s => s.originalIndex >= savedStep);\r\n\t\t\tstartLocal = found >= 0 ? found : 0;\r\n\t\t}\r\n\r\n\t\t// Monta a configuração do driver.js para essa página\r\n\t\tconst driverSteps = pageSteps.map((s, localIdx) => {\r\n\t\t\tconst isLastOnPage = localIdx === pageSteps.length - 1;\r\n\t\t\tconst isVeryLast   = s.originalIndex === steps.length - 1;\r\n\r\n\t\t\treturn {\r\n\t\t\t\telement:  s.element,\r\n\t\t\t\tpopover:  {\r\n\t\t\t\t\t...s.popover,\r\n\t\t\t\t\tnextBtnText: isLastOnPage && !isVeryLast ? \"Próxima tela →\" : isVeryLast ? \"Concluir tour 🎉\" : \"Próximo →\",\r\n\t\t\t\t\tprevBtnText: \"← Voltar\",\r\n\t\t\t\t},\r\n\t\t\t\tonNextClick: isLastOnPage ? (isVeryLast\r\n\t\t\t\t\t? () => completeTour()\r\n\t\t\t\t\t: () => {\r\n\t\t\t\t\t\t// Próxima tela: acha o primeiro passo da próxima página\r\n\t\t\t\t\t\tconst nextOrigIdx = pageSteps[pageSteps.length - 1].originalIndex + 1;\r\n\t\t\t\t\t\tif (nextOrigIdx < steps.length) {\r\n\t\t\t\t\t\t\tnavigateTo(steps[nextOrigIdx].path, nextOrigIdx);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t) : undefined,\r\n\t\t\t};\r\n\t\t});\r\n\r\n\t\t// Aguarda DOM pronto e inicia\r\n\t\tdocument.addEventListener(\"DOMContentLoaded\", function() {\r\n\t\t\tconst d = window.driver.js.driver({\r\n\t\t\t\tanimate:           true,\r\n\t\t\t\toverlayColor:      \"#0f172a\",\r\n\t\t\t\toverlayOpacity:    0.7,\r\n\t\t\t\tstagePadding:      8,\r\n\t\t\t\tallowClose:        false,\r\n\t\t\t\tdisableActiveInteraction: false,\r\n\t\t\t\tsteps: driverSteps,\r\n\t\t\t\tonDestroyStarted: () => {\r\n\t\t\t\t\t// Usuário fechou o tour manualmente — marca como concluído\r\n\t\t\t\t\tif (confirm(\"Sair do tour? Você pode reiniciá-lo pelo menu depois.\")) {\r\n\t\t\t\t\t\tcompleteTour();\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t});\r\n\r\n\t\t\td.drive(startLocal);\r\n\t\t});\r\n\t})();\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -423,7 +423,7 @@ func AppHead(title string, includeHTMX bool) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 393, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 391, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -465,7 +465,7 @@ func FormLabel(forID, text string) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(forID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 398, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 396, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {
@@ -478,7 +478,7 @@ func FormLabel(forID, text string) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 398, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 396, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -520,7 +520,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 403, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 401, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
@@ -533,7 +533,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(inputType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 404, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 402, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
@@ -546,7 +546,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 405, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 403, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 		if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 406, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 404, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
@@ -572,7 +572,7 @@ func TextInput(id, name, inputType, value, placeholder string, required bool) te
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 407, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 405, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
@@ -624,7 +624,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 417, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 415, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 		if templ_7745c5c3_Err != nil {
@@ -637,7 +637,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 418, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 416, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
@@ -665,7 +665,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 426, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 424, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
@@ -688,7 +688,7 @@ func SelectInput(id, name string, options []SelectOption, required bool) templ.C
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 430, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 428, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -740,7 +740,7 @@ func PrimaryButton(buttonType, text string, fullWidth bool) templ.Component {
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(buttonType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 437, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 435, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 		if templ_7745c5c3_Err != nil {
@@ -766,7 +766,7 @@ func PrimaryButton(buttonType, text string, fullWidth bool) templ.Component {
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 440, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 438, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -808,7 +808,7 @@ func SecondaryButton(buttonType, text string) templ.Component {
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.ResolveAttributeValue(buttonType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 446, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 444, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var43)
 		if templ_7745c5c3_Err != nil {
@@ -821,7 +821,7 @@ func SecondaryButton(buttonType, text string) templ.Component {
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 449, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 447, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
@@ -863,7 +863,7 @@ func SecondaryLink(href, text string) templ.Component {
 		var templ_7745c5c3_Var46 templ.SafeURL
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinURLErrs(href)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 455, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 453, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -876,7 +876,7 @@ func SecondaryLink(href, text string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 458, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/components.templ`, Line: 456, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {

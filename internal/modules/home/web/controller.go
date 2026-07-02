@@ -56,7 +56,8 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Query().Get("tour") == "" {
+	tourActive := r.URL.Query().Get("tour") == "1"
+	if !tourActive {
 		done, err := c.tourService.HasDoneTour(r.Context(), session.UserID)
 		if err == nil && !done {
 			http.Redirect(w, r, "/tour", http.StatusSeeOther)
@@ -64,7 +65,7 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken))
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, tourActive))
 }
 
 func (c *Controller) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +77,12 @@ func (c *Controller) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	period, from, to := parsePeriod(r)
+
+	// Modo tour: dados fictícios em memória, sem tocar no banco.
+	if r.URL.Query().Get("tour") == "1" {
+		render.Templ(w, r, http.StatusOK, templates.DashboardPartial(service.MockDashboard(), period, from, to, 0, session.CSRFToken))
+		return
+	}
 
 	accounts, err := c.accountService.ListSummariesByUser(r.Context(), session.UserID)
 	if err != nil {
@@ -110,7 +117,7 @@ func parsePeriod(r *http.Request) (period string, from, to time.Time) {
 	now := time.Now().UTC()
 	period = r.URL.Query().Get("period")
 	if period == "" {
-		period = "this_month"
+		period = "last_30"
 	}
 	switch period {
 	case "last_30":
