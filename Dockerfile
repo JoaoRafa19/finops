@@ -3,6 +3,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+
+RUN go install github.com/a-h/templ/cmd/templ@$(go list -m -f '{{.Version}}' github.com/a-h/templ)
+RUN templ generate ./...
 RUN go build -o finops ./cmd/finops/
 
 FROM alpine:latest
