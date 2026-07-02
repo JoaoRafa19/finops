@@ -1,12 +1,25 @@
-package templates 
+package templates
 
 templ TransactionModalBlocked() {
 	<div class="p-6">
 		<div class="flex items-center justify-between">
-			<p class="text-lg font-bold text-finops-900">Adicionar Transacao</p>
+			<p class="text-lg font-bold text-finops-900">Adicionar Transação</p>
 			<form method="dialog">
-				<button type="submit"></button>
+				@DefaultCloseModalButton()
 			</form>
 		</div>
+		<div class="mt-4 rounded-xl border-l-4 border-amber-400 bg-amber-50 p-4">
+			<p class="text-sm text-amber-900">Você precisa ter ao menos uma conta cadastrada para registrar transações.</p>
+		</div>
+		<button
+			type="button"
+			hx-get="/account-modal"
+			hx-target="#account-modal-body"
+			hx-swap="innerHTML"
+			hx-on::after-request="document.getElementById('transaction-modal')?.close(); document.getElementById('account-modal')?.showModal()"
+			class="mt-6 inline-flex items-center gap-2 rounded-xl bg-finops-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-finops-800"
+		>
+			<i class="fa-solid fa-plus" aria-hidden="true"></i> Cadastrar conta agora
+		</button>
 	</div>
 }

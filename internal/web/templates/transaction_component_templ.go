@@ -686,7 +686,7 @@ func TransferModalBlocked() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</form></div><p class=\"mt-4 text-sm text-finops-700\">Cadastre ao menos duas contas para registrar uma transferencia.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</form></div><div class=\"mt-4 rounded-xl border-l-4 border-amber-400 bg-amber-50 p-4\"><p class=\"text-sm text-amber-900\">Cadastre ao menos duas contas para registrar uma transferência.</p></div><button type=\"button\" hx-get=\"/account-modal\" hx-target=\"#account-modal-body\" hx-swap=\"innerHTML\" hx-on::after-request=\"document.getElementById('transfer-modal')?.close(); document.getElementById('account-modal')?.showModal()\" class=\"mt-6 inline-flex items-center gap-2 rounded-xl bg-finops-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-finops-800\"><i class=\"fa-solid fa-plus\" aria-hidden=\"true\"></i> Cadastrar conta agora</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -735,7 +735,7 @@ func TransferModalDialog(form TransferFormState, csrf_token string, accounts []s
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(form.ErrorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/transaction_component.templ`, Line: 241, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/transaction_component.templ`, Line: 253, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -753,7 +753,7 @@ func TransferModalDialog(form TransferFormState, csrf_token string, accounts []s
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf_token)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/transaction_component.templ`, Line: 251, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/templates/transaction_component.templ`, Line: 263, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
