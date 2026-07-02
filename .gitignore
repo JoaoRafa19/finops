@@ -15,5 +15,6 @@ coverage.out
 
 *.md
 
-!README.md 
+!README.md
+!CHANGELOG.md
 !docs/**
