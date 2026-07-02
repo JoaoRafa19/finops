@@ -168,6 +168,20 @@ templ HomePage(email, csrf string) {
 						hx-swap="innerHTML"
 						hx-on::after-request="document.getElementById('transfer-modal')?.showModal()"
 					><i class="fa-solid fa-arrow-right-arrow-left"></i> Transferir</button>
+					<button
+						class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50"
+						hx-get="/account-modal"
+						hx-target="#account-modal-body"
+						hx-swap="innerHTML"
+						hx-on::after-request="document.getElementById('account-modal')?.showModal()"
+					><i class="fa-solid fa-building-columns"></i> Nova conta</button>
+					<button
+						class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50"
+						hx-get="/category-modal"
+						hx-target="#category-modal-body"
+						hx-swap="innerHTML"
+						hx-on::after-request="document.getElementById('category-modal')?.showModal()"
+					><i class="fa-solid fa-tag"></i> Nova categoria</button>
 					<a href="/reports" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-finops-800 shadow-sm transition hover:bg-slate-50">
 						<i class="fa-solid fa-chart-bar"></i> Relatórios
 					</a>

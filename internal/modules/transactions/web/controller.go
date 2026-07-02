@@ -111,7 +111,7 @@ func (c *Controller) RegisterTransactionModal(w http.ResponseWriter, r *http.Req
 	}
 
 	if len(accounts) == 0 {
-		render.Templ(w, r, http.StatusBadRequest, templates.TransactionModalBlocked())
+		render.Templ(w, r, http.StatusOK, templates.TransactionModalBlocked())
 		return
 	}
 
@@ -136,7 +136,7 @@ func (c *Controller) RegisterTransferModal(w http.ResponseWriter, r *http.Reques
 	}
 
 	if len(accounts) < 2 {
-		render.Templ(w, r, http.StatusBadRequest, templates.TransferModalBlocked())
+		render.Templ(w, r, http.StatusOK, templates.TransferModalBlocked())
 		return
 	}
 
