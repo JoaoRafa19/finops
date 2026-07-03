@@ -5,6 +5,21 @@ Todas as mudanças relevantes do FinOps são registradas neste arquivo.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto
 adota [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0-beta] — 2026-07-02
+
+### Adicionado
+
+**Worker de e-mail assíncrono**
+- Envio de e-mails (recuperação de senha e verificação) agora é assíncrono via fila no Redis: os handlers empilham (`QueueEmailService`) e um worker consome e envia de fato.
+- Worker embutido no monolito como goroutine (`internal/worker.RunEmailWorker`), com shutdown gracioso via `Runtime.Close`.
+- Novo binário standalone `cmd/email-worker` para rodar o worker como serviço separado quando necessário.
+- `app.NewEmailSender(cfg)` centraliza a escolha do provedor (Resend > SMTP > Noop) para os dois modos de execução.
+- Teste de integração do ciclo fila → worker → envio (skip automático sem Redis local).
+
+### Removido
+
+- `deploy/docker/docker-compose.yaml` (obsoleto).
+
 ## [v0.1.0-beta] — 2026-07-01
 
 Primeira release beta. Sistema publicado em https://finops-app.com.br.
