@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	service "finops/internal/services"
 	"finops/internal/store"
+	"finops/internal/worker"
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
@@ -29,6 +30,25 @@ type Runtime struct {
 	DB          *sql.DB
 	RedisClient *redis.Client
 	Services    Services
+
+	stopWorker context.CancelFunc
+}
+
+// NewEmailSender escolhe o sender real conforme a config: Resend > SMTP > Noop.
+// Usado pelo worker embutido e pelo binário standalone cmd/email-worker.
+func NewEmailSender(cfg Config) service.EmailService {
+	switch {
+	case cfg.ResendAPIKey != "":
+		slog.Info("email_service_resend", "from", cfg.ResendFrom)
+		return service.NewResendEmailService(cfg.ResendAPIKey, cfg.ResendFrom)
+	case cfg.SMTPHost != "":
+		slog.Info("email_service_smtp", "host", cfg.SMTPHost, "port", cfg.SMTPPort, "from", cfg.SMTPFrom)
+		return service.NewSMTPEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
+	default:
+		slog.Warn("email_service_noop",
+			"hint", "set RESEND_API_KEY (recommended in prod) or SMTP_HOST/PORT/USER/PASSWORD/FROM to enable e-mail sending")
+		return service.NewNoopEmailService()
+	}
 }
 
 func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
@@ -63,19 +83,12 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 
 	embSvc := service.NewEmbeddingService(cfg.EmbeddingBaseURL, cfg.EmbeddingAPIKey, cfg.EmbeddingModel)
 
-	var emailSvc service.EmailService
-	switch {
-	case cfg.ResendAPIKey != "":
-		slog.Info("email_service_resend", "from", cfg.ResendFrom)
-		emailSvc = service.NewResendEmailService(cfg.ResendAPIKey, cfg.ResendFrom)
-	case cfg.SMTPHost != "":
-		slog.Info("email_service_smtp", "host", cfg.SMTPHost, "port", cfg.SMTPPort, "from", cfg.SMTPFrom)
-		emailSvc = service.NewSMTPEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
-	default:
-		slog.Warn("email_service_noop",
-			"hint", "set RESEND_API_KEY (recommended in prod) or SMTP_HOST/PORT/USER/PASSWORD/FROM to enable e-mail sending")
-		emailSvc = service.NewNoopEmailService()
-	}
+	// Handlers empilham no Redis; o worker embutido consome e envia de fato.
+	// O worker ganha ctx próprio (o ctx do Bootstrap tem timeout de 10s) e é
+	// parado no Runtime.Close.
+	emailSvc := service.NewQueueEmailService(redisClient)
+	workerCtx, stopWorker := context.WithCancel(context.Background())
+	go worker.RunEmailWorker(workerCtx, redisClient, NewEmailSender(cfg))
 
 	services := Services{
 		Auth: service.NewRedisAuthService(
@@ -115,11 +128,16 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		DB:          db,
 		RedisClient: redisClient,
 		Services:    services,
+		stopWorker:  stopWorker,
 	}, nil
 }
 
 func (r *Runtime) Close() error {
 	var closeErr error
+
+	if r.stopWorker != nil {
+		r.stopWorker()
+	}
 
 	if r.RedisClient != nil {
 		if err := r.RedisClient.Close(); err != nil {
