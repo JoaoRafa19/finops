@@ -16,12 +16,75 @@ import (
 	"strings"
 	"time"
 
+	"finops/internal/models"
+	"finops/internal/observability"
 	emailtemplates "finops/internal/web/templates/email"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type EmailService interface {
 	SendPasswordReset(ctx context.Context, toEmail, resetURL string) error
 	SendVerifyEmail(ctx context.Context, toEmail, verifyURL string) error
+}
+
+// QueueEmailService empilha os e-mails no Redis; o envio real é feito pelo
+// worker (internal/worker.RunEmailWorker) consumindo as filas.
+type QueueEmailService struct {
+	rdb *redis.Client
+}
+
+func NewQueueEmailService(rdb *redis.Client) EmailService {
+	return &QueueEmailService{rdb: rdb}
+}
+
+func (em *QueueEmailService) SendVerifyEmail(ctx context.Context, toEmail, verifyURL string) error {
+	logger := observability.Logger(ctx)
+
+	payload := models.VerifyResetEmailBody{
+		Email:     toEmail,
+		VerifyUrl: verifyURL,
+	}
+
+
+	data, err := json.Marshal(payload)
+
+	if err != nil {
+		return err
+	}
+
+	if err := em.rdb.LPush(ctx, models.EmailVerifyKey, data).Err(); err != nil {
+		return fmt.Errorf("store email verify : %w", err)
+	}
+
+	logger.Info("email_verify_requested", "email", toEmail)
+	return nil
+
+}
+
+func (em *QueueEmailService) SendPasswordReset(ctx context.Context, toEmail, resetURL string) error {
+	// Get the email
+	// Send to redis
+	logger := observability.Logger(ctx)
+
+	payload := models.VerifyResetEmailBody{
+		Email:    toEmail,
+		ResetUrl: resetURL,
+	}
+
+	data, err := json.Marshal(payload)
+
+	if err != nil {
+		return err
+	}
+
+	if err := em.rdb.LPush(ctx, models.EmailResetKey, data).Err(); err != nil {
+		return fmt.Errorf("store email reset : %w", err)
+	}
+
+	logger.Info("password_reset_requested", "email", toEmail)
+	return nil
+
 }
 
 // SMTPEmailService envia emails via SMTP com STARTTLS ou TLS.
