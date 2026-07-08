@@ -45,12 +45,12 @@ templ ImportPage(accounts []store.Account, csrf string) {
 							</select>
 						</div>
 						<div>
-							@FormLabel("file", "Arquivo (.ofx, .qfx, .csv)")
+							@FormLabel("file", "Arquivo (.ofx, .qfx, .csv, .pdf)")
 							<input
 								id="file"
 								type="file"
 								name="file"
-								accept=".ofx,.qfx,.csv"
+								accept=".ofx,.qfx,.csv,.pdf"
 								required
 								class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-finops-900 shadow-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-finops-900 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white"
 							/>
@@ -112,6 +112,104 @@ templ OFXPreviewFragment(rows []service.ImportRow, uuid, csrf, accountID string)
 			<input type="hidden" name="account_id" value={ accountID }/>
 			@PrimaryButton("submit", fmt.Sprintf("Confirmar importação de %d transações", len(rows)), true)
 		</form>
+	</div>
+}
+
+templ InvoicePreviewFragment(prop service.InvoiceProposal, uuid, csrf, accountID string) {
+	<div>
+		<div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
+			<i class="fa-solid fa-robot mr-2"></i>A IA extraiu { fmt.Sprintf("%d lançamento(s) e %d compromisso(s)", len(prop.Transactions), len(prop.Commitments)) } da fatura. Revise antes de confirmar.
+		</div>
+		if len(prop.Commitments) > 0 {
+			<p class="mb-2 font-bold text-finops-900">Compromissos propostos</p>
+			<div class="mb-4 max-h-52 overflow-y-auto rounded-xl border border-slate-200">
+				<table class="w-full text-sm">
+					<thead class="sticky top-0 bg-slate-50">
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="px-4 py-2">Descrição</th>
+							<th class="px-4 py-2">Tipo</th>
+							<th class="px-4 py-2">Período</th>
+							<th class="px-4 py-2 text-right">Valor mensal</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, c := range prop.Commitments {
+							<tr>
+								<td class="px-4 py-2 text-finops-900">{ c.Name }</td>
+								<td class="px-4 py-2 text-finops-700">{ commitmentKindLabel(c.Kind) }</td>
+								<td class="px-4 py-2 text-finops-700">{ invoiceCommitmentPeriod(c) }</td>
+								<td class="px-4 py-2 text-right font-bold tabular-nums text-rose-700">{ utils.FormatMoney(c.MonthlyValue) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		if len(prop.Transactions) > 0 {
+			<p class="mb-2 font-bold text-finops-900">Lançamentos</p>
+			<div class="max-h-60 overflow-y-auto rounded-xl border border-slate-200">
+				<table class="w-full text-sm">
+					<thead class="sticky top-0 bg-slate-50">
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="px-4 py-2">Data</th>
+							<th class="px-4 py-2">Descrição</th>
+							<th class="px-4 py-2 text-right">Valor</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range prop.Transactions {
+							<tr>
+								<td class="px-4 py-2 text-finops-700">{ row.PostedOn.Format("02/01/2006") }</td>
+								<td class="px-4 py-2 text-finops-900">{ row.Description }</td>
+								<td class={ "px-4 py-2 text-right font-bold tabular-nums " + importAmountClass(row.Direction) }>
+									{ importAmountLabel(row) }
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		<form
+			hx-post="/import/invoice-confirm"
+			hx-target="#import-result"
+			hx-swap="innerHTML"
+			class="mt-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input type="hidden" name="uuid" value={ uuid }/>
+			<input type="hidden" name="account_id" value={ accountID }/>
+			@PrimaryButton("submit", "Confirmar importação da fatura", true)
+		</form>
+	</div>
+}
+
+func invoiceCommitmentPeriod(c service.CommitmentProposal) string {
+	if c.EndMonth == nil {
+		return "desde " + fmtMonth(c.StartMonth)
+	}
+	if c.StartMonth.Equal(*c.EndMonth) {
+		return fmtMonth(c.StartMonth)
+	}
+	return fmtMonth(c.StartMonth) + " → " + fmtMonth(*c.EndMonth)
+}
+
+templ InvoiceResultFragment(result service.InvoiceImportResult) {
+	<div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
+		<p class="font-bold"><i class="fa-solid fa-circle-check mr-2"></i>Fatura importada</p>
+		<ul class="mt-2 space-y-1">
+			<li>{ fmt.Sprintf("%d lançamento(s) inseridos", result.TransactionsInserted) }</li>
+			if result.TransactionsDuplicated > 0 {
+				<li class="text-finops-700">{ fmt.Sprintf("%d lançamento(s) já existiam (ignorados)", result.TransactionsDuplicated) }</li>
+			}
+			<li>{ fmt.Sprintf("%d compromisso(s) criados", result.CommitmentsCreated) }</li>
+			if result.CommitmentsSkipped > 0 {
+				<li class="text-finops-700">{ fmt.Sprintf("%d compromisso(s) já existiam (ignorados)", result.CommitmentsSkipped) }</li>
+			}
+		</ul>
+		<a href="/projections" class="mt-3 inline-flex items-center gap-2 rounded-lg bg-finops-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-finops-800">
+			<i class="fa-solid fa-chart-line" aria-hidden="true"></i> Ver projeções
+		</a>
 	</div>
 }
 

@@ -33,9 +33,10 @@ type OllamaAgentChatService struct {
 	client      *openai.Client
 	model       string
 	rdb         *redis.Client
-	accountSvc  AccountService
-	reportSvc   ReportsService
-	categorySvc CategoryService
+	accountSvc    AccountService
+	reportSvc     ReportsService
+	categorySvc   CategoryService
+	projectionSvc ProjectionService
 }
 
 func NewOllamaAgentChatService(
@@ -44,16 +45,18 @@ func NewOllamaAgentChatService(
 	accountSvc AccountService,
 	reportSvc ReportsService,
 	categorySvc CategoryService,
+	projectionSvc ProjectionService,
 ) ChatService {
 	cfg := openai.DefaultConfig(apiKey)
 	cfg.BaseURL = strings.TrimRight(baseURL, "/") + "/v1"
 	return &OllamaAgentChatService{
-		client:      openai.NewClientWithConfig(cfg),
-		model:       model,
-		rdb:         rdb,
-		accountSvc:  accountSvc,
-		reportSvc:   reportSvc,
-		categorySvc: categorySvc,
+		client:        openai.NewClientWithConfig(cfg),
+		model:         model,
+		rdb:           rdb,
+		accountSvc:    accountSvc,
+		reportSvc:     reportSvc,
+		categorySvc:   categorySvc,
+		projectionSvc: projectionSvc,
 	}
 }
 
@@ -102,7 +105,7 @@ func (s *OllamaAgentChatService) History(ctx context.Context, userID int64) ([]C
 func (s *OllamaAgentChatService) Ask(ctx context.Context, userID int64, question string) (string, error) {
 	logger := slog.Default()
 	history, _ := s.loadMsgs(ctx, userID)
-	tools := FinancialTools(s.reportSvc, s.accountSvc, s.categorySvc, userID)
+	tools := FinancialTools(s.reportSvc, s.accountSvc, s.categorySvc, s.projectionSvc, userID)
 
 	// Constrói schema de tools para a API
 	openaiTools := make([]openai.Tool, len(tools))

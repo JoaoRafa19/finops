@@ -51,7 +51,7 @@ func tool(name, description string, parameters json.RawMessage) openai.Tool {
 }
 
 // FinancialTools retorna as ferramentas disponíveis para o agente de chat.
-func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categorySvc CategoryService, userID int64) []financialTool {
+func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categorySvc CategoryService, projectionSvc ProjectionService, userID int64) []financialTool {
 	return []financialTool{
 		accountBalancesTool(accountSvc, userID),
 		categoriesTool(categorySvc, userID),
@@ -61,6 +61,63 @@ func FinancialTools(reportSvc ReportsService, accountSvc AccountService, categor
 		monthlyComparisonTool(reportSvc, userID),
 		balanceHistoryTool(reportSvc, userID),
 		listTransactionsTool(reportSvc, userID),
+		projectionForecastTool(projectionSvc, userID),
+	}
+}
+
+func projectionForecastTool(projectionSvc ProjectionService, userID int64) financialTool {
+	return financialTool{
+		schema: tool("get_cash_flow_projection",
+			"Projeta o fluxo de caixa FUTURO mês a mês (entradas, saídas fixas, sobra e caixa acumulado) a partir das premissas e compromissos cadastrados (parcelamentos, assinaturas, recebíveis). Use para perguntas sobre meses futuros: quanto vai sobrar, quando a fatura alivia, meses no vermelho.",
+			params(map[string]any{
+				"from": prop("string", "Mês inicial no formato YYYY-MM (opcional; default: mês atual)"),
+				"to":   prop("string", "Mês final no formato YYYY-MM (opcional; default: 11 meses após o inicial)"),
+			}),
+		),
+		handler: func(ctx context.Context, args json.RawMessage) (string, error) {
+			var p struct {
+				From string `json:"from"`
+				To   string `json:"to"`
+			}
+			_ = json.Unmarshal(args, &p)
+			now := time.Now()
+			from := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+			if t, err := time.Parse("2006-01", p.From); err == nil {
+				from = t
+			}
+			to := from.AddDate(0, 11, 0)
+			if t, err := time.Parse("2006-01", p.To); err == nil && !t.Before(from) {
+				to = t
+			}
+			res, err := projectionSvc.Forecast(ctx, userID, from, to)
+			if err != nil {
+				return "", err
+			}
+			if len(res.Months) == 0 {
+				return "Nenhum mês no período.", nil
+			}
+			months := [...]string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
+			mName := func(t time.Time) string { return fmt.Sprintf("%s/%d", months[t.Month()-1], t.Year()) }
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "Projeção de fluxo de caixa (%s a %s):\n", mName(from), mName(to))
+			for _, m := range res.Months {
+				fmt.Fprintf(&sb, "- %s: entradas %s | saídas %s | sobra %s | caixa acumulado %s\n",
+					mName(m.Month), utils.FormatMoney(m.Income), utils.FormatMoney(m.FixedOut+m.VariableOut),
+					utils.FormatMoney(m.Net), utils.FormatMoney(m.Cumulative))
+			}
+			fmt.Fprintf(&sb, "Resumo: sobra média %s | pior mês %s (%s) | melhor mês %s (%s) | caixa final %s | %d mês(es) no vermelho\n",
+				utils.FormatMoney(res.Summary.AvgNet),
+				mName(res.Summary.WorstMonth), utils.FormatMoney(res.Summary.WorstNet),
+				mName(res.Summary.BestMonth), utils.FormatMoney(res.Summary.BestNet),
+				utils.FormatMoney(res.Summary.FinalCash), res.Summary.MonthsNetNegative)
+			if len(res.Milestones) > 0 {
+				sb.WriteString("Marcos:\n")
+				for _, ms := range res.Milestones {
+					fmt.Fprintf(&sb, "- %s: %s\n", mName(ms.Month), ms.Label)
+				}
+			}
+			return sb.String(), nil
+		},
 	}
 }
 

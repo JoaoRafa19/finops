@@ -23,6 +23,8 @@ type Services struct {
 	Classification service.ClassificationService
 	Chat           service.ChatService
 	Tour           service.TourService
+	Projection     service.ProjectionService
+	Invoice        service.InvoiceService
 }
 
 type Runtime struct {
@@ -90,6 +92,15 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 	workerCtx, stopWorker := context.WithCancel(context.Background())
 	go worker.RunEmailWorker(workerCtx, redisClient, NewEmailSender(cfg))
 
+	projectionSvc := service.NewPGProjectionService(queries)
+	importSvc := service.NewPGImportService(db, queries)
+	invoiceSvc := service.NewAIInvoiceService(
+		queries,
+		service.NewAIService(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel),
+		importSvc,
+		projectionSvc,
+	)
+
 	services := Services{
 		Auth: service.NewRedisAuthService(
 			redisClient,
@@ -105,13 +116,15 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 		Transaction: service.NewPGTransactionService(db, queries),
 		Category:    service.NewPGCategoryService(queries),
 		Report:      service.NewPGReportService(queries),
-		Import:      service.NewPGImportService(db, queries),
+		Import:      importSvc,
 		Classification: service.NewPGClassificationService(
 			queries, db,
 			service.NewAIService(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel),
 			embSvc,
 		),
-		Tour: service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
+		Tour:       service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
+		Projection: projectionSvc,
+		Invoice:    invoiceSvc,
 		Chat: service.NewOllamaAgentChatService(
 			cfg.LLMBaseURL,
 			cfg.LLMAPIKey,
@@ -120,6 +133,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 			service.NewPGAccountService(db, queries),
 			service.NewPGReportService(queries),
 			service.NewPGCategoryService(queries),
+			projectionSvc,
 		),
 	}
 
