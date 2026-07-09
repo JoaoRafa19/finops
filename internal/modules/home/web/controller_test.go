@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"finops/internal/models"
+	service "finops/internal/services"
 	"finops/internal/web/templates"
 )
 
@@ -51,7 +52,7 @@ func renderHome(t *testing.T) string {
 func renderHomeTour(t *testing.T, tourActive bool) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := templates.HomePage("user@example.com", "csrf-token", tourActive).Render(context.Background(), &sb); err != nil {
+	if err := templates.HomePage("user@example.com", "csrf-token", tourActive, service.HomeModeAdvanced).Render(context.Background(), &sb); err != nil {
 		t.Fatalf("render home: %v", err)
 	}
 	return sb.String()
@@ -92,7 +93,7 @@ func TestHomeTourModeLoadsMockDashboard(t *testing.T) {
 // Dashboard em modo tour responde com dados mock sem consultar nenhum serviço
 // (controller com serviços nil: qualquer acesso ao banco causaria panic).
 func TestDashboardTourModeUsesMockWithoutServices(t *testing.T) {
-	c := NewController(nil, nil, nil, nil, nil, nil)
+	c := NewController(nil, nil, nil, nil, nil, nil, nil)
 
 	req := httptest.NewRequest("GET", "/dashboard?tour=1", nil)
 	req = req.WithContext(context.WithValue(req.Context(), models.SessionCtxKey, models.Session{

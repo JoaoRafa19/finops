@@ -6,6 +6,7 @@ import (
 	"finops/internal/web/middleware"
 	"finops/internal/web/render"
 	"finops/internal/web/templates"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +15,11 @@ import (
 type ImportController struct {
 	importSvc  service.ImportService
 	accountSvc service.AccountService
+	invoiceSvc service.InvoiceService
 }
 
-func NewImportController(importSvc service.ImportService, accountSvc service.AccountService) *ImportController {
-	return &ImportController{importSvc: importSvc, accountSvc: accountSvc}
+func NewImportController(importSvc service.ImportService, accountSvc service.AccountService, invoiceSvc service.InvoiceService) *ImportController {
+	return &ImportController{importSvc: importSvc, accountSvc: accountSvc, invoiceSvc: invoiceSvc}
 }
 
 func (c *ImportController) Page(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +68,8 @@ func (c *ImportController) Upload(w http.ResponseWriter, r *http.Request) {
 
 	name := strings.ToLower(header.Filename)
 	isOFX := strings.HasSuffix(name, ".ofx") || strings.HasSuffix(name, ".qfx")
+	isInvoice := strings.HasSuffix(name, ".pdf") || strings.HasSuffix(name, ".png") ||
+		strings.HasSuffix(name, ".jpg") || strings.HasSuffix(name, ".jpeg")
 
 	if isOFX {
 		rows, err := c.importSvc.ParseOFX(file)
@@ -76,6 +80,27 @@ func (c *ImportController) Upload(w http.ResponseWriter, r *http.Request) {
 		}
 		uuid := c.importSvc.StorePreview(rows)
 		render.Templ(w, r, http.StatusOK, templates.OFXPreviewFragment(rows, uuid, session.CSRFToken, accountID))
+		return
+	}
+
+	if isInvoice {
+		accID, err := strconv.ParseInt(accountID, 10, 64)
+		if err != nil {
+			render.Templ(w, r, http.StatusBadRequest, templates.ImportErrorFragment("Conta inválida."))
+			return
+		}
+		content, err := io.ReadAll(file)
+		if err != nil {
+			render.Templ(w, r, http.StatusOK, templates.ImportErrorFragment("Erro ao ler o arquivo."))
+			return
+		}
+		uuid, prop, err := c.invoiceSvc.ExtractInvoice(r.Context(), session.UserID, accID, header.Filename, content)
+		if err != nil {
+			logger.Warn("import_invoice_extract_failed", "user_id", session.UserID, "error", err)
+			render.Templ(w, r, http.StatusOK, templates.ImportErrorFragment("Erro ao extrair a fatura: "+err.Error()))
+			return
+		}
+		render.Templ(w, r, http.StatusOK, templates.InvoicePreviewFragment(prop, uuid, session.CSRFToken, accountID))
 		return
 	}
 
@@ -178,6 +203,37 @@ func (c *ImportController) Confirm(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("import_confirm_succeeded", "user_id", session.UserID, "inserted", result.Inserted, "duplicates", result.Duplicates, "errors", result.Errors)
 	render.Templ(w, r, http.StatusOK, templates.ImportResultFragment(result))
+}
+
+// ConfirmInvoice persiste a proposta de fatura (transações + compromissos),
+// aplicando o dedup determinístico no service.
+func (c *ImportController) ConfirmInvoice(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		render.Templ(w, r, http.StatusBadRequest, templates.ImportErrorFragment("Requisição inválida."))
+		return
+	}
+	uuid := r.FormValue("uuid")
+	accountID, err := strconv.ParseInt(r.FormValue("account_id"), 10, 64)
+	if err != nil {
+		render.Templ(w, r, http.StatusBadRequest, templates.ImportErrorFragment("Conta inválida."))
+		return
+	}
+	result, err := c.invoiceSvc.ConfirmInvoice(r.Context(), session.UserID, accountID, uuid)
+	if err != nil {
+		logger.Error("import_invoice_confirm_failed", "user_id", session.UserID, "error", err)
+		render.Templ(w, r, http.StatusOK, templates.ImportErrorFragment("Erro ao importar a fatura: "+err.Error()))
+		return
+	}
+	logger.Info("import_invoice_confirmed", "user_id", session.UserID,
+		"tx_inserted", result.TransactionsInserted, "tx_dup", result.TransactionsDuplicated,
+		"commitments", result.CommitmentsCreated, "commitments_skipped", result.CommitmentsSkipped)
+	render.Templ(w, r, http.StatusOK, templates.InvoiceResultFragment(result))
 }
 
 func parseCol(s string) int {

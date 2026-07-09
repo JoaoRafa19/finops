@@ -85,7 +85,15 @@ func OnboardingPage(errorMessage string, csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FormLabel("home_mode", "Como você prefere ver sua tela inicial?").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2\"><label class=\"flex cursor-pointer flex-col gap-1 rounded-xl border border-slate-300 p-4 transition has-[:checked]:border-finops-500 has-[:checked]:bg-finops-50\"><span class=\"flex items-center gap-2 font-semibold text-finops-900\"><input type=\"radio\" name=\"home_mode\" value=\"simple\" checked> <i class=\"fa-solid fa-feather text-finops-500\"></i> Simples</span> <span class=\"text-sm text-finops-700\">Poucos números, direto ao ponto. Ideal para começar.</span></label> <label class=\"flex cursor-pointer flex-col gap-1 rounded-xl border border-slate-300 p-4 transition has-[:checked]:border-finops-500 has-[:checked]:bg-finops-50\"><span class=\"flex items-center gap-2 font-semibold text-finops-900\"><input type=\"radio\" name=\"home_mode\" value=\"advanced\"> <i class=\"fa-solid fa-chart-line text-finops-500\"></i> Avançado</span> <span class=\"text-sm text-finops-700\">Gráficos, categorias e insights detalhados.</span></label></div><p class=\"mt-2 text-xs text-finops-500\">Você pode trocar quando quiser na tela inicial.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -93,7 +101,7 @@ func OnboardingPage(errorMessage string, csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</form></div></section></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</form></div></section></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

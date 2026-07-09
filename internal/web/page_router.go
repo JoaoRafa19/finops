@@ -11,6 +11,7 @@ import (
 	imports "finops/internal/modules/imports/web"
 	onboarding "finops/internal/modules/onboarding/web"
 	profile "finops/internal/modules/profile/web"
+	projections "finops/internal/modules/projections/web"
 	reports "finops/internal/modules/reports/web"
 	transactions "finops/internal/modules/transactions/web"
 	"finops/internal/web/middleware"
@@ -28,9 +29,10 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.ImportService,
 		deps.TourService,
 		deps.CategoryService,
+		deps.UserSettingsService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
-	onboardingController := onboarding.NewController(deps.WorkspaceService)
+	onboardingController := onboarding.NewController(deps.WorkspaceService, deps.UserSettingsService)
 	transactionController := transactions.NewController(
 		deps.TransactionService,
 		deps.AccountService,
@@ -38,7 +40,8 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	)
 	categoryController := category.NewCategoryController(deps.CategoryService)
 	reportsController := reports.NewReportsController(deps.ReportService, deps.CategoryService)
-	importController := imports.NewImportController(deps.ImportService, deps.AccountService)
+	projectionsController := projections.NewProjectionsController(deps.ProjectionService, deps.AccountService)
+	importController := imports.NewImportController(deps.ImportService, deps.AccountService, deps.InvoiceService)
 	classificationController := classification.NewClassificationController(deps.ClassificationService, deps.CategoryService)
 	chatController := chat.NewChatController(deps.ChatService)
 	tourController := tour.NewTourController(deps.TourService)
@@ -68,6 +71,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
 	private.HandleFunc("GET /dashboard", homeController.Dashboard)
+	private.HandleFunc("POST /home/mode", homeController.ToggleMode)
 	private.HandleFunc("POST /accounts", accountController.Create)
 	private.HandleFunc("GET /account-modal", accountController.AccountModal)
 	private.HandleFunc("GET /accounts/{id}/edit", accountController.EditForm)
@@ -93,7 +97,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 	private.HandleFunc("GET /transactions/{id}/edit-modal", transactionController.EditModal)
-	private.HandleFunc("POST /transactions/{id}", transactionController.UpdateTransaction)
+	private.HandleFunc("PUT /transactions/{id}", transactionController.UpdateTransaction)
 	private.HandleFunc("DELETE /transactions/{id}", transactionController.DeleteTransaction)
 	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
 	private.HandleFunc("GET /reports", reportsController.Page)
@@ -101,10 +105,24 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /reports/comparison", reportsController.Comparison)
 	private.HandleFunc("GET /reports/balance", reportsController.Balance)
 	private.HandleFunc("GET /reports/transactions", reportsController.Transactions)
+
+	private.HandleFunc("GET /projections", projectionsController.Page)
+	private.HandleFunc("GET /projections/forecast", projectionsController.Forecast)
+	private.HandleFunc("GET /projections/summary", projectionsController.Summary)
+	private.HandleFunc("GET /projections/simulator", projectionsController.Simulator)
+	private.HandleFunc("POST /projections/variable", projectionsController.SetVariableOverride)
+	private.HandleFunc("GET /projections/commitments", projectionsController.CommitmentsFragment)
+	private.HandleFunc("POST /projections/commitments", projectionsController.CreateCommitment)
+	private.HandleFunc("GET /projections/commitments/{id}/edit", projectionsController.EditRow)
+	private.HandleFunc("GET /projections/commitments/{id}/row", projectionsController.Row)
+	private.HandleFunc("POST /projections/commitments/{id}", projectionsController.UpdateCommitment)
+	private.HandleFunc("DELETE /projections/commitments/{id}", projectionsController.DeleteCommitment)
+	private.HandleFunc("POST /projections/settings", projectionsController.UpdateSettings)
 	private.HandleFunc("GET /import", importController.Page)
 	private.HandleFunc("POST /import/upload", importController.Upload)
 	private.HandleFunc("POST /import/preview-csv", importController.PreviewCSV)
 	private.HandleFunc("POST /import/confirm", importController.Confirm)
+	private.HandleFunc("POST /import/invoice-confirm", importController.ConfirmInvoice)
 	private.HandleFunc("GET /classify", classificationController.Page)
 	private.HandleFunc("GET /classify/{id}/modal", classificationController.SuggestModal)
 	private.HandleFunc("POST /classify", classificationController.Classify)
@@ -115,6 +133,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 	private.HandleFunc("POST /chat", chatController.Message)
 	private.HandleFunc("GET /chat/history", chatController.GetHistory)
+	private.HandleFunc("POST /chat/clear", chatController.Clear)
 	private.HandleFunc("GET /profile", profileController.Page)
 	private.HandleFunc("GET /tour", tourController.Page)
 	private.HandleFunc("GET /tour/start", tourController.Start)

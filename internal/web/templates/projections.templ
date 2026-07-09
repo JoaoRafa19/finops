@@ -1,0 +1,665 @@
+package templates
+
+import (
+	"finops/internal/services"
+	"finops/internal/store"
+	"finops/internal/utils"
+	"fmt"
+	"sort"
+	"strconv"
+)
+
+func commitmentKindLabel(kind string) string {
+	switch kind {
+	case service.CommitmentInstallment:
+		return "Parcelamento"
+	case service.CommitmentSubscription:
+		return "Assinatura"
+	case service.CommitmentFixed:
+		return "Gasto fixo"
+	case service.CommitmentIncome:
+		return "Recebível"
+	case service.CommitmentOneOff:
+		return "Evento único"
+	}
+	return kind
+}
+
+func commitmentPeriod(c service.Commitment) string {
+	if c.EndMonth == nil {
+		return "desde " + fmtMonth(c.StartMonth)
+	}
+	if c.StartMonth.Equal(*c.EndMonth) {
+		return fmtMonth(c.StartMonth)
+	}
+	return fmtMonth(c.StartMonth) + " → " + fmtMonth(*c.EndMonth)
+}
+
+func fmtMoneyInput(v float64) string {
+	if v == 0 {
+		return ""
+	}
+	return strconv.FormatFloat(v, 'f', 2, 64)
+}
+
+func fmtIntInput(v int) string {
+	if v == 0 {
+		return ""
+	}
+	return strconv.Itoa(v)
+}
+
+func fmtRateInput(v float64) string {
+	if v == 0 {
+		return ""
+	}
+	return strconv.FormatFloat(v*100, 'f', -1, 64)
+}
+
+func fmtPct(v float64) string {
+	return fmt.Sprintf("%.1f%%", v*100)
+}
+
+func fmtMonthInput(c service.Commitment, end bool) string {
+	if end {
+		if c.EndMonth == nil {
+			return ""
+		}
+		return c.EndMonth.Format("2006-01")
+	}
+	return c.StartMonth.Format("2006-01")
+}
+
+var commitmentKindOptions = []struct {
+	Value string
+	Label string
+}{
+	{service.CommitmentInstallment, "Parcelamento"},
+	{service.CommitmentSubscription, "Assinatura"},
+	{service.CommitmentFixed, "Gasto fixo"},
+	{service.CommitmentIncome, "Recebível"},
+	{service.CommitmentOneOff, "Evento único"},
+}
+
+func sortedCardIDs(names map[int64]string) []int64 {
+	ids := make([]int64, 0, len(names))
+	for id := range names {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids
+}
+
+func cardLabel(names map[int64]string, id int64) string {
+	if n := names[id]; n != "" {
+		return n
+	}
+	return fmt.Sprintf("Conta %d", id)
+}
+
+// netClass: design system §3 — negativo vira vermelho (fundo + texto), o "semáforo".
+func netClass(v float64) string {
+	if v < 0 {
+		return "bg-rose-50 text-rose-700 font-bold"
+	}
+	return "text-finops-900"
+}
+
+func chartLabels(months []service.MonthProjection) []string {
+	out := make([]string, len(months))
+	for i, m := range months {
+		out[i] = fmtMonth(m.Month)
+	}
+	return out
+}
+
+func cumulativeValues(months []service.MonthProjection) []float64 {
+	out := make([]float64, len(months))
+	for i, m := range months {
+		out[i] = m.Cumulative
+	}
+	return out
+}
+
+func netValues(months []service.MonthProjection) []float64 {
+	out := make([]float64, len(months))
+	for i, m := range months {
+		out[i] = m.Net
+	}
+	return out
+}
+
+templ ProjectionsPage(csrf string) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		@AppHead("Projeções · Finops", true)
+		<body class="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#e2e8f0_100%)] font-display text-finops-900">
+			@SideNav("/projections", csrf)
+			<main id="page-content" class="mx-auto max-w-6xl px-4 py-12 pl-16 sm:px-6 sm:pl-16">
+				<div class="mb-6">
+					<p class="text-xs font-bold uppercase tracking-[0.2em] text-finops-500">Finops</p>
+					<h1 class="mt-1 text-3xl font-extrabold">Projeções</h1>
+					<p class="mt-1 text-sm text-finops-700">Fluxo de caixa projetado 12 meses a partir das premissas e compromissos.</p>
+				</div>
+				@ProjectionsOnboarding()
+				<div
+					id="summary-section"
+					class="mt-6"
+					hx-get="/projections/summary"
+					hx-trigger="load, projection-changed from:body"
+					hx-swap="innerHTML"
+				>
+					<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-finops-700">Calculando resumo…</div>
+				</div>
+				<div
+					id="forecast-section"
+					class="mt-6"
+					hx-get="/projections/forecast"
+					hx-trigger="load, projection-changed from:body"
+					hx-swap="innerHTML"
+				>
+					<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-finops-700">Calculando projeção…</div>
+				</div>
+				<div
+					id="simulator-section"
+					class="mt-6"
+					hx-get="/projections/simulator"
+					hx-trigger="load, projection-changed from:body"
+					hx-swap="innerHTML"
+				>
+					<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-finops-700">Simulando financiamento…</div>
+				</div>
+				<div
+					id="commitments-section"
+					class="mt-6"
+					hx-get="/projections/commitments"
+					hx-trigger="load"
+					hx-swap="innerHTML"
+				>
+					<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-finops-700">Carregando compromissos…</div>
+				</div>
+			</main>
+		</body>
+	</html>
+}
+
+// ProjectionsOnboarding — módulo "Início": modelo mental + legenda de cores (§4.1/§3).
+templ ProjectionsOnboarding() {
+	<details class="rounded-2xl border border-slate-200 bg-white p-6">
+		<summary class="cursor-pointer text-lg font-bold text-finops-900">Como funciona <span class="text-sm font-normal text-finops-700">— clique para o guia rápido</span></summary>
+		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+			<div>
+				<p class="mb-2 text-sm font-bold text-finops-800">Passo a passo</p>
+				<ol class="list-decimal space-y-1 pl-5 text-sm text-finops-700">
+					<li><b>Premissas</b>: renda, saldo inicial, gasto variável e dados do imóvel.</li>
+					<li><b>Compromissos</b>: parcelamentos, assinaturas e recebíveis com seus meses de término.</li>
+					<li><b>Projeção</b>: o demonstrativo mês a mês; ajuste o gasto variável de cada mês direto na tabela.</li>
+					<li><b>Simulador</b>: veredito se a parcela do financiamento cabe no bolso.</li>
+					<li><b>Resumo</b>: os KPIs e os marcos do período.</li>
+				</ol>
+			</div>
+			<div>
+				<p class="mb-2 text-sm font-bold text-finops-800">Código de cores</p>
+				<ul class="space-y-1 text-sm text-finops-700">
+					<li><span class="rounded bg-blue-100 px-2 py-0.5 font-semibold text-blue-700">Azul</span> — campo que você edita</li>
+					<li><span class="rounded bg-amber-100 px-2 py-0.5 font-semibold text-amber-700">Amarelo</span> — premissa incerta (placeholder)</li>
+					<li><span class="rounded bg-rose-50 px-2 py-0.5 font-semibold text-rose-700">Vermelho</span> — valor negativo (alerta de risco)</li>
+				</ul>
+			</div>
+		</div>
+	</details>
+}
+
+templ SummaryFragment(res service.ProjectionResult) {
+	<div class="space-y-6">
+		<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+			@kpiCard("Sobra média mensal", utils.FormatMoney(res.Summary.AvgNet), netClass(res.Summary.AvgNet), "")
+			@kpiCard("Pior mês", utils.FormatMoney(res.Summary.WorstNet), netClass(res.Summary.WorstNet), fmtMonth(res.Summary.WorstMonth))
+			@kpiCard("Melhor mês", utils.FormatMoney(res.Summary.BestNet), "text-emerald-700", fmtMonth(res.Summary.BestMonth))
+			@kpiCard("Caixa ao fim", utils.FormatMoney(res.Summary.FinalCash), netClass(res.Summary.FinalCash), "")
+			@kpiCard("Vale (menor caixa)", utils.FormatMoney(res.Summary.LowestCash), netClass(res.Summary.LowestCash), fmtMonth(res.Summary.LowestCashMonth))
+			@kpiCard("Meses com sobra negativa", strconv.Itoa(res.Summary.MonthsNetNegative), redIf(res.Summary.MonthsNetNegative), "")
+			@kpiCard("Meses com caixa negativo", strconv.Itoa(res.Summary.MonthsCashNegative), redIf(res.Summary.MonthsCashNegative), "")
+			@kpiCard("% renda comprometida (1º→últ)", fmtPct(res.Summary.FirstCommittedPct)+" → "+fmtPct(res.Summary.LastCommittedPct), "text-finops-900", "desalavancagem")
+		</div>
+		<div class="grid gap-4 lg:grid-cols-2">
+			<div class="rounded-2xl border border-slate-200 bg-white p-5">
+				<p class="mb-4 text-sm font-bold text-finops-900">Caixa acumulado</p>
+				<div
+					style="height:220px"
+					data-chart="cumulative"
+					data-labels={ jsonStrings(chartLabels(res.Months)) }
+					data-values={ jsonFloats(cumulativeValues(res.Months)) }
+				>
+					<canvas id="proj-cumulative-chart" role="img" aria-label="Gráfico de linha do caixa acumulado mês a mês"></canvas>
+				</div>
+			</div>
+			<div class="rounded-2xl border border-slate-200 bg-white p-5">
+				<p class="mb-4 text-sm font-bold text-finops-900">Sobra por mês</p>
+				<div
+					style="height:220px"
+					data-chart="net"
+					data-labels={ jsonStrings(chartLabels(res.Months)) }
+					data-values={ jsonFloats(netValues(res.Months)) }
+				>
+					<canvas id="proj-net-chart" role="img" aria-label="Gráfico de barras da sobra por mês"></canvas>
+				</div>
+			</div>
+		</div>
+		if len(res.Milestones) > 0 {
+			<div class="rounded-2xl border border-slate-200 bg-white p-6">
+				<p class="mb-4 text-lg font-bold text-finops-900">Marcos importantes</p>
+				<ul class="space-y-2">
+					for _, ms := range res.Milestones {
+						<li class="flex items-baseline gap-3 text-sm">
+							<span class="shrink-0 rounded-lg bg-slate-100 px-2 py-1 font-bold text-finops-800">{ fmtMonth(ms.Month) }</span>
+							<span class="text-finops-700">{ ms.Label }</span>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	</div>
+	@drawProjectionCharts()
+}
+
+// drawProjectionCharts vai DENTRO do fragment: roda toda vez que o SummaryFragment
+// é trocado via HTMX (não depende de listener global), evitando o gráfico em branco
+// no primeiro carregamento.
+templ drawProjectionCharts() {
+	<script>
+		(function() {
+			function draw() {
+				if (typeof Chart === "undefined") return;
+				const cumEl = document.querySelector("[data-chart=cumulative]");
+				if (cumEl) {
+					const c = document.getElementById("proj-cumulative-chart");
+					const ex = Chart.getChart(c); if (ex) ex.destroy();
+					new Chart(c, {
+						type: "line",
+						data: {
+							labels: JSON.parse(cumEl.dataset.labels),
+							datasets: [{ label: "Caixa acumulado", data: JSON.parse(cumEl.dataset.values),
+								borderColor: "#0ea5a4", backgroundColor: "rgba(14,165,164,0.1)", fill: true, tension: 0.3, pointRadius: 3 }],
+						},
+						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
+					});
+				}
+				const netEl = document.querySelector("[data-chart=net]");
+				if (netEl) {
+					const c = document.getElementById("proj-net-chart");
+					const ex = Chart.getChart(c); if (ex) ex.destroy();
+					const vals = JSON.parse(netEl.dataset.values);
+					new Chart(c, {
+						type: "bar",
+						data: {
+							labels: JSON.parse(netEl.dataset.labels),
+							datasets: [{ label: "Sobra", data: vals,
+								backgroundColor: vals.map(v => v < 0 ? "#f43f5e" : "#14b8a6") }],
+						},
+						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
+					});
+				}
+			}
+			requestAnimationFrame(draw);
+		})();
+	</script>
+}
+
+templ kpiCard(label, value, valueClass, sub string) {
+	<div class="rounded-2xl border border-slate-200 bg-white p-5">
+		<p class="text-xs font-bold uppercase tracking-wide text-finops-500">{ label }</p>
+		<p class={ "text-2xl font-extrabold " + valueClass }>{ value }</p>
+		if sub != "" {
+			<p class="text-xs text-finops-700">{ sub }</p>
+		}
+	</div>
+}
+
+func redIf(n int) string {
+	if n > 0 {
+		return "text-rose-700"
+	}
+	return "text-emerald-700"
+}
+
+templ ForecastFragment(res service.ProjectionResult, csrf string) {
+	<div class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="mb-4 flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Fluxo de caixa projetado</p>
+			<p class="text-xs text-finops-700">Gasto variável (azul) é editável por mês</p>
+		</div>
+		<div class="overflow-x-auto">
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+						<th class="pb-3 pr-6">Mês</th>
+						<th class="pb-3 pr-6 text-right">Entradas</th>
+						<th class="pb-3 pr-6 text-right">Saídas fixas</th>
+						<th class="pb-3 pr-6 text-right">Variável</th>
+						<th class="pb-3 pr-6 text-right">Sobra</th>
+						<th class="pb-3 pr-6 text-right">Acumulado</th>
+						<th class="pb-3 text-right">% renda</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, m := range res.Months {
+						<tr>
+							<td class="py-2 pr-6 font-semibold">{ fmtMonth(m.Month) }</td>
+							<td class="py-2 pr-6 text-right tabular-nums text-emerald-700">{ utils.FormatMoney(m.Income) }</td>
+							<td class="py-2 pr-6 text-right tabular-nums text-finops-700">{ utils.FormatMoney(m.FixedOut) }</td>
+							<td class="py-2 pr-6 text-right">
+								@variableCell(m, csrf)
+							</td>
+							<td class={ "py-2 pr-6 text-right tabular-nums rounded " + netClass(m.Net) }>{ utils.FormatMoney(m.Net) }</td>
+							<td class={ "py-2 pr-6 text-right tabular-nums rounded " + netClass(m.Cumulative) }>{ utils.FormatMoney(m.Cumulative) }</td>
+							<td class="py-2 text-right tabular-nums text-finops-700">{ fmtPct(m.CommittedPct) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		if len(res.CardNames) > 0 {
+			<p class="mb-2 mt-6 text-sm font-bold text-finops-900">Faturas projetadas por cartão</p>
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-finops-500">
+							<th class="pb-3 pr-6">Mês</th>
+							for _, id := range sortedCardIDs(res.CardNames) {
+								<th class="pb-3 pr-6 text-right">{ cardLabel(res.CardNames, id) }</th>
+							}
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, m := range res.Months {
+							<tr>
+								<td class="py-2 pr-6 font-semibold">{ fmtMonth(m.Month) }</td>
+								for _, id := range sortedCardIDs(res.CardNames) {
+									<td class="py-2 pr-6 text-right tabular-nums">{ utils.FormatMoney(m.CardTotals[id]) }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+// variableCell: input azul editável (item 11). Salva no blur; vazio volta ao padrão.
+templ variableCell(m service.MonthProjection, csrf string) {
+	<form
+		hx-post="/projections/variable"
+		hx-target="#forecast-section"
+		hx-swap="innerHTML"
+		class="inline"
+	>
+		<input type="hidden" name="_csrf" value={ csrf }/>
+		<input type="hidden" name="month" value={ m.Month.Format("2006-01") }/>
+		<input
+			name="value"
+			inputmode="decimal"
+			value={ fmtMoneyInput(m.VariableOut) }
+			placeholder="padrão"
+			hx-trigger="change"
+			class={ "w-24 rounded border px-2 py-1 text-right text-sm tabular-nums " + variableInputClass(m.VariableIsOverride) }
+		/>
+	</form>
+}
+
+func variableInputClass(isOverride bool) string {
+	if isOverride {
+		return "border-blue-300 bg-blue-50 text-blue-700 font-semibold"
+	}
+	return "border-slate-200 text-finops-700"
+}
+
+templ SimulatorFragment(sim service.FinancingSimulation, s service.ProjectionSettings, csrf string) {
+	<div class="rounded-2xl border border-slate-200 bg-white p-6">
+		<div class="mb-4 flex items-center justify-between">
+			<p class="text-lg font-bold text-finops-900">Simulador de financiamento</p>
+			<p class="text-xs text-finops-700">Cenário pós-entrega</p>
+		</div>
+		if sim.PriceInstallment == 0 {
+			<div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+				{ sim.Verdict }
+			</div>
+		} else {
+			<div class={ "mb-4 rounded-xl p-4 text-sm font-semibold " + verdictClass(sim) }>
+				<i class="fa-solid fa-scale-balanced mr-2"></i>{ sim.Verdict }
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				@simCard("Saldo a financiar", utils.FormatMoney(sim.AmountFinanced), "")
+				@simCard("Parcela Price (sua parte)", utils.FormatMoney(sim.PriceShare), "fixa mensal")
+				@simCard("SAC 1ª parcela (sua parte)", utils.FormatMoney(sim.SacFirstShare), "decrescente")
+				@simCard("Capacidade estimada", utils.FormatMoney(sim.Capacity), "sobra média + entrada atual")
+			</div>
+			<p class="mt-3 text-xs text-finops-500">
+				Taxa mensal equivalente: { fmtPct(sim.MonthlyRate) } · Parcela Price total do casal: { utils.FormatMoney(sim.PriceInstallment) } · SAC total: { utils.FormatMoney(sim.SacFirst) } → { utils.FormatMoney(sim.SacLast) }
+			</p>
+			<p class="mt-2 text-xs italic text-amber-700">
+				<i class="fa-solid fa-triangle-exclamation mr-1"></i>O modelo não corrige o saldo devedor por INCC/IPCA durante a obra — confirme com a construtora.
+			</p>
+		}
+	</div>
+}
+
+func verdictClass(sim service.FinancingSimulation) string {
+	if sim.FitsSac || sim.FitsPrice {
+		return "bg-emerald-50 text-emerald-800"
+	}
+	return "bg-rose-50 text-rose-700"
+}
+
+templ simCard(label, value, sub string) {
+	<div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+		<p class="text-xs font-bold uppercase tracking-wide text-finops-500">{ label }</p>
+		<p class="text-xl font-extrabold text-finops-900">{ value }</p>
+		if sub != "" {
+			<p class="text-xs text-finops-700">{ sub }</p>
+		}
+	</div>
+}
+
+templ CommitmentsPanel(commitments []service.Commitment, settings service.ProjectionSettings, accounts []store.Account, csrf, errMsg string) {
+	<div class="space-y-6">
+		@ProjectionSettingsForm(settings, csrf, "")
+		<div class="rounded-2xl border border-slate-200 bg-white p-6">
+			if errMsg != "" {
+				<div class="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">{ errMsg }</div>
+			}
+			<div class="flex items-center justify-between">
+				<p class="text-lg font-bold text-finops-900">Compromissos</p>
+				<p class="mt-1 text-sm text-finops-700">Parcelamentos, assinaturas, gastos fixos e recebíveis</p>
+			</div>
+			<form
+				method="post"
+				hx-post="/projections/commitments"
+				hx-target="#commitments-section"
+				hx-swap="innerHTML"
+				class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-7"
+			>
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<input name="name" placeholder="Descrição" required class="col-span-2 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+				@commitmentKindSelect("")
+				<input name="monthly_value" placeholder="Valor mensal" required inputmode="decimal" class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+				<input name="start_month" type="month" required title="Primeiro mês" class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+				<input name="end_month" type="month" title="Último mês (vazio = sem fim)" class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+				<div class="flex gap-2">
+					@commitmentAccountSelect(accounts, nil)
+					<button type="submit" class="rounded-lg bg-finops-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-finops-800" title="Adicionar compromisso">
+						<i class="fa-solid fa-plus" aria-hidden="true"></i>
+					</button>
+				</div>
+			</form>
+			if len(commitments) > 0 {
+				<ul class="mt-6 space-y-3">
+					for _, c := range commitments {
+						@CommitmentRow(c, csrf)
+					}
+				</ul>
+			} else {
+				<div class="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+					<p class="text-sm text-finops-700">Nenhum compromisso cadastrado. Adicione parcelamentos do cartão, assinaturas e gastos fixos para projetar seu fluxo de caixa.</p>
+				</div>
+			}
+		</div>
+	</div>
+}
+
+templ commitmentKindSelect(selected string) {
+	<select name="kind" class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm">
+		for _, opt := range commitmentKindOptions {
+			<option value={ opt.Value } selected?={ opt.Value == selected }>{ opt.Label }</option>
+		}
+	</select>
+}
+
+templ commitmentAccountSelect(accounts []store.Account, selected *int64) {
+	<select name="account_id" title="Cartão/conta (opcional)" class="w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm">
+		<option value="">Sem conta</option>
+		for _, a := range accounts {
+			<option
+				value={ fmt.Sprintf("%d", a.ID) }
+				selected?={ selected != nil && *selected == a.ID }
+			>{ a.Name }</option>
+		}
+	</select>
+}
+
+templ CommitmentRow(c service.Commitment, csrf string) {
+	<li id={ fmt.Sprintf("commitment-%d", c.ID) } class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+		<div class="min-w-0">
+			<p class="truncate font-semibold text-finops-900">{ c.Name }</p>
+			<p class="text-sm text-finops-700">
+				{ commitmentKindLabel(c.Kind) }
+				if c.AccountName != "" {
+					· { c.AccountName }
+				}
+				· { commitmentPeriod(c) }
+			</p>
+		</div>
+		<div class="flex shrink-0 items-center gap-3">
+			if c.Kind == service.CommitmentIncome {
+				<p class="font-bold tabular-nums text-emerald-700">{ utils.FormatMoney(c.MonthlyValue) }</p>
+			} else {
+				<p class="font-bold tabular-nums text-rose-700">{ utils.FormatMoney(c.MonthlyValue) }</p>
+			}
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/projections/commitments/%d/edit", c.ID) }
+				hx-target={ fmt.Sprintf("#commitment-%d", c.ID) }
+				hx-swap="outerHTML"
+				class="inline-flex items-center rounded-lg bg-slate-200 px-3 py-1 text-sm text-finops-800 transition hover:bg-slate-300"
+				title="Editar compromisso"
+				aria-label={ "Editar compromisso " + c.Name }
+			><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+			<form
+				method="post"
+				hx-delete={ fmt.Sprintf("/projections/commitments/%d", c.ID) }
+				hx-target="closest li"
+				hx-swap="outerHTML"
+				hx-confirm={ fmt.Sprintf("Excluir o compromisso \"%s\"?", c.Name) }
+			>
+				<input type="hidden" name="_csrf" value={ csrf }/>
+				<button type="submit" class="inline-flex items-center rounded-lg bg-rose-100 px-3 py-1 text-sm text-rose-700 transition hover:bg-rose-200" title="Excluir compromisso" aria-label={ "Excluir compromisso " + c.Name }>
+					<i class="fa-solid fa-trash" aria-hidden="true"></i>
+				</button>
+			</form>
+		</div>
+	</li>
+}
+
+templ CommitmentEditRow(c service.Commitment, accounts []store.Account, csrf, errMsg string) {
+	<li id={ fmt.Sprintf("commitment-%d", c.ID) } class="rounded-xl border border-finops-300 bg-white px-4 py-3">
+		<form
+			method="post"
+			hx-post={ fmt.Sprintf("/projections/commitments/%d", c.ID) }
+			hx-target={ fmt.Sprintf("#commitment-%d", c.ID) }
+			hx-swap="outerHTML"
+			class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<input name="name" value={ c.Name } required autofocus class="col-span-2 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+			@commitmentKindSelect(c.Kind)
+			<input name="monthly_value" value={ fmtMoneyInput(c.MonthlyValue) } required inputmode="decimal" class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+			<input name="start_month" type="month" value={ fmtMonthInput(c, false) } required class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+			<input name="end_month" type="month" value={ fmtMonthInput(c, true) } class="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+			<div class="flex gap-2">
+				@commitmentAccountSelect(accounts, c.AccountID)
+				<button type="submit" class="rounded-lg bg-finops-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-finops-800" title="Salvar">
+					<i class="fa-solid fa-check" aria-hidden="true"></i>
+				</button>
+				<button
+					type="button"
+					hx-get={ fmt.Sprintf("/projections/commitments/%d/row", c.ID) }
+					hx-target={ fmt.Sprintf("#commitment-%d", c.ID) }
+					hx-swap="outerHTML"
+					class="rounded-lg bg-slate-200 px-3 py-2 text-sm text-finops-800 transition hover:bg-slate-300"
+					title="Cancelar"
+				><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+			</div>
+		</form>
+		if errMsg != "" {
+			<p class="mt-2 text-sm text-rose-700">{ errMsg }</p>
+		}
+	</li>
+}
+
+templ ProjectionSettingsForm(s service.ProjectionSettings, csrf, errMsg string) {
+	<div id="projection-settings" class="rounded-2xl border border-slate-200 bg-white p-6">
+		<p class="text-lg font-bold text-finops-900">Premissas</p>
+		<p class="mt-1 text-sm text-finops-700">Valores base da projeção e parâmetros do simulador de financiamento.</p>
+		if errMsg != "" {
+			<div class="mt-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">{ errMsg }</div>
+		}
+		<form
+			method="post"
+			hx-post="/projections/settings"
+			hx-target="#projection-settings"
+			hx-swap="outerHTML"
+			class="mt-4 space-y-4"
+		>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			<div>
+				<p class="mb-2 text-xs font-bold uppercase tracking-wide text-finops-500">Renda &amp; caixa</p>
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+					@settingsField("monthly_income", "Renda líquida mensal", fmtMoneyInput(s.MonthlyIncome), "decimal")
+					@settingsField("variable_expense", "Gasto variável padrão", fmtMoneyInput(s.VariableExpense), "decimal")
+					@settingsField("opening_balance", "Saldo inicial", fmtMoneyInput(s.OpeningBalance), "decimal")
+				</div>
+			</div>
+			<div>
+				<p class="mb-2 text-xs font-bold uppercase tracking-wide text-finops-500">Imóvel &amp; financiamento (simulador)</p>
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+					@settingsField("property_value", "Valor do imóvel", fmtMoneyInput(s.PropertyValue), "decimal")
+					@settingsField("down_payment_monthly", "Entrada mensal (total)", fmtMoneyInput(s.DownPaymentMonthly), "decimal")
+					@settingsField("down_payment_months", "Nº meses de entrada", fmtIntInput(s.DownPaymentMonths), "numeric")
+					@settingsFieldPlaceholder("financing_annual_rate", "Taxa anual (%)", fmtRateInput(s.FinancingAnnualRate))
+					@settingsFieldPlaceholder("financing_term_years", "Prazo (anos)", fmtIntInput(s.FinancingTermYears))
+					@settingsField("share_pct", "Sua parte (%)", fmtRateInput(s.SharePct), "numeric")
+				</div>
+			</div>
+			<button type="submit" class="rounded-lg bg-finops-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-finops-800">Salvar premissas</button>
+		</form>
+	</div>
+}
+
+templ settingsField(name, label, value, mode string) {
+	<label class="text-sm text-finops-700">
+		{ label }
+		<input name={ name } value={ value } inputmode={ mode } placeholder="0" class="mt-1 w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm"/>
+	</label>
+}
+
+// settingsFieldPlaceholder: campo amarelo (§3) — premissa incerta a confirmar com o banco.
+templ settingsFieldPlaceholder(name, label, value string) {
+	<label class="text-sm text-finops-700">
+		{ label } <span title="placeholder — substituir pela simulação real do banco">⚠️</span>
+		<input name={ name } value={ value } inputmode="decimal" placeholder="0" class="mt-1 w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm"/>
+	</label>
+}
+

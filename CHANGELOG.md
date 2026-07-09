@@ -5,6 +5,31 @@ Todas as mudanças relevantes do FinOps são registradas neste arquivo.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto
 adota [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0-beta] — 2026-07-09
+
+### Adicionado
+
+**Projeções financeiras**
+- Nova página `/projections`: previsão de saldo (forecast), resumo, simulador de cenários e compromissos recorrentes (CRUD).
+- Overrides de variáveis para ajustar projeções sem alterar os dados base.
+- Migration `015_projections` com as tabelas de compromissos e variáveis.
+
+**Assistente de chat com escrita**
+- O chat agora executa ações no financeiro via linguagem natural: criar, editar e apagar transações (`commit_transaction`) com fluxo de confirmação antes de aplicar.
+- Parsing de datas relativas ("hoje", "ontem") e resolução de conta/categoria por nome.
+
+**Deduplicação de transações**
+- Detecção de transações duplicadas por data, valor, direção e descrição similar (normalização de acentos e tokens), evitando lançamentos repetidos em importações e cadastros.
+
+**Preferências de usuário**
+- `home_mode` por usuário (`simple` / `advanced`) controla a densidade do dashboard. Migration `016_user_settings`.
+
+### Corrigido
+
+- Modal de editar transação não disparava o `UpdateTransaction`: método trocado de `hx-post` para `hx-put`, alinhado à rota `PUT /transactions/{id}`.
+- Campo de categoria era `required` no formulário, bloqueando o submit (validação HTML5) em transações sem categoria — agora opcional, coerente com o backend.
+- `htmx:targetError` ao editar transação pela tela de relatórios: o dialog usava ids próprios (`report-tx-modal`) divergentes do alvo da form compartilhada; ids unificados para `transaction-modal`.
+
 ## [v0.2.0-beta] — 2026-07-02
 
 ### Adicionado

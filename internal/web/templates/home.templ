@@ -88,7 +88,7 @@ func jsonStrings(vals []string) string {
 	return "[" + strings.Join(parts, ",") + "]"
 }
 
-templ HomePage(email, csrf string, tourActive bool) {
+templ HomePage(email, csrf string, tourActive bool, mode string) {
 	<!DOCTYPE html>
 	<html lang="pt-BR">
 		@AppHead("Finops", true)
@@ -103,8 +103,9 @@ templ HomePage(email, csrf string, tourActive bool) {
 						</h1>
 						<p class="mt-1 text-sm text-finops-700">Como está minha situação financeira agora?</p>
 					</div>
-					<!-- Seletor de período -->
+					<!-- Seletor de período + toggle de modo -->
 					<div class="flex items-center gap-2">
+						@HomeModeToggle(mode, csrf)
 						<select
 							id="period-select"
 							name="period"
@@ -224,6 +225,61 @@ templ HomePage(email, csrf string, tourActive bool) {
 			</main>
 		</body>
 	</html>
+}
+
+// HomeModeToggle alterna simples/avançado; persiste no /home/mode e recarrega a página.
+templ HomeModeToggle(mode, csrf string) {
+	<button
+		type="button"
+		hx-post="/home/mode"
+		hx-swap="none"
+		title="Alternar entre visão simples e avançada"
+		class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-finops-800 shadow-sm transition hover:border-finops-500"
+	>
+		<input type="hidden" name="_csrf" value={ csrf }/>
+		if mode == service.HomeModeSimple {
+			<i class="fa-solid fa-chart-line text-finops-500" aria-hidden="true"></i> Ver modo avançado
+		} else {
+			<i class="fa-solid fa-feather text-finops-500" aria-hidden="true"></i> Ver modo simples
+		}
+	</button>
+}
+
+// DashboardSimplePartial: visão enxuta para quem não tem costume de controle
+// financeiro — saldo em destaque, entrou/saiu e uma frase de orientação.
+templ DashboardSimplePartial(data service.DashboardSummary, period string, from, to time.Time, csrf string) {
+	<div class="mb-6 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+		<p class="text-sm font-semibold uppercase tracking-wide text-finops-500">Seu saldo hoje</p>
+		<p class={ "mt-2 text-4xl font-extrabold " + balanceTextClass(data.TotalBalance) }>{ utils.FormatMoney(data.TotalBalance) }</p>
+		<p class="mt-1 text-sm text-finops-700">Somando todas as suas contas</p>
+	</div>
+	<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+		<div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+			<p class="text-sm font-semibold text-emerald-700"><i class="fa-solid fa-arrow-down mr-1"></i>Entrou no período</p>
+			<p class="mt-1 text-2xl font-extrabold text-emerald-800">{ utils.FormatMoney(data.Income) }</p>
+		</div>
+		<div class="rounded-2xl border border-rose-200 bg-rose-50 p-6">
+			<p class="text-sm font-semibold text-rose-700"><i class="fa-solid fa-arrow-up mr-1"></i>Saiu no período</p>
+			<p class="mt-1 text-2xl font-extrabold text-rose-800">{ utils.FormatMoney(data.Expenses) }</p>
+		</div>
+	</div>
+	if len(data.Insights) > 0 {
+		<div class="mb-6 rounded-2xl border border-finops-200 bg-finops-50 px-6 py-5">
+			<p class="text-base text-finops-900"><i class="fa-solid fa-lightbulb mr-2 text-amber-500"></i>{ data.Insights[0] }</p>
+		</div>
+	} else {
+		<div class="mb-6 rounded-2xl border border-slate-200 bg-white px-6 py-5">
+			<p class="text-base text-finops-800"><i class="fa-solid fa-lightbulb mr-2 text-amber-500"></i>Registre suas primeiras transações para começar a acompanhar sua vida financeira.</p>
+		</div>
+	}
+}
+
+// balanceTextClass: saldo negativo em vermelho.
+func balanceTextClass(v float64) string {
+	if v < 0 {
+		return "text-rose-700"
+	}
+	return "text-finops-900"
 }
 
 templ DashboardPartial(data service.DashboardSummary, period string, from, to time.Time, pending int, csrf string) {

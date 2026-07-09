@@ -44,10 +44,38 @@ type ClassificationRule struct {
 	CreatedAt   time.Time
 }
 
+type Commitment struct {
+	ID           int64
+	WorkspaceID  int64
+	AccountID    sql.NullInt64
+	Name         string
+	Kind         string
+	MonthlyValue string
+	StartMonth   time.Time
+	EndMonth     sql.NullTime
+	Notes        sql.NullString
+	CreatedAt    time.Time
+}
+
 type Import struct {
 	ID          int64
 	WorkspaceID int64
 	ImportedAt  time.Time
+}
+
+type ProjectionSetting struct {
+	WorkspaceID         int64
+	MonthlyIncome       string
+	VariableExpense     string
+	OpeningBalance      string
+	HorizonStart        sql.NullTime
+	PropertyValue       string
+	DownPaymentMonthly  string
+	DownPaymentMonths   int32
+	FinancingAnnualRate string
+	FinancingTermYears  int32
+	SharePct            string
+	UpdatedAt           time.Time
 }
 
 type Transaction struct {
@@ -75,6 +103,18 @@ type User struct {
 	CreatedAt       time.Time
 	HasDoneTour     bool
 	EmailVerifiedAt sql.NullTime
+}
+
+type UserSetting struct {
+	UserID    int64
+	HomeMode  string
+	UpdatedAt time.Time
+}
+
+type VariableExpenseOverride struct {
+	WorkspaceID int64
+	Month       time.Time
+	Value       string
 }
 
 type Workspace struct {

@@ -11,11 +11,13 @@ import (
 
 type Controller struct {
 	workspaceService service.WorkspaceService
+	settingsService  service.UserSettingsService
 }
 
-func NewController(service service.WorkspaceService) *Controller {
+func NewController(wsService service.WorkspaceService, settingsService service.UserSettingsService) *Controller {
 	return &Controller{
-		workspaceService: service,
+		workspaceService: wsService,
+		settingsService:  settingsService,
 	}
 }
 
@@ -69,6 +71,15 @@ func (c *Controller) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		logger.Error("onboarding_create_workspace_failed", "user_id", session.UserID, "error", err)
 		render.Templ(w, r, http.StatusInternalServerError, templates.OnboardingPage("Não foi possivel criar o workspace", session.CSRFToken))
 		return
+	}
+
+	// Modo do dashboard escolhido no onboarding (default simples para iniciantes).
+	mode := service.HomeModeSimple
+	if r.FormValue("home_mode") == service.HomeModeAdvanced {
+		mode = service.HomeModeAdvanced
+	}
+	if err := c.settingsService.SetHomeMode(r.Context(), session.UserID, mode); err != nil {
+		logger.Warn("onboarding_set_home_mode_failed", "user_id", session.UserID, "error", err)
 	}
 
 	logger.Debug("onboarding_create_workspace_succeeded", "user_id", session.UserID)

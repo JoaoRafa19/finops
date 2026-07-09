@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"finops/internal/observability"
 	service "finops/internal/services"
 	"finops/internal/web/middleware"
@@ -40,11 +41,29 @@ func (c *ChatController) Message(w http.ResponseWriter, r *http.Request) {
 	answer, err := c.chatSvc.Ask(r.Context(), session.UserID, question)
 	if err != nil {
 		logger.Error("chat_ask_failed", "user_id", session.UserID, "error", err)
-		render.Templ(w, r, http.StatusOK, templates.ChatErrorBubble("Não foi possível processar sua pergunta. Tente novamente."))
+		msg := "Não foi possível processar sua pergunta. Tente novamente."
+		if errors.Is(err, service.ErrRateLimited) {
+			msg = "O assistente está sobrecarregado no momento. Aguarde alguns segundos e tente de novo."
+		}
+		render.Templ(w, r, http.StatusOK, templates.ChatErrorPair(question, msg))
 		return
 	}
 
 	render.Templ(w, r, http.StatusOK, templates.ChatMessagePair(question, answer))
+}
+
+// Clear apaga o histórico da conversa e devolve o estado vazio do painel.
+func (c *ChatController) Clear(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if err := c.chatSvc.Clear(r.Context(), session.UserID); err != nil {
+		logger.Error("chat_clear_failed", "user_id", session.UserID, "error", err)
+	}
+	render.Templ(w, r, http.StatusOK, templates.ChatEmptyState())
 }
 
 func (c *ChatController) GetHistory(w http.ResponseWriter, r *http.Request) {

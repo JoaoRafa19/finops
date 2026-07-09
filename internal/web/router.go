@@ -21,6 +21,9 @@ type RouterDeps struct {
 	ClassificationService service.ClassificationService
 	ChatService           service.ChatService
 	TourService           service.TourService
+	ProjectionService     service.ProjectionService
+	InvoiceService        service.InvoiceService
+	UserSettingsService   service.UserSettingsService
 	DB                    *sql.DB
 	RedisClient           *redis.Client
 	SessionCookie         string

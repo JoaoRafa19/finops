@@ -91,7 +91,7 @@ templ SideNav(currentPath, csrf string) {
 		})();
 
 		// SPA: ordem das páginas para determinar direcção do slide
-		const _NAV_ORDER = { "/": 0, "/reports": 1, "/import": 2, "/classify": 3 };
+		const _NAV_ORDER = { "/": 0, "/reports": 1, "/projections": 2, "/import": 3, "/classify": 4 };
 		let _currentOrder = _NAV_ORDER[window.location.pathname] ?? 0;
 
 		document.addEventListener("htmx:beforeRequest", function(evt) {
@@ -180,6 +180,7 @@ templ SideNav(currentPath, csrf string) {
 		</a>
 		@sideNavLink("/", "fa-house", "Home", currentPath == "/")
 		@sideNavLink("/reports", "fa-chart-bar", "Relatórios", currentPath == "/reports")
+		@sideNavLink("/projections", "fa-chart-line", "Projeções", currentPath == "/projections")
 		@sideNavLink("/import", "fa-file-arrow-up", "Importar", currentPath == "/import")
 		@sideNavLink("/classify", "fa-tags", "Classificar", currentPath == "/classify")
 		

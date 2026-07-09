@@ -76,6 +76,12 @@ func (c *Controller) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		Direction:   payload.Direction,
 	})
 	if err != nil {
+		var dup *service.DuplicateError
+		if errors.As(err, &dup) {
+			logger.Info("create_transaction_duplicate", "user_id", session.UserID)
+			c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, buildTransactionFormState(r, dup.Error()))
+			return
+		}
 		logger.Error("create_transaction_failed", "user_id", session.UserID, "error", err)
 		c.renderTransactionsModal(w, r, session.UserID, session.CSRFToken, buildTransactionFormState(r, "erro ao criar transação"))
 		return
@@ -269,7 +275,7 @@ func (c *Controller) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		PostedOn:    payload.PostedOn,
 		CategoryID:  catID,
 		AccountID:   payload.AccountID,
-	}); err != nil {
+		}); err != nil {
 		logger.Error("update_transaction_failed", "tx_id", txID, "error", err)
 		c.renderEditModal(w, r, session.UserID, txID, session.CSRFToken, buildTransactionFormState(r, "erro ao atualizar transação"))
 		return
@@ -318,7 +324,7 @@ func (c *Controller) renderEditModal(w http.ResponseWriter, r *http.Request, use
 		http.Error(w, "failed to load categories", http.StatusInternalServerError)
 		return
 	}
-	render.Templ(w, r, http.StatusBadRequest, templates.TransactionEditModalDialog(txID, form, csrf, accounts, categories))
+	render.Templ(w, r, http.StatusOK, templates.TransactionEditModalDialog(txID, form, csrf, accounts, categories))
 }
 
 func (c *Controller) renderTransactionsModal(w http.ResponseWriter, r *http.Request, userID int64, csrfToken string, form templates.TransactionFormState) {

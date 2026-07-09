@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 type transactionServiceStub struct {
@@ -47,6 +48,9 @@ func (s transactionServiceStub) Update(_ context.Context, _, _ int64, _ service.
 	return nil
 }
 func (s transactionServiceStub) Delete(_ context.Context, _, _ int64) error { return nil }
+func (s transactionServiceStub) FindDuplicate(_ context.Context, _, _ int64, _ time.Time, _ float64, _, _ string) (service.DuplicateMatch, bool, error) {
+	return service.DuplicateMatch{}, false, nil // userID-based; assinatura idêntica
+}
 
 type accountServiceStub struct {
 	listByUserFn          func(ctx context.Context, userID int64) ([]store.Account, error)

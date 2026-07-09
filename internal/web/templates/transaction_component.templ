@@ -129,7 +129,7 @@ templ TransactionEditModalDialog(txID int64, form TransactionFormState, csrf_tok
 			<p class="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">{ form.ErrorMessage }</p>
 		}
 		<form
-			hx-post={ fmt.Sprintf("/transactions/%d", txID) }
+			hx-put={ fmt.Sprintf("/transactions/%d", txID) }
 			hx-target="#transaction-modal-body"
 			hx-swap="innerHTML"
 			class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
@@ -153,7 +153,7 @@ templ TransactionEditModalDialog(txID int64, form TransactionFormState, csrf_tok
 			</div>
 			<div>
 				@FormLabel("category_id", "Categoria")
-				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), true)
+				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), false)
 			</div>
 			<div>
 				@FormLabel("direction", "Tipo")
@@ -204,7 +204,7 @@ templ TransactionModalDialog(form TransactionFormState, csrf_token string, accou
 			</div>
 			<div>
 				@FormLabel("category_id", "Categoria")
-				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), true)
+				@SelectInput("category_id", "category_id", buildCategoryOptions(categories, form.CategoryID), false)
 			</div>
 			<div>
 				@FormLabel("direction", "Tipo")

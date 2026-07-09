@@ -59,6 +59,9 @@ func main() {
 		ClassificationService: runtime.Services.Classification,
 		ChatService:           runtime.Services.Chat,
 		TourService:           runtime.Services.Tour,
+		ProjectionService:     runtime.Services.Projection,
+		InvoiceService:        runtime.Services.Invoice,
+		UserSettingsService:   runtime.Services.UserSettings,
 		DB:                    runtime.DB,
 		RedisClient:           runtime.RedisClient,
 	})
