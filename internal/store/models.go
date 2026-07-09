@@ -105,6 +105,12 @@ type User struct {
 	EmailVerifiedAt sql.NullTime
 }
 
+type UserSetting struct {
+	UserID    int64
+	HomeMode  string
+	UpdatedAt time.Time
+}
+
 type VariableExpenseOverride struct {
 	WorkspaceID int64
 	Month       time.Time

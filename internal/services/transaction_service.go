@@ -42,6 +42,9 @@ type TransactionService interface {
 	GetForEdit(ctx context.Context, userID, txID int64) (store.GetTransactionForEditRow, error)
 	Update(ctx context.Context, userID, txID int64, input UpdateTransactionDTO) error
 	Delete(ctx context.Context, userID, txID int64) error
+	// FindDuplicate procura uma transação equivalente (conta+valor+data±3d+descrição
+	// parecida) por usuário. Usado pelo chat antes de gravar.
+	FindDuplicate(ctx context.Context, userID, accountID int64, postedOn time.Time, amount float64, direction, description string) (DuplicateMatch, bool, error)
 }
 
 type PGTransactionService struct {
@@ -103,6 +106,13 @@ func (p *PGTransactionService) CreateManual(ctx context.Context, input models.Cr
 		}
 
 		categoryID = sql.NullInt64{Int64: category.ID, Valid: true}
+	}
+
+	if match, dup, err := p.findDuplicateInWorkspace(ctx, workspace.ID, account.ID, input.PostedOn, input.Amount, direction, description); err != nil {
+		logger.Warn("transaction_create_dedup_check_failed", "user_id", input.UserID, "error", err)
+	} else if dup {
+		logger.Info("transaction_create_duplicate_blocked", "user_id", input.UserID, "existing_id", match.ID)
+		return store.Transaction{}, &DuplicateError{Match: match}
 	}
 
 	transaction, err := p.db.CreateTransaction(ctx, store.CreateTransactionParams{

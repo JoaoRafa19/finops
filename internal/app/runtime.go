@@ -25,6 +25,7 @@ type Services struct {
 	Tour           service.TourService
 	Projection     service.ProjectionService
 	Invoice        service.InvoiceService
+	UserSettings   service.UserSettingsService
 }
 
 type Runtime struct {
@@ -123,8 +124,9 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 			embSvc,
 		),
 		Tour:       service.NewPGTourService(queries, service.NewPGWorkspaceService(queries)),
-		Projection: projectionSvc,
-		Invoice:    invoiceSvc,
+		Projection:   projectionSvc,
+		Invoice:      invoiceSvc,
+		UserSettings: service.NewPGUserSettingsService(queries),
 		Chat: service.NewOllamaAgentChatService(
 			cfg.LLMBaseURL,
 			cfg.LLMAPIKey,
@@ -134,6 +136,7 @@ func Bootstrap(ctx context.Context, cfg Config) (*Runtime, error) {
 			service.NewPGReportService(queries),
 			service.NewPGCategoryService(queries),
 			projectionSvc,
+			service.NewPGTransactionService(db, queries),
 		),
 	}
 

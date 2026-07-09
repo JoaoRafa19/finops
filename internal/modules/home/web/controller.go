@@ -17,6 +17,7 @@ type Controller struct {
 	importService    service.ImportService
 	tourService      service.TourService
 	categoryService  service.CategoryService
+	settingsService  service.UserSettingsService
 }
 
 func NewController(
@@ -26,6 +27,7 @@ func NewController(
 	importSvc service.ImportService,
 	tourSvc service.TourService,
 	categorySvc service.CategoryService,
+	settingsSvc service.UserSettingsService,
 ) *Controller {
 	return &Controller{
 		accountService:   accountSvc,
@@ -34,6 +36,7 @@ func NewController(
 		importService:    importSvc,
 		tourService:      tourSvc,
 		categoryService:  categorySvc,
+		settingsService:  settingsSvc,
 	}
 }
 
@@ -65,7 +68,38 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, tourActive))
+	mode, err := c.settingsService.GetHomeMode(r.Context(), session.UserID)
+	if err != nil {
+		logger.Warn("home_mode_load_failed", "error", err)
+		mode = service.HomeModeAdvanced
+	}
+
+	render.Templ(w, r, http.StatusOK, templates.HomePage(session.Email, session.CSRFToken, tourActive, mode))
+}
+
+// ToggleMode alterna simples/avançado, persiste e recarrega a home (HX-Refresh).
+func (c *Controller) ToggleMode(w http.ResponseWriter, r *http.Request) {
+	logger := observability.Logger(r.Context())
+	session, ok := middleware.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	current, err := c.settingsService.GetHomeMode(r.Context(), session.UserID)
+	if err != nil {
+		current = service.HomeModeAdvanced
+	}
+	next := service.HomeModeSimple
+	if current == service.HomeModeSimple {
+		next = service.HomeModeAdvanced
+	}
+	if err := c.settingsService.SetHomeMode(r.Context(), session.UserID, next); err != nil {
+		logger.Error("home_mode_toggle_failed", "error", err)
+		http.Error(w, "erro ao salvar preferência", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("HX-Refresh", "true")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (c *Controller) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +144,14 @@ func (c *Controller) Dashboard(w http.ResponseWriter, r *http.Request) {
 		pending++
 	}
 
+	mode, err := c.settingsService.GetHomeMode(r.Context(), session.UserID)
+	if err != nil {
+		mode = service.HomeModeAdvanced
+	}
+	if mode == service.HomeModeSimple {
+		render.Templ(w, r, http.StatusOK, templates.DashboardSimplePartial(data, period, from, to, session.CSRFToken))
+		return
+	}
 	render.Templ(w, r, http.StatusOK, templates.DashboardPartial(data, period, from, to, pending, session.CSRFToken))
 }
 

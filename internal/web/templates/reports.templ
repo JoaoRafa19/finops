@@ -120,8 +120,8 @@ templ ReportsPage(csrf string) {
 					</div>
 				</div>
 				<!-- Modal de edição de transação -->
-				<dialog id="report-tx-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
-					<div id="report-tx-modal-body"></div>
+				<dialog id="transaction-modal" class="w-full max-w-2xl rounded-2xl border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40">
+					<div id="transaction-modal-body"></div>
 				</dialog>
 				<script>
 					(function() {
@@ -374,9 +374,9 @@ templ TransactionsFragment(items []service.TransactionListItem, categories []sto
 											class="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-finops-700"
 											title="Editar"
 											hx-get={ fmt.Sprintf("/transactions/%d/edit-modal", tx.ID) }
-											hx-target="#report-tx-modal-body"
+											hx-target="#transaction-modal-body"
 											hx-swap="innerHTML"
-											hx-on::after-request="document.getElementById('report-tx-modal')?.showModal()"
+											hx-on::after-request="document.getElementById('transaction-modal')?.showModal()"
 										><i class="fa-solid fa-pen text-xs"></i></button>
 										<button
 											class="rounded p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"

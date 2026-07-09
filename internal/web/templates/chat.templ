@@ -1,6 +1,10 @@
 package templates
 
-import service "finops/internal/services"
+import (
+	"fmt"
+
+	service "finops/internal/services"
+)
 
 templ ChatWidget(csrf string) {
 	<div id="chat-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
@@ -33,12 +37,25 @@ templ ChatWidget(csrf string) {
 						aria-label="Dicas de uso do assistente"
 					><i class="fa-solid fa-circle-info text-xs" aria-hidden="true"></i></button>
 				</div>
-				<button
-					onclick="chatToggle()"
-					class="text-white/60 transition hover:text-white"
-					title="Fechar chat"
-					aria-label="Fechar chat"
-				><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+				<div class="flex items-center gap-3">
+					<button
+						type="button"
+						hx-post="/chat/clear"
+						hx-target="#chat-messages"
+						hx-swap="innerHTML"
+						hx-confirm="Limpar toda a conversa?"
+						hx-vals={ fmt.Sprintf(`{"_csrf":"%s"}`, csrf) }
+						class="text-white/60 transition hover:text-white"
+						title="Limpar conversa"
+						aria-label="Limpar conversa"
+					><i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i></button>
+					<button
+						onclick="chatToggle()"
+						class="text-white/60 transition hover:text-white"
+						title="Fechar chat"
+						aria-label="Fechar chat"
+					><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+				</div>
 			</div>
 			@ChatTipsModal()
 			<!-- Mensagens -->
@@ -50,10 +67,7 @@ templ ChatWidget(csrf string) {
 				hx-swap="innerHTML"
 				hx-on::after-settle="this.scrollTop = this.scrollHeight; chatRenderMarkdown();"
 			>
-				<div class="flex flex-col items-center justify-center gap-2 py-8 text-center">
-					<i class="fa-solid fa-comments text-2xl text-finops-400"></i>
-					<p class="text-xs text-finops-700">Olá! Pergunte sobre suas finanças.</p>
-				</div>
+				@ChatEmptyState()
 			</div>
 			<!-- Indicador de carregamento -->
 			<div id="chat-loading" class="htmx-indicator shrink-0 px-4 pb-1">
@@ -200,12 +214,16 @@ templ ChatMessagePair(question, answer string) {
 	@chatAssistantBubble(answer)
 }
 
+templ ChatEmptyState() {
+	<div class="flex flex-col items-center justify-center gap-2 py-8 text-center">
+		<i class="fa-solid fa-comments text-2xl text-finops-400"></i>
+		<p class="text-xs text-finops-700">Olá! Pergunte sobre suas finanças.</p>
+	</div>
+}
+
 templ ChatHistoryFragment(messages []service.ChatMessage) {
 	if len(messages) == 0 {
-		<div class="flex flex-col items-center justify-center gap-2 py-8 text-center">
-			<i class="fa-solid fa-comments text-2xl text-finops-400"></i>
-			<p class="text-xs text-finops-700">Olá! Pergunte sobre suas finanças.</p>
-		</div>
+		@ChatEmptyState()
 	} else {
 		for _, msg := range messages {
 			if msg.Role == "user" {
@@ -218,6 +236,13 @@ templ ChatHistoryFragment(messages []service.ChatMessage) {
 }
 
 templ ChatErrorBubble(errMsg string) {
+	@chatAssistantBubble(errMsg)
+}
+
+// ChatErrorPair mantém a pergunta do usuário visível quando a resposta falha,
+// para a mensagem não "se perder" após o input ser limpo.
+templ ChatErrorPair(question, errMsg string) {
+	@chatUserBubble(question)
 	@chatAssistantBubble(errMsg)
 }
 

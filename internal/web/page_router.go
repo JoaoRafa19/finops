@@ -29,9 +29,10 @@ func newPageRouter(deps RouterDeps) http.Handler {
 		deps.ImportService,
 		deps.TourService,
 		deps.CategoryService,
+		deps.UserSettingsService,
 	)
 	accountController := accounts.NewController(deps.AccountService)
-	onboardingController := onboarding.NewController(deps.WorkspaceService)
+	onboardingController := onboarding.NewController(deps.WorkspaceService, deps.UserSettingsService)
 	transactionController := transactions.NewController(
 		deps.TransactionService,
 		deps.AccountService,
@@ -70,6 +71,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private := http.NewServeMux()
 	private.HandleFunc("GET /", homeController.Home)
 	private.HandleFunc("GET /dashboard", homeController.Dashboard)
+	private.HandleFunc("POST /home/mode", homeController.ToggleMode)
 	private.HandleFunc("POST /accounts", accountController.Create)
 	private.HandleFunc("GET /account-modal", accountController.AccountModal)
 	private.HandleFunc("GET /accounts/{id}/edit", accountController.EditForm)
@@ -95,7 +97,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("GET /transfer-modal", transactionController.RegisterTransferModal)
 	private.HandleFunc("POST /transactions", transactionController.CreateTransaction)
 	private.HandleFunc("GET /transactions/{id}/edit-modal", transactionController.EditModal)
-	private.HandleFunc("POST /transactions/{id}", transactionController.UpdateTransaction)
+	private.HandleFunc("PUT /transactions/{id}", transactionController.UpdateTransaction)
 	private.HandleFunc("DELETE /transactions/{id}", transactionController.DeleteTransaction)
 	private.HandleFunc("POST /transfers", transactionController.CreateTransfer)
 	private.HandleFunc("GET /reports", reportsController.Page)
@@ -131,6 +133,7 @@ func newPageRouter(deps RouterDeps) http.Handler {
 	private.HandleFunc("POST /classify/bulk-confirm", classificationController.BulkConfirm)
 	private.HandleFunc("POST /chat", chatController.Message)
 	private.HandleFunc("GET /chat/history", chatController.GetHistory)
+	private.HandleFunc("POST /chat/clear", chatController.Clear)
 	private.HandleFunc("GET /profile", profileController.Page)
 	private.HandleFunc("GET /tour", tourController.Page)
 	private.HandleFunc("GET /tour/start", tourController.Start)

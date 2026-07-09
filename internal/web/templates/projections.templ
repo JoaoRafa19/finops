@@ -179,7 +179,6 @@ templ ProjectionsPage(csrf string) {
 					<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-finops-700">Carregando compromissos…</div>
 				</div>
 			</main>
-			@projectionChartsScript()
 		</body>
 	</html>
 }
@@ -261,6 +260,52 @@ templ SummaryFragment(res service.ProjectionResult) {
 			</div>
 		}
 	</div>
+	@drawProjectionCharts()
+}
+
+// drawProjectionCharts vai DENTRO do fragment: roda toda vez que o SummaryFragment
+// é trocado via HTMX (não depende de listener global), evitando o gráfico em branco
+// no primeiro carregamento.
+templ drawProjectionCharts() {
+	<script>
+		(function() {
+			function draw() {
+				if (typeof Chart === "undefined") return;
+				const cumEl = document.querySelector("[data-chart=cumulative]");
+				if (cumEl) {
+					const c = document.getElementById("proj-cumulative-chart");
+					const ex = Chart.getChart(c); if (ex) ex.destroy();
+					new Chart(c, {
+						type: "line",
+						data: {
+							labels: JSON.parse(cumEl.dataset.labels),
+							datasets: [{ label: "Caixa acumulado", data: JSON.parse(cumEl.dataset.values),
+								borderColor: "#0ea5a4", backgroundColor: "rgba(14,165,164,0.1)", fill: true, tension: 0.3, pointRadius: 3 }],
+						},
+						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
+					});
+				}
+				const netEl = document.querySelector("[data-chart=net]");
+				if (netEl) {
+					const c = document.getElementById("proj-net-chart");
+					const ex = Chart.getChart(c); if (ex) ex.destroy();
+					const vals = JSON.parse(netEl.dataset.values);
+					new Chart(c, {
+						type: "bar",
+						data: {
+							labels: JSON.parse(netEl.dataset.labels),
+							datasets: [{ label: "Sobra", data: vals,
+								backgroundColor: vals.map(v => v < 0 ? "#f43f5e" : "#14b8a6") }],
+						},
+						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
+					});
+				}
+			}
+			requestAnimationFrame(draw);
+		})();
+	</script>
 }
 
 templ kpiCard(label, value, valueClass, sub string) {
@@ -618,48 +663,3 @@ templ settingsFieldPlaceholder(name, label, value string) {
 	</label>
 }
 
-templ projectionChartsScript() {
-	<script>
-		(function() {
-			function draw() {
-				if (typeof Chart === "undefined") return;
-				const cumEl = document.querySelector("[data-chart=cumulative]");
-				if (cumEl) {
-					const c = document.getElementById("proj-cumulative-chart");
-					const ex = Chart.getChart(c); if (ex) ex.destroy();
-					new Chart(c, {
-						type: "line",
-						data: {
-							labels: JSON.parse(cumEl.dataset.labels),
-							datasets: [{ label: "Caixa acumulado", data: JSON.parse(cumEl.dataset.values),
-								borderColor: "#0ea5a4", backgroundColor: "rgba(14,165,164,0.1)", fill: true, tension: 0.3, pointRadius: 3 }],
-						},
-						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
-					});
-				}
-				const netEl = document.querySelector("[data-chart=net]");
-				if (netEl) {
-					const c = document.getElementById("proj-net-chart");
-					const ex = Chart.getChart(c); if (ex) ex.destroy();
-					const vals = JSON.parse(netEl.dataset.values);
-					new Chart(c, {
-						type: "bar",
-						data: {
-							labels: JSON.parse(netEl.dataset.labels),
-							datasets: [{ label: "Sobra", data: vals,
-								backgroundColor: vals.map(v => v < 0 ? "#f43f5e" : "#14b8a6") }],
-						},
-						options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-							scales: { y: { ticks: { callback: v => "R$ " + Number(v).toLocaleString("pt-BR") } } } },
-					});
-				}
-			}
-			// Redesenha quando o fragment do resumo é trocado via HTMX.
-			document.body.addEventListener("htmx:afterSwap", function(e) {
-				if (e.target && e.target.id === "summary-section") requestAnimationFrame(draw);
-			});
-			requestAnimationFrame(draw);
-		})();
-	</script>
-}
